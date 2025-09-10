@@ -20,11 +20,12 @@ services:
     depends_on:
       - db
     environment:
+      - DB_CONNECTION=pgsql
       - DB_HOST=db
       - DB_PORT=5432
       - DB_DATABASE=pomolab
       - DB_USERNAME=root
-      - DB_PASSWORD=
+      - DB_PASSWORD=password
 
   db:
     image: postgres:15
@@ -35,8 +36,8 @@ services:
     environment:
       POSTGRES_DB: pomolab
       POSTGRES_USER: root
-      POSTGRES_PASSWORD: 
-      POSTGRES_ROOT_PASSWORD: 
+      POSTGRES_PASSWORD: password
+      POSTGRES_ROOT_PASSWORD: password 
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
