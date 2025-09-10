@@ -11,8 +11,11 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.13",
+    "@videosdk.live/react-sdk": "^0.4.1",
+    "jose": "^6.1.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-router-dom": "^7.8.2",
     "tailwindcss": "^4.1.13"
   },
   "devDependencies": {

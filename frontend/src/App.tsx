@@ -1,34 +1,50 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { Routes, Route, Link } from 'react-router-dom'
 import './App.css'
+import LearnTogether from './pages/learn-together'
+
+function Home() {
+  return (
+    <div className="home-page p-6 text-center">
+      <h1 className="text-4xl font-bold mb-6">Pomolab</h1>
+      <p className="text-lg mb-8">Your productivity and learning companion</p>
+      <div className="navigation-buttons flex justify-center gap-4">
+        <Link 
+          to="/learn-together" 
+          className="px-6 py-3 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        >
+          Start Video Learning Session
+        </Link>
+      </div>
+    </div>
+  )
+}
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1 className='text-red-500'>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div className="app">
+      <nav className="navbar bg-gray-800 text-white p-4">
+        <div className="nav-container flex justify-between items-center">
+          <Link to="/" className="text-xl font-bold">
+            Pomolab
+          </Link>
+          <div className="nav-links flex gap-4">
+            <Link to="/" className="hover:text-gray-300">
+              Home
+            </Link>
+            <Link to="/learn-together" className="hover:text-gray-300">
+              Learn Together
+            </Link>
+          </div>
+        </div>
+      </nav>
+      
+      <main className="main-content">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/learn-together" element={<LearnTogether />} />
+        </Routes>
+      </main>
+    </div>
   )
 }
 
