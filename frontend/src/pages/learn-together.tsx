@@ -46,10 +46,10 @@ export default function LearnTogether() {
           <MeetingView meetingId={meetingId} onLeave={onMeetingLeave} />
         </MeetingProvider>
       ) : (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="min-h-screen pt-24 bg-gradient-to-br from-[#E8E1F5] via-[#D8C7F0] to-[#C8B9E8] flex items-center justify-center">
           <div className="text-center max-w-md mx-auto px-6">
             <div className="mb-8">
-              <div className="w-20 h-20 mx-auto mb-6 bg-blue-500 rounded-full flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-r from-[#6B5B95] to-[#8A7CA8] rounded-full flex items-center justify-center shadow-xl">
                 <Camera className="w-10 h-10 text-white" />
               </div>
               <h1 className="text-4xl font-bold text-gray-800 mb-4">Learn Together</h1>
@@ -61,7 +61,7 @@ export default function LearnTogether() {
             <button
               onClick={getMeetingAndToken}
               disabled={isLoading}
-              className="w-full px-8 py-4 bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition-all duration-200 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+              className="w-full btn-primary text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
             >
               {isLoading ? (
                 <>

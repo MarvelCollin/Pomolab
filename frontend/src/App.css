@@ -1,1 +1,28 @@
 @import "tailwindcss";
+
+  .video-container {
+    /* This creates a space for our video and positions it */
+    position: relative;
+    width: 560px;
+    height: 315px;
+    overflow: hidden;
+  }
+
+  .video-container iframe {
+    /* This makes the iframe fill the container */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .video-overlay {
+    /* This is the crucial part: the transparent layer on top */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* This ensures the overlay is on top of the video */
+  }

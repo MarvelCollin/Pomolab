@@ -5,34 +5,38 @@
   --color-secondary: #FBF3D5;
   --color-accent: #D6DAC8;
   --color-sage: #9CAFAA;
+  --color-purple: #6B5B95;
+  --color-lavender: #E8E1F5;
+  --color-orange: #FF8C42;
   
   --color-primary-rgb: 214, 169, 157;
   --color-secondary-rgb: 251, 243, 213;
   --color-accent-rgb: 214, 218, 200;
   --color-sage-rgb: 156, 175, 170;
+  --color-purple-rgb: 107, 91, 149;
+  --color-lavender-rgb: 232, 225, 245;
+  --color-orange-rgb: 255, 140, 66;
   
   --gradient-primary: linear-gradient(135deg, #FBF3D5 0%, #D6DAC8 50%, #D6A99D 100%);
   --gradient-soft: linear-gradient(135deg, rgba(251, 243, 213, 0.8) 0%, rgba(214, 218, 200, 0.6) 100%);
-  --gradient-hero: linear-gradient(135deg, #FBF3D5 0%, #D6DAC8 30%, rgba(214, 169, 157, 0.1) 100%);
+  --gradient-hero: linear-gradient(135deg, #E8E1F5 0%, #D8C7F0 50%, #C8B9E8 100%);
+  --gradient-purple: linear-gradient(135deg, #E8E1F5 0%, #D8C7F0 100%);
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
   body {
-    @apply bg-gradient-to-br from-[#FBF3D5] via-[#D6DAC8] to-[#D6A99D] min-h-screen;
+    @apply bg-gradient-to-br from-[#E8E1F5] via-[#D8C7F0] to-[#C8B9E8] min-h-screen;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-[#D6A99D] hover:bg-[#c49388] text-white font-semibold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1;
+    @apply bg-[#FF8C42] hover:bg-[#e67c37] text-white font-semibold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1;
   }
   
   .btn-secondary {
-    @apply bg-[#9CAFAA] hover:bg-[#8a9c97] text-white font-semibold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl;
+    @apply bg-[#6B5B95] hover:bg-[#5a4a7a] text-white font-semibold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl;
   }
   
   .card-primary {
