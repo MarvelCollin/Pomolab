@@ -11,6 +11,12 @@ node_modules
 dist
 dist-ssr
 *.local
+package-lock.json
+
+# Environment files
+.env
+.env.local
+.env.production
 
 # Editor directories and files
 .vscode/*

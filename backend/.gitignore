@@ -18,7 +18,10 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/api-docs
 /vendor
+composer.phar
+package-lock.json
 Homestead.json
 Homestead.yaml
 Thumbs.db
