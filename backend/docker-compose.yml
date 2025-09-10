@@ -22,9 +22,9 @@ services:
     environment:
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_DATABASE=laravel_db
-      - DB_USERNAME=laravel_user
-      - DB_PASSWORD=laravel_password
+      - DB_DATABASE=pomolab
+      - DB_USERNAME=root
+      - DB_PASSWORD=
 
   db:
     image: postgres:15
@@ -33,10 +33,10 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: laravel_db
-      POSTGRES_USER: laravel_user
-      POSTGRES_PASSWORD: laravel_password
-      POSTGRES_ROOT_PASSWORD: root_password
+      POSTGRES_DB: pomolab
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: 
+      POSTGRES_ROOT_PASSWORD: 
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
