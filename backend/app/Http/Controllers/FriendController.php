@@ -16,6 +16,23 @@ class FriendController extends Controller
         $this->friendRepository = $friendRepository;
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/friends",
+     *     summary="Get all friend relationships",
+     *     tags={"Friends"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(type="array", @OA\Items(
+     *             @OA\Property(property="id", type="integer"),
+     *             @OA\Property(property="user_id", type="integer"),
+     *             @OA\Property(property="friend_id", type="integer"),
+     *             @OA\Property(property="status", type="string", enum={"pending", "accepted", "rejected"})
+     *         ))
+     *     )
+     * )
+     */
     public function index(): JsonResponse
     {
         $friends = $this->friendRepository->getAll();
@@ -33,6 +50,25 @@ class FriendController extends Controller
         return response()->json($friend);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/friends",
+     *     summary="Create a friend request",
+     *     tags={"Friends"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"user_id","friend_id","status"},
+     *             @OA\Property(property="user_id", type="integer", example=1),
+     *             @OA\Property(property="friend_id", type="integer", example=2),
+     *             @OA\Property(property="status", type="string", enum={"pending", "accepted", "rejected"}, example="pending")
+     *         )
+     *     ),
+     *     @OA\Response(response=201, description="Friend request created"),
+     *     @OA\Response(response=409, description="Friendship already exists"),
+     *     @OA\Response(response=422, description="Validation error")
+     * )
+     */
     public function store(Request $request): JsonResponse
     {
         try {
@@ -90,6 +126,25 @@ class FriendController extends Controller
         return response()->json(['message' => 'Friendship deleted successfully']);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/users/{userId}/friends",
+     *     summary="Get user's friends",
+     *     tags={"Friends"},
+     *     @OA\Parameter(
+     *         name="userId",
+     *         in="path",
+     *         description="User ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(type="array", @OA\Items(type="object"))
+     *     )
+     * )
+     */
     public function getUserFriends(int $userId): JsonResponse
     {
         $friends = $this->friendRepository->getFriendsByUserId($userId);

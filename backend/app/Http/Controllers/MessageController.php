@@ -16,6 +16,25 @@ class MessageController extends Controller
         $this->messageRepository = $messageRepository;
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/messages",
+     *     summary="Get all messages",
+     *     tags={"Messages"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(type="array", @OA\Items(
+     *             @OA\Property(property="id", type="integer"),
+     *             @OA\Property(property="from_user_id", type="integer"),
+     *             @OA\Property(property="to_user_id", type="integer"),
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="task_id", type="integer"),
+     *             @OA\Property(property="created_at", type="string", format="date-time")
+     *         ))
+     *     )
+     * )
+     */
     public function index(): JsonResponse
     {
         $messages = $this->messageRepository->getAll();
@@ -94,6 +113,32 @@ class MessageController extends Controller
         return response()->json($messages);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/conversation/{userId1}/{userId2}",
+     *     summary="Get conversation between two users",
+     *     tags={"Messages"},
+     *     @OA\Parameter(
+     *         name="userId1",
+     *         in="path",
+     *         description="First user ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="userId2",
+     *         in="path",
+     *         description="Second user ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(type="array", @OA\Items(type="object"))
+     *     )
+     * )
+     */
     public function getConversation(int $userId1, int $userId2): JsonResponse
     {
         $messages = $this->messageRepository->getConversationBetweenUsers($userId1, $userId2);
@@ -112,6 +157,25 @@ class MessageController extends Controller
         return response()->json($messages);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/messages/send",
+     *     summary="Send a message",
+     *     tags={"Messages"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"from_user_id","to_user_id","message"},
+     *             @OA\Property(property="from_user_id", type="integer", example=1),
+     *             @OA\Property(property="to_user_id", type="integer", example=2),
+     *             @OA\Property(property="message", type="string", example="Hello, how are you?"),
+     *             @OA\Property(property="task_id", type="integer", example=1, description="Optional task ID")
+     *         )
+     *     ),
+     *     @OA\Response(response=201, description="Message sent successfully"),
+     *     @OA\Response(response=422, description="Validation error")
+     * )
+     */
     public function sendMessage(Request $request): JsonResponse
     {
         try {

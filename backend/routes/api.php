@@ -7,6 +7,28 @@ use App\Http\Controllers\FriendController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\MessageController;
 
+/**
+ * @OA\Info(
+ *     title="Pomolab API",
+ *     version="1.0.0",
+ *     description="API documentation for Pomolab backend - Task management and messaging system"
+ * )
+ */
+
+/**
+ * @OA\Get(
+ *     path="/api/test",
+ *     summary="Test endpoint",
+ *     tags={"System"},
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful operation",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="Hello World")
+ *         )
+ *     )
+ * )
+ */
 Route::get('/test', function () {
     return response()->json(['message' => 'Hello World']);
 });
