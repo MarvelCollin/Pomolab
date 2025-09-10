@@ -102,7 +102,7 @@ export default function Home() {
       </div>
 
       {!isMinimalMode && (
-        <section className="relative z-10 pt-8 pb-8 min-h-screen flex items-center">
+        <section className="relative z-10 pt-20 pb-8 min-h-screen flex items-center">
           <div className="max-w-7xl mx-auto px-4 w-full">
             <div className="grid lg:grid-cols-12 gap-6 items-start">
               
