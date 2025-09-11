@@ -1,12 +1,13 @@
 import { useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { TrendingUp, Users, Zap, Target, ChevronLeft, ChevronRight, Timer, CheckSquare, Eye, EyeOff } from 'lucide-react';
+import { TrendingUp, Users, Zap, Target, Timer, CheckSquare, Eye, EyeOff, Image, X } from 'lucide-react';
 import PomodoroTimer from '../components/pomodoro/pomodoro-timer';
 import TaskList from '../components/pomodoro/task-list';
 import type { ITask } from '../interfaces/ITask';
 import { dummyTasks } from '../data/dummy-data';
 import { useBackground } from '../hooks/use-background';
+import type { IBackground } from '../interfaces/IBackground';
 import '../app.css';
 
 export default function Home() {
@@ -19,8 +20,16 @@ export default function Home() {
   const [isMinimalMode, setIsMinimalMode] = useState(false);
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const [showContent, setShowContent] = useState(false);
+  const [showBackgroundSelector, setShowBackgroundSelector] = useState(false);
   
-  const { activeBackground, loading: backgroundsLoading } = useBackground();
+  const { 
+    backgrounds, 
+    activeBackground, 
+    loading: backgroundsLoading, 
+    changeBackground,
+    uploadBackground,
+    deleteBackground 
+  } = useBackground();
 
   const handleTaskSelect = useCallback((task: ITask) => {
     setSelectedTask(task);
@@ -65,6 +74,29 @@ export default function Home() {
     setTimeout(() => {
       setShowContent(true);
     }, 500);
+  };
+
+  const handleBackgroundChange = (background: IBackground) => {
+    changeBackground(background);
+    setShowBackgroundSelector(false);
+    setBackgroundLoaded(false);
+    setShowContent(false);
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const result = await uploadBackground(file);
+    if (result) {
+      handleBackgroundChange(result);
+    }
+    event.target.value = '';
+  };
+
+  const handleDeleteBackground = async (background: IBackground, event: React.MouseEvent) => {
+    event.stopPropagation();
+    await deleteBackground(background);
   };
 
   const completedTasks = tasks.filter(t => t.status === 'completed').length;
@@ -233,6 +265,13 @@ export default function Home() {
               className="fixed top-4 right-4 z-50 flex flex-col gap-2"
             >
               <button
+                onClick={() => setShowBackgroundSelector(!showBackgroundSelector)}
+                className="w-10 h-10 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 shadow-lg"
+              >
+                <Image className="w-4 h-4 text-white" />
+              </button>
+
+              <button
                 onClick={() => setIsMinimalMode(!isMinimalMode)}
                 className="w-10 h-10 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 shadow-lg"
               >
@@ -258,6 +297,101 @@ export default function Home() {
               )}
             </motion.div>
 
+            <AnimatePresence>
+              {showBackgroundSelector && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="fixed top-16 right-4 z-50 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl p-4 shadow-2xl max-w-sm w-80"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-white font-medium text-sm">Change Background</h3>
+                    <button
+                      onClick={() => setShowBackgroundSelector(false)}
+                      className="w-6 h-6 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block">
+                      <input
+                        type="file"
+                        accept="image/*,video/*"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                      <div className="w-full h-20 border-2 border-dashed border-white/30 rounded-xl flex items-center justify-center cursor-pointer hover:border-white/50 transition-colors">
+                        <div className="text-center">
+                          <div className="text-white/70 text-xs mb-1">Upload New</div>
+                          <div className="text-white/50 text-xs">Image or Video</div>
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div className="max-h-60 overflow-y-auto">
+                    <div className="grid grid-cols-2 gap-2">
+                      {backgrounds.map((background) => (
+                        <div
+                          key={background.id}
+                          className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
+                            activeBackground?.id === background.id
+                              ? 'border-white/60 ring-2 ring-white/30'
+                              : 'border-white/20 hover:border-white/40'
+                          }`}
+                          onClick={() => handleBackgroundChange(background)}
+                        >
+                          {background.type === 'video' ? (
+                            <video
+                              className="w-full h-16 object-cover"
+                              muted
+                              preload="metadata"
+                            >
+                              <source src={background.url} type="video/mp4" />
+                            </video>
+                          ) : (
+                            <div
+                              className="w-full h-16 bg-cover bg-center"
+                              style={{ backgroundImage: `url(${background.url})` }}
+                            />
+                          )}
+                          
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                          
+                          <button
+                            onClick={(e) => handleDeleteBackground(background, e)}
+                            className="absolute top-1 right-1 w-5 h-5 bg-red-500/80 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-3 h-3 text-white" />
+                          </button>
+                          
+                          <div className="absolute bottom-1 left-1 right-1">
+                            <div className="text-white text-xs bg-black/50 rounded px-1 py-0.5 truncate">
+                              {background.name}
+                            </div>
+                          </div>
+                          
+                          {activeBackground?.id === background.id && (
+                            <div className="absolute top-1 left-1 w-2 h-2 bg-green-400 rounded-full"></div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {backgrounds.length === 0 && (
+                      <div className="text-center py-8 text-white/50 text-sm">
+                        No backgrounds available
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {!isMinimalMode && (
               <motion.section
                 initial={{ opacity: 0, y: 20 }}
@@ -282,7 +416,6 @@ export default function Home() {
                               <h1 className="text-4xl font-bold leading-tight mb-2">
                                 <span className="text-white drop-shadow-lg">POMOLAB</span>
                               </h1>
-                              
                             </div>
                             <PomodoroTimer onSessionComplete={handleSessionComplete} />
                             {selectedTask && (

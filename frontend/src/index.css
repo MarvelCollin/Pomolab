@@ -45,7 +45,6 @@
   font-family: var(--font-primary);
 }
 
-
 @layer base {
   * {
     font-family: var(--font-primary);
