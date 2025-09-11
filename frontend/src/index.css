@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'MateJournal';
+  src: url('https://txojgjlvqdarrixsdspg.supabase.co/storage/v1/object/public/assets/fonts/MateJournal-PV4rP.otf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'MateJournal';
+  src: url('https://txojgjlvqdarrixsdspg.supabase.co/storage/v1/object/public/assets/fonts/MateJournal-LVLRy.ttf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --color-primary: #D6A99D;
   --color-secondary: #FBF3D5;
@@ -21,22 +37,43 @@
   --gradient-soft: linear-gradient(135deg, rgba(251, 243, 213, 0.8) 0%, rgba(214, 218, 200, 0.6) 100%);
   --gradient-hero: linear-gradient(135deg, #E8E1F5 0%, #D8C7F0 50%, #C8B9E8 100%);
   --gradient-purple: linear-gradient(135deg, #E8E1F5 0%, #D8C7F0 100%);
+  
+  --font-primary: 'MateJournal', 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+* {
+  font-family: var(--font-primary);
+}
+
+
 @layer base {
+  * {
+    font-family: var(--font-primary);
+  }
+  
   body {
     @apply bg-gradient-to-br from-[#E8E1F5] via-[#D8C7F0] to-[#C8B9E8] min-h-screen;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: var(--font-primary);
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-primary);
+  }
+  
+  p, span, div, button, input, textarea, label {
+    font-family: var(--font-primary);
   }
 }
 
 @layer components {
   .btn-primary {
     @apply bg-[#FF8C42] hover:bg-[#e67c37] text-white font-semibold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1;
+    font-family: var(--font-primary);
   }
   
   .btn-secondary {
     @apply bg-[#6B5B95] hover:bg-[#5a4a7a] text-white font-semibold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl;
+    font-family: var(--font-primary);
   }
   
   .card-primary {
@@ -65,5 +102,9 @@
   
   .bg-sage {
     @apply bg-[#9CAFAA];
+  }
+  
+  .font-mate {
+    font-family: var(--font-primary);
   }
 }

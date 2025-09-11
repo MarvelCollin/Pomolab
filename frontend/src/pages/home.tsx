@@ -282,9 +282,7 @@ export default function Home() {
                               <h1 className="text-4xl font-bold leading-tight mb-2">
                                 <span className="text-white drop-shadow-lg">POMOLAB</span>
                               </h1>
-                              <p className="text-white/80 text-sm drop-shadow">
-                                Focus • Learn • Achieve
-                              </p>
+                              
                             </div>
                             <PomodoroTimer onSessionComplete={handleSessionComplete} />
                             {selectedTask && (
