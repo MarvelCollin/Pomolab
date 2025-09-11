@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { TrendingUp, Users, Zap, Target, Timer, CheckSquare, Eye, EyeOff, Image, X, Upload, Music, Play, Pause, SkipForward, SkipBack, Volume2, VolumeX } from 'lucide-react';
+import { Timer, CheckSquare, Eye, EyeOff, Image, X, Upload, Music } from 'lucide-react';
 import PomodoroTimer from '../components/pomodoro/pomodoro-timer';
 import TaskList from '../components/pomodoro/task-list';
+import MiniMusicPlayer from '../components/common/mini-music-player';
 import type { ITask } from '../interfaces/ITask';
 import { dummyTasks } from '../data/dummy-data';
 import { useBackground } from '../hooks/use-background';
@@ -15,8 +16,6 @@ import '../app.css';
 export default function Home() {
   const [tasks, setTasks] = useState<ITask[]>(dummyTasks);
   const [selectedTask, setSelectedTask] = useState<ITask | null>(tasks.find(t => t.status === 'in_progress') || null);
-  const [totalPomodoros, setTotalPomodoros] = useState(6);
-  const [todayPomodoros, setTodayPomodoros] = useState(3);
   const [showPomodoro, setShowPomodoro] = useState(true);
   const [showTasks, setShowTasks] = useState(true);
   const [isMinimalMode, setIsMinimalMode] = useState(false);
@@ -26,7 +25,6 @@ export default function Home() {
   const [showBackgroundSelector, setShowBackgroundSelector] = useState(false);
   const [showMusicPlayer, setShowMusicPlayer] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
-  const [uploadingMusic, setUploadingMusic] = useState(false);
   
   const { 
     backgrounds, 
@@ -43,12 +41,6 @@ export default function Home() {
     playerState,
     loading: musicLoading,
     playMusic,
-    togglePlayPause,
-    nextMusic,
-    previousMusic,
-    setVolume,
-    toggleMute,
-    uploadMusic,
     deleteMusic
   } = useMusic();
 
@@ -104,8 +96,6 @@ export default function Home() {
             }
           : task
       ));
-      setTodayPomodoros(prev => prev + 1);
-      setTotalPomodoros(prev => prev + 1);
     }
   }, [selectedTask]);
 
@@ -145,29 +135,10 @@ export default function Home() {
     await deleteBackground(background);
   };
 
-  const handleMusicUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setUploadingMusic(true);
-    const result = await uploadMusic(file);
-    setUploadingMusic(false);
-    event.target.value = '';
-  };
-
   const handleDeleteMusic = async (music: IMusic, event: React.MouseEvent) => {
     event.stopPropagation();
     await deleteMusic(music);
   };
-
-  const formatTime = (time: number): string => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  const completedTasks = tasks.filter(t => t.status === 'completed').length;
-  const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length;
 
   const renderBackground = () => {
     if (!activeBackground && !backgroundsLoading) {
@@ -583,35 +554,6 @@ export default function Home() {
                     </div>
                   )}
 
-                  <div className="mb-4">
-                    <label className="block">
-                      <input
-                        type="file"
-                        accept="audio/*"
-                        onChange={handleMusicUpload}
-                        className="hidden"
-                        id="music-upload"
-                      />
-                      <button
-                        onClick={() => document.getElementById('music-upload')?.click()}
-                        disabled={uploadingMusic}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {uploadingMusic ? (
-                          <>
-                            <div className="w-4 h-4 border border-white/30 border-t-white rounded-full animate-spin"></div>
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="w-4 h-4" />
-                            Upload Music
-                          </>
-                        )}
-                      </button>
-                    </label>
-                  </div>
-
                   <div className="max-h-48 overflow-y-auto">
                     <div className="space-y-2">
                       {musics.map((music) => (
@@ -662,41 +604,10 @@ export default function Home() {
               )}
             </AnimatePresence>
 
-            {currentMusic && !showMusicPlayer && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                className="fixed bottom-4 left-4 z-40 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl p-3 shadow-xl max-w-sm"
-              >
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={togglePlayPause}
-                    className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors"
-                  >
-                    {playerState.isPlaying ? (
-                      <Pause className="w-4 h-4 text-white" />
-                    ) : (
-                      <Play className="w-4 h-4 text-white ml-0.5" />
-                    )}
-                  </button>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white text-sm font-medium truncate">{currentMusic.name}</div>
-                    <div className="text-white/60 text-xs">
-                      {formatTime(playerState.currentTime)} / {formatTime(playerState.duration)}
-                    </div>
-                  </div>
-                  
-                  <button
-                    onClick={() => setShowMusicPlayer(true)}
-                    className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
-                  >
-                    <Music className="w-3 h-3 text-white" />
-                  </button>
-                </div>
-              </motion.div>
-            )}
+            <MiniMusicPlayer 
+              showMusicPlayer={showMusicPlayer} 
+              setShowMusicPlayer={setShowMusicPlayer} 
+            />
 
             {!isMinimalMode && (
               <motion.section
@@ -823,36 +734,6 @@ export default function Home() {
               className="relative z-10 pb-12"
             >
               <div className="max-w-6xl mx-auto px-4">
-                {!isMinimalMode && (
-                  <>
-                    <div className="grid md:grid-cols-4 gap-4 mb-8">
-                      {[
-                        { icon: Target, value: todayPomodoros, label: "Today's Focus" },
-                        { icon: TrendingUp, value: totalPomodoros, label: "Total Sessions" },
-                        { icon: Zap, value: completedTasks, label: "Completed" },
-                        { icon: Users, value: inProgressTasks, label: "In Progress" }
-                      ].map((stat, index) => (
-                        <motion.div
-                          key={stat.label}
-                          initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          transition={{ 
-                            duration: 0.6, 
-                            delay: 0.1 + (index * 0.1),
-                            ease: [0.25, 0.46, 0.45, 0.94]
-                          }}
-                          className="bg-white/5 backdrop-blur-2xl rounded-2xl p-4 shadow-xl border border-white/10 text-center"
-                        >
-                          <div className="w-10 h-10 bg-white/20 backdrop-blur-xl border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                            <stat.icon className="w-5 h-5 text-white" />
-                          </div>
-                          <div className="text-xl font-bold text-white mb-1 drop-shadow">{stat.value}</div>
-                          <div className="text-xs text-white/70">{stat.label}</div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </>
-                )}
               </div>
             </motion.section>
           </>

@@ -14,6 +14,7 @@ export const useMusic = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [autoPlay, setAutoPlay] = useState(true);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -70,6 +71,126 @@ export const useMusic = () => {
     }
   }, [currentMusic]);
 
+  const nextMusic = useCallback(() => {
+    if (musics.length === 0 || !currentMusic) return;
+    
+    const currentIndex = musics.findIndex(m => m.id === currentMusic.id);
+    const nextIndex = (currentIndex + 1) % musics.length;
+    const nextTrack = musics[nextIndex];
+    
+    if (nextTrack) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+
+      audioRef.current = musicService.createAudioElement(nextTrack.url);
+      const audio = audioRef.current;
+
+      audio.volume = playerState.volume;
+      audio.muted = playerState.isMuted;
+
+      audio.addEventListener('loadedmetadata', () => {
+        setPlayerState(prev => ({
+          ...prev,
+          duration: audio.duration || 0
+        }));
+      });
+
+      audio.addEventListener('timeupdate', () => {
+        setPlayerState(prev => ({
+          ...prev,
+          currentTime: audio.currentTime || 0
+        }));
+      });
+
+      audio.addEventListener('ended', () => {
+        setPlayerState(prev => ({
+          ...prev,
+          isPlaying: false,
+          currentTime: 0
+        }));
+        if (autoPlay) {
+          setTimeout(() => nextMusic(), 500);
+        }
+      });
+
+      audio.play()
+        .then(() => {
+          setCurrentMusic(nextTrack);
+          setPlayerState(prev => ({
+            ...prev,
+            isPlaying: true
+          }));
+          setMusics(prev => 
+            prev.map(m => ({ ...m, isActive: m.id === nextTrack.id }))
+          );
+        })
+        .catch(() => {
+          setError('Failed to play next music');
+        });
+    }
+  }, [musics, currentMusic, playerState.volume, playerState.isMuted, autoPlay]);
+
+  const previousMusic = useCallback(() => {
+    if (musics.length === 0 || !currentMusic) return;
+    
+    const currentIndex = musics.findIndex(m => m.id === currentMusic.id);
+    const prevIndex = currentIndex === 0 ? musics.length - 1 : currentIndex - 1;
+    const prevTrack = musics[prevIndex];
+    
+    if (prevTrack) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+
+      audioRef.current = musicService.createAudioElement(prevTrack.url);
+      const audio = audioRef.current;
+
+      audio.volume = playerState.volume;
+      audio.muted = playerState.isMuted;
+
+      audio.addEventListener('loadedmetadata', () => {
+        setPlayerState(prev => ({
+          ...prev,
+          duration: audio.duration || 0
+        }));
+      });
+
+      audio.addEventListener('timeupdate', () => {
+        setPlayerState(prev => ({
+          ...prev,
+          currentTime: audio.currentTime || 0
+        }));
+      });
+
+      audio.addEventListener('ended', () => {
+        setPlayerState(prev => ({
+          ...prev,
+          isPlaying: false,
+          currentTime: 0
+        }));
+        if (autoPlay) {
+          setTimeout(() => nextMusic(), 500);
+        }
+      });
+
+      audio.play()
+        .then(() => {
+          setCurrentMusic(prevTrack);
+          setPlayerState(prev => ({
+            ...prev,
+            isPlaying: true
+          }));
+          setMusics(prev => 
+            prev.map(m => ({ ...m, isActive: m.id === prevTrack.id }))
+          );
+        })
+        .catch(() => {
+          setError('Failed to play previous music');
+        });
+    }
+  }, [musics, currentMusic, playerState.volume, playerState.isMuted, autoPlay]);
+
   const playMusic = useCallback((music: IMusic) => {
     try {
       if (audioRef.current) {
@@ -102,7 +223,9 @@ export const useMusic = () => {
           isPlaying: false,
           currentTime: 0
         }));
-        nextMusic();
+        if (autoPlay) {
+          setTimeout(() => nextMusic(), 500);
+        }
       });
 
       audio.addEventListener('error', () => {
@@ -131,7 +254,38 @@ export const useMusic = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to play music');
     }
-  }, [playerState.volume, playerState.isMuted]);
+  }, [playerState.volume, playerState.isMuted, autoPlay, nextMusic]);
+
+  const seekTo = useCallback((time: number) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+      setPlayerState(prev => ({
+        ...prev,
+        currentTime: time
+      }));
+    }
+  }, []);
+
+  const setVolume = useCallback((volume: number) => {
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    if (audioRef.current) {
+      audioRef.current.volume = clampedVolume;
+    }
+    setPlayerState(prev => ({
+      ...prev,
+      volume: clampedVolume
+    }));
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.muted = !playerState.isMuted;
+    }
+    setPlayerState(prev => ({
+      ...prev,
+      isMuted: !prev.isMuted
+    }));
+  }, [playerState.isMuted]);
 
   const pauseMusic = useCallback(() => {
     if (audioRef.current) {
@@ -173,53 +327,6 @@ export const useMusic = () => {
     musicService.destroyAudioElement();
   }, []);
 
-  const nextMusic = useCallback(() => {
-    if (musics.length === 0 || !currentMusic) return;
-    
-    const currentIndex = musics.findIndex(m => m.id === currentMusic.id);
-    const nextIndex = (currentIndex + 1) % musics.length;
-    playMusic(musics[nextIndex]);
-  }, [musics, currentMusic, playMusic]);
-
-  const previousMusic = useCallback(() => {
-    if (musics.length === 0 || !currentMusic) return;
-    
-    const currentIndex = musics.findIndex(m => m.id === currentMusic.id);
-    const prevIndex = currentIndex === 0 ? musics.length - 1 : currentIndex - 1;
-    playMusic(musics[prevIndex]);
-  }, [musics, currentMusic, playMusic]);
-
-  const seekTo = useCallback((time: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
-      setPlayerState(prev => ({
-        ...prev,
-        currentTime: time
-      }));
-    }
-  }, []);
-
-  const setVolume = useCallback((volume: number) => {
-    const clampedVolume = Math.max(0, Math.min(1, volume));
-    if (audioRef.current) {
-      audioRef.current.volume = clampedVolume;
-    }
-    setPlayerState(prev => ({
-      ...prev,
-      volume: clampedVolume
-    }));
-  }, []);
-
-  const toggleMute = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.muted = !playerState.isMuted;
-    }
-    setPlayerState(prev => ({
-      ...prev,
-      isMuted: !prev.isMuted
-    }));
-  }, [playerState.isMuted]);
-
   const togglePlayPause = useCallback(() => {
     if (playerState.isPlaying) {
       pauseMusic();
@@ -228,9 +335,67 @@ export const useMusic = () => {
     }
   }, [playerState.isPlaying, currentMusic, pauseMusic, resumeMusic]);
 
+  const toggleAutoPlay = useCallback(() => {
+    setAutoPlay(prev => !prev);
+  }, []);
+
   useEffect(() => {
     loadMusics();
   }, [loadMusics]);
+
+  useEffect(() => {
+    if (musics.length > 0 && !currentMusic && autoPlay) {
+      const firstMusic = musics[0];
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+        }
+
+        audioRef.current = musicService.createAudioElement(firstMusic.url);
+        const audio = audioRef.current;
+
+        audio.volume = playerState.volume;
+        audio.muted = playerState.isMuted;
+
+        audio.addEventListener('loadedmetadata', () => {
+          setPlayerState(prev => ({
+            ...prev,
+            duration: audio.duration || 0
+          }));
+        });
+
+        audio.addEventListener('timeupdate', () => {
+          setPlayerState(prev => ({
+            ...prev,
+            currentTime: audio.currentTime || 0
+          }));
+        });
+
+        audio.addEventListener('ended', () => {
+          setPlayerState(prev => ({
+            ...prev,
+            isPlaying: false,
+            currentTime: 0
+          }));
+        });
+
+        audio.play()
+          .then(() => {
+            setCurrentMusic(firstMusic);
+            setPlayerState(prev => ({
+              ...prev,
+              isPlaying: true
+            }));
+            setMusics(prev => 
+              prev.map(m => ({ ...m, isActive: m.id === firstMusic.id }))
+            );
+          })
+          .catch(() => {
+            setError('Failed to auto-play music');
+          });
+      }, 500);
+    }
+  }, [musics, currentMusic, autoPlay, playerState.volume, playerState.isMuted]);
 
   useEffect(() => {
     return () => {
@@ -247,6 +412,7 @@ export const useMusic = () => {
     playerState,
     loading,
     error,
+    autoPlay,
     playMusic,
     pauseMusic,
     resumeMusic,
@@ -257,6 +423,7 @@ export const useMusic = () => {
     setVolume,
     toggleMute,
     togglePlayPause,
+    toggleAutoPlay,
     uploadMusic,
     deleteMusic,
     refreshMusics: loadMusics
