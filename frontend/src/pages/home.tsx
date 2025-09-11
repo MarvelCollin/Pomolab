@@ -324,12 +324,6 @@ export default function Home() {
                         onChange={handleFileUpload}
                         className="hidden"
                       />
-                      <div className="w-full h-20 border-2 border-dashed border-white/30 rounded-xl flex items-center justify-center cursor-pointer hover:border-white/50 transition-colors">
-                        <div className="text-center">
-                          <div className="text-white/70 text-xs mb-1">Upload New</div>
-                          <div className="text-white/50 text-xs">Image or Video</div>
-                        </div>
-                      </div>
                     </label>
                   </div>
 
@@ -526,29 +520,6 @@ export default function Home() {
                         </div>
                         <div className="text-xl font-bold text-white mb-1 drop-shadow">{inProgressTasks}</div>
                         <div className="text-xs text-white/70">In Progress</div>
-                      </div>
-                    </div>
-                    
-                    <div className="text-center">
-                      <div className="bg-white/5 backdrop-blur-2xl rounded-2xl p-6 shadow-xl border border-white/10 max-w-xl mx-auto">
-                        <h3 className="text-lg font-semibold text-white mb-3 drop-shadow">The Pomodoro Technique</h3>
-                        <p className="text-sm text-white/70 leading-relaxed mb-4">
-                          Boost productivity with 25-minute focus sessions followed by short breaks.
-                        </p>
-                        <div className="flex justify-center items-center gap-6 text-xs text-white/60">
-                          <span className="flex items-center gap-1">
-                            <div className="w-2 h-2 bg-white/80 rounded-full shadow-sm"></div>
-                            25m Focus
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <div className="w-2 h-2 bg-white/60 rounded-full shadow-sm"></div>
-                            5m Break
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <div className="w-2 h-2 bg-white/40 rounded-full shadow-sm"></div>
-                            15m Long Break
-                          </span>
-                        </div>
                       </div>
                     </div>
                   </>

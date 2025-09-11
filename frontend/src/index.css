@@ -2,7 +2,7 @@
 
 @font-face {
   font-family: 'MateJournal';
-  src: url('https://txojgjlvqdarrixsdspg.supabase.co/storage/v1/object/public/assets/fonts/MateJournal-PV4rP.otf') format('truetype');
+  src: url('./assets/fonts/MateJournal-LVLRy.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -10,7 +10,7 @@
 
 @font-face {
   font-family: 'MateJournal';
-  src: url('https://txojgjlvqdarrixsdspg.supabase.co/storage/v1/object/public/assets/fonts/MateJournal-LVLRy.ttf') format('opentype');
+  src: url('./assets/fonts/MateJournal-PVlAr.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -42,37 +42,135 @@
 }
 
 * {
-  font-family: var(--font-primary);
+  font-family: var(--font-primary) !important;
+  cursor: url('assets/blupoint/BluPointmed.cur'), auto !important;
+}
+
+*::before,
+*::after {
+  font-family: var(--font-primary) !important;
+  cursor: url('assets/blupoint/BluPointmed.cur'), auto !important;
+}
+
+html, body {
+  cursor: url('assets/blupoint/BluPointmed.cur'), auto !important;
+}
+
+button, 
+a, 
+[role="button"],
+.cursor-pointer,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  cursor: url('assets/blupoint/BluPointmed.cur'), pointer !important;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+textarea,
+[contenteditable="true"] {
+  cursor: url('assets/blupoint/BluPointText2.cur'), text !important;
+}
+
+.resize,
+textarea {
+  cursor: url('assets/blupoint/BluPointHorzResize.cur'), ew-resize !important;
+}
+
+.loading,
+.busy {
+  cursor: url('assets/blupoint/BluPointBusy.ani'), wait !important;
+}
+
+:disabled,
+.disabled {
+  cursor: url('assets/blupoint/BluPointUnavailableRed.cur'), not-allowed !important;
+}
+
+[draggable="true"],
+.draggable {
+  cursor: url('assets/blupoint/BluPointMove1.cur'), move !important;
+}
+
+.precision {
+  cursor: url('assets/blupoint/BluPointPrecision.cur'), crosshair !important;
+}
+
+.help,
+[title]:hover {
+  cursor: url('assets/blupoint/BluPointHelpmed.cur'), help !important;
+}
+
+a:hover {
+  cursor: url('assets/blupoint/BluPointLink.cur'), pointer !important;
+}
+
+.handwriting,
+.drawing {
+  cursor: url('assets/blupoint/BluPointHandwriting.cur'), crosshair !important;
+}
+
+.resize-nw-se {
+  cursor: url('assets/blupoint/BluPointDiagonal1.cur'), nw-resize !important;
+}
+
+.resize-ne-sw {
+  cursor: url('assets/blupoint/BluPointDiagonal2.cur'), ne-resize !important;
+}
+
+.resize-vertical {
+  cursor: url('assets/blupoint/BluPointVertResize.cur'), ns-resize !important;
+}
+
+.working {
+  cursor: url('assets/blupoint/BluPointWorkingMed.ani'), progress !important;
 }
 
 @layer base {
-  * {
-    font-family: var(--font-primary);
+  html {
+    font-family: var(--font-primary) !important;
+    cursor: url('assets/blupoint/BluPointmed.cur'), auto !important;
   }
   
   body {
     @apply bg-gradient-to-br from-[#E8E1F5] via-[#D8C7F0] to-[#C8B9E8] min-h-screen;
-    font-family: var(--font-primary);
+    font-family: var(--font-primary) !important;
+    cursor: url('assets/blupoint/BluPointmed.cur'), auto !important;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-primary);
+    font-family: var(--font-primary) !important;
   }
   
-  p, span, div, button, input, textarea, label {
-    font-family: var(--font-primary);
+  p, span, div, button, input, textarea, label, a, li, ul, ol {
+    font-family: var(--font-primary) !important;
+  }
+  
+  select, option {
+    font-family: var(--font-primary) !important;
+  }
+  
+  .lucide, svg text {
+    font-family: var(--font-primary) !important;
   }
 }
 
 @layer components {
   .btn-primary {
     @apply bg-[#FF8C42] hover:bg-[#e67c37] text-white font-semibold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1;
-    font-family: var(--font-primary);
+    font-family: var(--font-primary) !important;
+    cursor: url('assets/blupoint/BluPointmed.cur'), pointer !important;
   }
   
   .btn-secondary {
     @apply bg-[#6B5B95] hover:bg-[#5a4a7a] text-white font-semibold py-3 px-6 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl;
-    font-family: var(--font-primary);
+    font-family: var(--font-primary) !important;
+    cursor: url('assets/blupoint/BluPointmed.cur'), pointer !important;
   }
   
   .card-primary {
@@ -104,6 +202,97 @@
   }
   
   .font-mate {
-    font-family: var(--font-primary);
+    font-family: var(--font-primary) !important;
   }
+}
+
+@layer utilities {
+  [class*="font-"], 
+  [style*="font-family"] {
+    font-family: var(--font-primary) !important;
+  }
+  
+  .react-component,
+  .component,
+  [data-component] {
+    font-family: var(--font-primary) !important;
+  }
+  
+  [data-framer-component],
+  .framer-component {
+    font-family: var(--font-primary) !important;
+  }
+
+  .cursor-blupoint {
+    cursor: url('assets/blupoint/BluPointmed.cur'), auto !important;
+  }
+  
+  .cursor-blupoint-text {
+    cursor: url('assets/blupoint/BluPointText2.cur'), text !important;
+  }
+  
+  .cursor-blupoint-link {
+    cursor: url('assets/blupoint/BluPointLink.cur'), pointer !important;
+  }
+  
+  .cursor-blupoint-busy {
+    cursor: url('assets/blupoint/BluPointBusy.ani'), wait !important;
+  }
+  
+  .cursor-blupoint-help {
+    cursor: url('assets/blupoint/BluPointHelpmed.cur'), help !important;
+  }
+  
+  .cursor-blupoint-unavailable {
+    cursor: url('assets/blupoint/BluPointUnavailableRed.cur'), not-allowed !important;
+  }
+  
+  .cursor-blupoint-precision {
+    cursor: url('assets/blupoint/BluPointPrecision.cur'), crosshair !important;
+  }
+  
+  .cursor-blupoint-working {
+    cursor: url('assets/blupoint/BluPointWorkingMed.ani'), progress !important;
+  }
+}
+
+.MuiTypography-root,
+.ant-typography,
+.chakra-text,
+.mantine-text {
+  font-family: var(--font-primary) !important;
+}
+
+[style*="font-family"]:not([style*="MateJournal"]) {
+  font-family: var(--font-primary) !important;
+}
+
+button:hover,
+a:hover,
+[role="button"]:hover {
+  cursor: url('assets/blupoint/BluPointLink.cur'), pointer !important;
+}
+
+input:focus,
+textarea:focus {
+  cursor: url('assets/blupoint/BluPointText2.cur'), text !important;
+}
+
+.loading-background {
+  cursor: url('assets/blupoint/BluPointWorkingMed.ani'), progress !important;
+}
+
+input[type="file"] {
+  cursor: url('assets/blupoint/BluPointmed.cur'), pointer !important;
+}
+
+video,
+audio {
+  cursor: url('assets/blupoint/BluPointmed.cur'), pointer !important;
+}
+
+.overflow-y-auto,
+.overflow-x-auto,
+.overflow-auto {
+  cursor: url('assets/blupoint/BluPointmed.cur'), auto !important;
 }
