@@ -6,8 +6,8 @@ import PomodoroTimer from '../components/pomodoro/pomodoro-timer';
 import TaskList from '../components/pomodoro/task-list';
 import type { ITask } from '../interfaces/ITask';
 import { dummyTasks } from '../data/dummy-data';
+import { useBackground } from '../hooks/use-background';
 import '../app.css';
-
 
 export default function Home() {
   const [tasks, setTasks] = useState<ITask[]>(dummyTasks);
@@ -17,6 +17,8 @@ export default function Home() {
   const [showPomodoro, setShowPomodoro] = useState(true);
   const [showTasks, setShowTasks] = useState(true);
   const [isMinimalMode, setIsMinimalMode] = useState(false);
+  
+  const { activeBackground } = useBackground();
 
   const handleTaskSelect = useCallback((task: ITask) => {
     setSelectedTask(task);
@@ -59,19 +61,41 @@ export default function Home() {
   const completedTasks = tasks.filter(t => t.status === 'completed').length;
   const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length;
 
-  return (
-    <div className="home-page min-h-screen relative overflow-hidden">
-      <div className="fixed inset-0 z-0">
+  const renderBackground = () => {
+    if (!activeBackground) {
+      return (
+        <div className="absolute inset-0 "></div>
+      );
+    }
+
+    if (activeBackground.type === 'video') {
+      return (
         <video
           autoPlay
           loop
           muted
           playsInline
           className="w-full h-full object-cover"
+          key={activeBackground.id}
         >
-          <source src="/assets/video-lofi-2.mp4" type="video/mp4" />
+          <source src={activeBackground.url} type="video/mp4" />
           Your browser does not support the video tag.
         </video>
+      );
+    }
+
+    return (
+      <div
+        className="w-full h-full bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${activeBackground.url})` }}
+      />
+    );
+  };
+
+  return (
+    <div className="home-page min-h-screen relative overflow-hidden">
+      <div className="fixed inset-0 z-0">
+        {renderBackground()}
         <div className="absolute inset-0 bg-gradient-to-br from-black/10 via-transparent to-black/5"></div>
       </div>
 
@@ -192,16 +216,6 @@ export default function Home() {
             </div>
           </div>
         </section>
-      )}
-
-      {isMinimalMode && (
-        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-20">
-          <div className="bg-white/5 backdrop-blur-2xl rounded-2xl px-6 py-3 border border-white/10 shadow-2xl">
-            <h1 className="text-2xl font-bold text-white drop-shadow-lg text-center">
-              POMOLAB
-            </h1>
-          </div>
-        </div>
       )}
 
       <section className="relative z-10 pb-12">
