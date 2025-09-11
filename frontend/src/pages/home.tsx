@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { TrendingUp, Users, Zap, Target, ChevronLeft, ChevronRight, Timer, CheckSquare, Eye, EyeOff } from 'lucide-react';
 import PomodoroTimer from '../components/pomodoro/pomodoro-timer';
@@ -106,59 +107,72 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 w-full">
             <div className="grid lg:grid-cols-12 gap-6 items-start">
               
-              {showPomodoro && (
-                <div className={`${showTasks ? 'lg:col-span-7' : 'lg:col-span-8'} transition-all duration-500`}>
-                  <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-6 shadow-2xl border border-white/10 h-full">
-                    <div className="text-center mb-6">
-                      <h1 className="text-4xl font-bold leading-tight mb-2">
-                        <span className="text-white drop-shadow-lg">POMOLAB</span>
-                      </h1>
-                      <p className="text-white/80 text-sm drop-shadow">
-                        Focus • Learn • Achieve
-                      </p>
-                    </div>
-
-                    <PomodoroTimer onSessionComplete={handleSessionComplete} />
-
-                    {selectedTask && (
-                      <div className="mt-6 bg-white/5 backdrop-blur-2xl rounded-2xl p-4 border border-white/10 shadow-lg">
-                        <h3 className="text-white/90 font-medium mb-1 text-sm">Current Task</h3>
-                        <p className="text-white font-medium drop-shadow">{selectedTask.title}</p>
-                        {selectedTask.description && (
-                          <p className="text-white/70 text-xs mt-1">{selectedTask.description}</p>
-                        )}
-                        <div className="flex items-center gap-3 mt-2 text-white/60 text-xs">
-                          <span>🍅 {selectedTask.completed_pomodoros}/{selectedTask.estimated_pomodoros}</span>
-                          <span className="capitalize">{selectedTask.status.replace('_', ' ')}</span>
-                        </div>
+              <AnimatePresence>
+                {showPomodoro && (
+                  <motion.div
+                    className={`${showTasks ? 'lg:col-span-7' : 'lg:col-span-8'}`}
+                    initial={{ opacity: 0, y: 40, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 40, scale: 0.98 }}
+                    transition={{ duration: 0.5, ease: [0.4, 0.2, 0.2, 1] }}
+                  >
+                    <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-6 shadow-2xl border border-white/10 h-full">
+                      <div className="text-center mb-6">
+                        <h1 className="text-4xl font-bold leading-tight mb-2">
+                          <span className="text-white drop-shadow-lg">POMOLAB</span>
+                        </h1>
+                        <p className="text-white/80 text-sm drop-shadow">
+                          Focus • Learn • Achieve
+                        </p>
                       </div>
-                    )}
-
-                    <div className="mt-6 text-center">
-                      <Link
-                        to="/learn-together"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 text-white rounded-xl transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-xl"
-                      >
-                        Join Learning Session
-                      </Link>
+                      <PomodoroTimer onSessionComplete={handleSessionComplete} />
+                      {selectedTask && (
+                        <div className="mt-6 bg-white/5 backdrop-blur-2xl rounded-2xl p-4 border border-white/10 shadow-lg">
+                          <h3 className="text-white/90 font-medium mb-1 text-sm">Current Task</h3>
+                          <p className="text-white font-medium drop-shadow">{selectedTask.title}</p>
+                          {selectedTask.description && (
+                            <p className="text-white/70 text-xs mt-1">{selectedTask.description}</p>
+                          )}
+                          <div className="flex items-center gap-3 mt-2 text-white/60 text-xs">
+                            <span>🍅 {selectedTask.completed_pomodoros}/{selectedTask.estimated_pomodoros}</span>
+                            <span className="capitalize">{selectedTask.status.replace('_', ' ')}</span>
+                          </div>
+                        </div>
+                      )}
+                      <div className="mt-6 text-center">
+                        <Link
+                          to="/learn-together"
+                          className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 text-white rounded-xl transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-xl"
+                        >
+                          Join Learning Session
+                        </Link>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-              {showTasks && (
-                <div className={`${showPomodoro ? 'lg:col-span-5' : 'lg:col-span-4'} transition-all duration-500`}>
-                  <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-4 shadow-2xl border border-white/10 h-full max-h-[80vh]">
-                    <TaskList
-                      tasks={tasks}
-                      onTaskSelect={handleTaskSelect}
-                      onTaskComplete={handleTaskComplete}
-                      onTaskAdd={handleTaskAdd}
-                      selectedTaskId={selectedTask?.id}
-                    />
-                  </div>
-                </div>
-              )}
+              <AnimatePresence>
+                {showTasks && (
+                  <motion.div
+                    className={`${showPomodoro ? 'lg:col-span-5' : 'lg:col-span-4'}`}
+                    initial={{ opacity: 0, y: 40, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 40, scale: 0.98 }}
+                    transition={{ duration: 0.5, ease: [0.4, 0.2, 0.2, 1] }}
+                  >
+                    <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-4 shadow-2xl border border-white/10 h-full max-h-[80vh]">
+                      <TaskList
+                        tasks={tasks}
+                        onTaskSelect={handleTaskSelect}
+                        onTaskComplete={handleTaskComplete}
+                        onTaskAdd={handleTaskAdd}
+                        selectedTaskId={selectedTask?.id}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {!showPomodoro && !showTasks && (
                 <div className="lg:col-span-12 text-center">

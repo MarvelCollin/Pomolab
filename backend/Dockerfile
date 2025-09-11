@@ -11,7 +11,6 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     libpq-dev \
-    postgresql-client \
     nodejs \
     npm
 
@@ -29,13 +28,7 @@ RUN chown -R www-data:www-data /var/www/html \
 
 RUN composer install --no-dev --optimize-autoloader
 
-RUN php artisan key:generate --force
-
 RUN npm install && npm run build
 
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
 EXPOSE 9000
-ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["php-fpm"]

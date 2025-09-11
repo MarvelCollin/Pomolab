@@ -1,13 +1,13 @@
 import { Routes, Route } from 'react-router-dom'
 import './App.css'
-import Navbar from './components/common/navbar'
+// ...existing code...
 import Home from './pages/home'
 import LearnTogether from './pages/learn-together'
 
 function App() {
   return (
     <div className="app min-h-screen">
-      <Navbar />
+// ...existing code...
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
