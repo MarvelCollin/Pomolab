@@ -13,9 +13,7 @@ export const useBackground = () => {
     setError(null);
     try {
       const fetchedBackgrounds = await backgroundService.getBackgrounds();
-      console.log(fetchedBackgrounds);
       setBackgrounds(fetchedBackgrounds);
-
       
       if (fetchedBackgrounds.length > 0 && !activeBackground) {
         const defaultBackground = fetchedBackgrounds[0];

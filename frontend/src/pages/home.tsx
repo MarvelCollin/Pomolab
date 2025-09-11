@@ -17,8 +17,10 @@ export default function Home() {
   const [showPomodoro, setShowPomodoro] = useState(true);
   const [showTasks, setShowTasks] = useState(true);
   const [isMinimalMode, setIsMinimalMode] = useState(false);
+  const [backgroundLoaded, setBackgroundLoaded] = useState(false);
+  const [showContent, setShowContent] = useState(false);
   
-  const { activeBackground } = useBackground();
+  const { activeBackground, loading: backgroundsLoading } = useBackground();
 
   const handleTaskSelect = useCallback((task: ITask) => {
     setSelectedTask(task);
@@ -58,15 +60,29 @@ export default function Home() {
     }
   }, [selectedTask]);
 
+  const handleBackgroundLoad = () => {
+    setBackgroundLoaded(true);
+    setTimeout(() => {
+      setShowContent(true);
+    }, 500);
+  };
+
   const completedTasks = tasks.filter(t => t.status === 'completed').length;
   const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length;
 
   const renderBackground = () => {
-    if (!activeBackground) {
+    if (!activeBackground && !backgroundsLoading) {
       return (
-        <div className="absolute inset-0 "></div>
+        <div 
+          className="absolute inset-0"
+          style={{ background: 'var(--gradient-soft)' }}
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(251,243,213,0.1),transparent_50%)]" />
+        </div>
       );
     }
+
+    if (!activeBackground) return null;
 
     if (activeBackground.type === 'video') {
       return (
@@ -77,6 +93,8 @@ export default function Home() {
           playsInline
           className="w-full h-full object-cover"
           key={activeBackground.id}
+          onLoadedData={handleBackgroundLoad}
+          onCanPlayThrough={handleBackgroundLoad}
         >
           <source src={activeBackground.url} type="video/mp4" />
           Your browser does not support the video tag.
@@ -87,10 +105,17 @@ export default function Home() {
     return (
       <div
         className="w-full h-full bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${activeBackground.url})` }}
+        style={{ 
+          backgroundImage: `url(${activeBackground.url})`,
+          opacity: backgroundLoaded ? 1 : 0,
+          transition: 'opacity 0.5s ease-in-out'
+        }}
+        onLoad={handleBackgroundLoad}
       />
     );
   };
+
+  const isLoading = backgroundsLoading || !backgroundLoaded || !showContent;
 
   return (
     <div className="home-page min-h-screen relative overflow-hidden">
@@ -99,189 +124,309 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-br from-black/10 via-transparent to-black/5"></div>
       </div>
 
-      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
-        <button
-          onClick={() => setIsMinimalMode(!isMinimalMode)}
-          className="w-10 h-10 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 shadow-lg"
-        >
-          {isMinimalMode ? <Eye className="w-4 h-4 text-white" /> : <EyeOff className="w-4 h-4 text-white" />}
-        </button>
-        
-        {!isMinimalMode && (
-          <>
-            <button
-              onClick={() => setShowPomodoro(!showPomodoro)}
-              className="w-10 h-10 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 shadow-lg"
-            >
-              <Timer className="w-4 h-4 text-white" />
-            </button>
+      <AnimatePresence>
+        {isLoading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8 }}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ background: 'var(--gradient-soft)' }}
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(251,243,213,0.2),transparent_50%)]" />
             
-            <button
-              onClick={() => setShowTasks(!showTasks)}
-              className="w-10 h-10 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 shadow-lg"
+            <div className="relative z-10 text-center">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="mb-8"
+              >
+                <h1 className="text-6xl font-bold mb-4">
+                  <span className="bg-gradient-to-r from-amber-800 via-amber-700 to-amber-600 bg-clip-text text-transparent drop-shadow-lg">
+                    POMOLAB
+                  </span>
+                </h1>
+                <p className="text-amber-800/80 text-lg">
+                  Preparing your focus space...
+                </p>
+              </motion.div>
+
+              <div className="flex items-center justify-center space-x-2 mb-8">
+                {[0, 1, 2].map((index) => (
+                  <motion.div
+                    key={index}
+                    className="w-3 h-3 bg-amber-700/40 rounded-full"
+                    animate={{
+                      scale: [1, 1.2, 1],
+                      opacity: [0.4, 1, 0.4],
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      delay: index * 0.2,
+                      ease: "easeInOut",
+                    }}
+                  />
+                ))}
+              </div>
+
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.6 }}
+                className="relative"
+              >
+                <div className="w-64 h-1 bg-amber-800/20 rounded-full overflow-hidden mx-auto">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-amber-600 to-amber-500 rounded-full"
+                    initial={{ width: "0%" }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 2, ease: "easeInOut" }}
+                  />
+                </div>
+                <p className="text-amber-800/60 text-sm mt-4">
+                  Loading your productive environment
+                </p>
+              </motion.div>
+
+              <motion.div
+                className="absolute inset-0 pointer-events-none"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 2 }}
+              >
+                {[...Array(20)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute w-1 h-1 bg-amber-700/30 rounded-full"
+                    style={{
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                    }}
+                    animate={{
+                      y: [0, -20, 0],
+                      opacity: [0, 1, 0],
+                    }}
+                    transition={{
+                      duration: 3 + Math.random() * 2,
+                      repeat: Infinity,
+                      delay: Math.random() * 2,
+                      ease: "easeInOut",
+                    }}
+                  />
+                ))}
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showContent && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8 }}
+              className="fixed top-4 right-4 z-50 flex flex-col gap-2"
             >
-              <CheckSquare className="w-4 h-4 text-white" />
-            </button>
+              <button
+                onClick={() => setIsMinimalMode(!isMinimalMode)}
+                className="w-10 h-10 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 shadow-lg"
+              >
+                {isMinimalMode ? <Eye className="w-4 h-4 text-white" /> : <EyeOff className="w-4 h-4 text-white" />}
+              </button>
+              
+              {!isMinimalMode && (
+                <>
+                  <button
+                    onClick={() => setShowPomodoro(!showPomodoro)}
+                    className="w-10 h-10 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 shadow-lg"
+                  >
+                    <Timer className="w-4 h-4 text-white" />
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowTasks(!showTasks)}
+                    className="w-10 h-10 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 shadow-lg"
+                  >
+                    <CheckSquare className="w-4 h-4 text-white" />
+                  </button>
+                </>
+              )}
+            </motion.div>
+
+            {!isMinimalMode && (
+              <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="relative z-10 pt-20 pb-8 min-h-screen flex items-center"
+              >
+                <div className="max-w-7xl mx-auto px-4 w-full">
+                  <div className="grid lg:grid-cols-12 gap-6 items-start">
+                    
+                    <AnimatePresence>
+                      {showPomodoro && (
+                        <motion.div
+                          className={`${showTasks ? 'lg:col-span-7' : 'lg:col-span-8'}`}
+                          initial={{ opacity: 0, y: 40, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 40, scale: 0.98 }}
+                          transition={{ duration: 0.5, ease: [0.4, 0.2, 0.2, 1] }}
+                        >
+                          <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-6 shadow-2xl border border-white/10 h-full">
+                            <div className="text-center mb-6">
+                              <h1 className="text-4xl font-bold leading-tight mb-2">
+                                <span className="text-white drop-shadow-lg">POMOLAB</span>
+                              </h1>
+                              <p className="text-white/80 text-sm drop-shadow">
+                                Focus • Learn • Achieve
+                              </p>
+                            </div>
+                            <PomodoroTimer onSessionComplete={handleSessionComplete} />
+                            {selectedTask && (
+                              <div className="mt-6 bg-white/5 backdrop-blur-2xl rounded-2xl p-4 border border-white/10 shadow-lg">
+                                <h3 className="text-white/90 font-medium mb-1 text-sm">Current Task</h3>
+                                <p className="text-white font-medium drop-shadow">{selectedTask.title}</p>
+                                {selectedTask.description && (
+                                  <p className="text-white/70 text-xs mt-1">{selectedTask.description}</p>
+                                )}
+                                <div className="flex items-center gap-3 mt-2 text-white/60 text-xs">
+                                  <span>🍅 {selectedTask.completed_pomodoros}/{selectedTask.estimated_pomodoros}</span>
+                                  <span className="capitalize">{selectedTask.status.replace('_', ' ')}</span>
+                                </div>
+                              </div>
+                            )}
+                            <div className="mt-6 text-center">
+                              <Link
+                                to="/learn-together"
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 text-white rounded-xl transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-xl"
+                              >
+                                Join Learning Session
+                              </Link>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <AnimatePresence>
+                      {showTasks && (
+                        <motion.div
+                          className={`${showPomodoro ? 'lg:col-span-5' : 'lg:col-span-4'}`}
+                          initial={{ opacity: 0, y: 40, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 40, scale: 0.98 }}
+                          transition={{ duration: 0.5, ease: [0.4, 0.2, 0.2, 1] }}
+                        >
+                          <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-4 shadow-2xl border border-white/10 h-full max-h-[80vh]">
+                            <TaskList
+                              tasks={tasks}
+                              onTaskSelect={handleTaskSelect}
+                              onTaskComplete={handleTaskComplete}
+                              onTaskAdd={handleTaskAdd}
+                              selectedTaskId={selectedTask?.id}
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {!showPomodoro && !showTasks && (
+                      <div className="lg:col-span-12 text-center">
+                        <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 shadow-2xl border border-white/10 max-w-2xl mx-auto">
+                          <h1 className="text-5xl font-bold leading-tight mb-4">
+                            <span className="text-white drop-shadow-lg">POMOLAB</span>
+                          </h1>
+                          <p className="text-white/80 text-lg drop-shadow mb-6">
+                            Focus • Learn • Achieve
+                          </p>
+                          <p className="text-white/60 text-sm">
+                            Use the controls in the top-right to show your timer and tasks
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.section>
+            )}
+
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="relative z-10 pb-12"
+            >
+              <div className="max-w-6xl mx-auto px-4">
+                {!isMinimalMode && (
+                  <>
+                    <div className="grid md:grid-cols-4 gap-4 mb-8">
+                      <div className="bg-white/5 backdrop-blur-2xl rounded-2xl p-4 shadow-xl border border-white/10 text-center">
+                        <div className="w-10 h-10 bg-white/20 backdrop-blur-xl border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                          <Target className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="text-xl font-bold text-white mb-1 drop-shadow">{todayPomodoros}</div>
+                        <div className="text-xs text-white/70">Today's Focus</div>
+                      </div>
+
+                      <div className="bg-white/5 backdrop-blur-2xl rounded-2xl p-4 shadow-xl border border-white/10 text-center">
+                        <div className="w-10 h-10 bg-white/20 backdrop-blur-xl border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                          <TrendingUp className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="text-xl font-bold text-white mb-1 drop-shadow">{totalPomodoros}</div>
+                        <div className="text-xs text-white/70">Total Sessions</div>
+                      </div>
+
+                      <div className="bg-white/5 backdrop-blur-2xl rounded-2xl p-4 shadow-xl border border-white/10 text-center">
+                        <div className="w-10 h-10 bg-white/20 backdrop-blur-xl border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                          <Zap className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="text-xl font-bold text-white mb-1 drop-shadow">{completedTasks}</div>
+                        <div className="text-xs text-white/70">Completed</div>
+                      </div>
+
+                      <div className="bg-white/5 backdrop-blur-2xl rounded-2xl p-4 shadow-xl border border-white/10 text-center">
+                        <div className="w-10 h-10 bg-white/20 backdrop-blur-xl border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                          <Users className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="text-xl font-bold text-white mb-1 drop-shadow">{inProgressTasks}</div>
+                        <div className="text-xs text-white/70">In Progress</div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-center">
+                      <div className="bg-white/5 backdrop-blur-2xl rounded-2xl p-6 shadow-xl border border-white/10 max-w-xl mx-auto">
+                        <h3 className="text-lg font-semibold text-white mb-3 drop-shadow">The Pomodoro Technique</h3>
+                        <p className="text-sm text-white/70 leading-relaxed mb-4">
+                          Boost productivity with 25-minute focus sessions followed by short breaks.
+                        </p>
+                        <div className="flex justify-center items-center gap-6 text-xs text-white/60">
+                          <span className="flex items-center gap-1">
+                            <div className="w-2 h-2 bg-white/80 rounded-full shadow-sm"></div>
+                            25m Focus
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <div className="w-2 h-2 bg-white/60 rounded-full shadow-sm"></div>
+                            5m Break
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <div className="w-2 h-2 bg-white/40 rounded-full shadow-sm"></div>
+                            15m Long Break
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </motion.section>
           </>
         )}
-      </div>
-
-      {!isMinimalMode && (
-        <section className="relative z-10 pt-20 pb-8 min-h-screen flex items-center">
-          <div className="max-w-7xl mx-auto px-4 w-full">
-            <div className="grid lg:grid-cols-12 gap-6 items-start">
-              
-              <AnimatePresence>
-                {showPomodoro && (
-                  <motion.div
-                    className={`${showTasks ? 'lg:col-span-7' : 'lg:col-span-8'}`}
-                    initial={{ opacity: 0, y: 40, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 40, scale: 0.98 }}
-                    transition={{ duration: 0.5, ease: [0.4, 0.2, 0.2, 1] }}
-                  >
-                    <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-6 shadow-2xl border border-white/10 h-full">
-                      <div className="text-center mb-6">
-                        <h1 className="text-4xl font-bold leading-tight mb-2">
-                          <span className="text-white drop-shadow-lg">POMOLAB</span>
-                        </h1>
-                        <p className="text-white/80 text-sm drop-shadow">
-                          Focus • Learn • Achieve
-                        </p>
-                      </div>
-                      <PomodoroTimer onSessionComplete={handleSessionComplete} />
-                      {selectedTask && (
-                        <div className="mt-6 bg-white/5 backdrop-blur-2xl rounded-2xl p-4 border border-white/10 shadow-lg">
-                          <h3 className="text-white/90 font-medium mb-1 text-sm">Current Task</h3>
-                          <p className="text-white font-medium drop-shadow">{selectedTask.title}</p>
-                          {selectedTask.description && (
-                            <p className="text-white/70 text-xs mt-1">{selectedTask.description}</p>
-                          )}
-                          <div className="flex items-center gap-3 mt-2 text-white/60 text-xs">
-                            <span>🍅 {selectedTask.completed_pomodoros}/{selectedTask.estimated_pomodoros}</span>
-                            <span className="capitalize">{selectedTask.status.replace('_', ' ')}</span>
-                          </div>
-                        </div>
-                      )}
-                      <div className="mt-6 text-center">
-                        <Link
-                          to="/learn-together"
-                          className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 text-white rounded-xl transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-xl"
-                        >
-                          Join Learning Session
-                        </Link>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <AnimatePresence>
-                {showTasks && (
-                  <motion.div
-                    className={`${showPomodoro ? 'lg:col-span-5' : 'lg:col-span-4'}`}
-                    initial={{ opacity: 0, y: 40, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 40, scale: 0.98 }}
-                    transition={{ duration: 0.5, ease: [0.4, 0.2, 0.2, 1] }}
-                  >
-                    <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-4 shadow-2xl border border-white/10 h-full max-h-[80vh]">
-                      <TaskList
-                        tasks={tasks}
-                        onTaskSelect={handleTaskSelect}
-                        onTaskComplete={handleTaskComplete}
-                        onTaskAdd={handleTaskAdd}
-                        selectedTaskId={selectedTask?.id}
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {!showPomodoro && !showTasks && (
-                <div className="lg:col-span-12 text-center">
-                  <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 shadow-2xl border border-white/10 max-w-2xl mx-auto">
-                    <h1 className="text-5xl font-bold leading-tight mb-4">
-                      <span className="text-white drop-shadow-lg">POMOLAB</span>
-                    </h1>
-                    <p className="text-white/80 text-lg drop-shadow mb-6">
-                      Focus • Learn • Achieve
-                    </p>
-                    <p className="text-white/60 text-sm">
-                      Use the controls in the top-right to show your timer and tasks
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-      )}
-
-      <section className="relative z-10 pb-12">
-        <div className="max-w-6xl mx-auto px-4">
-          {!isMinimalMode && (
-            <>
-              <div className="grid md:grid-cols-4 gap-4 mb-8">
-                <div className="bg-white/5 backdrop-blur-2xl rounded-2xl p-4 shadow-xl border border-white/10 text-center">
-                  <div className="w-10 h-10 bg-white/20 backdrop-blur-xl border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                    <Target className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="text-xl font-bold text-white mb-1 drop-shadow">{todayPomodoros}</div>
-                  <div className="text-xs text-white/70">Today's Focus</div>
-                </div>
-
-                <div className="bg-white/5 backdrop-blur-2xl rounded-2xl p-4 shadow-xl border border-white/10 text-center">
-                  <div className="w-10 h-10 bg-white/20 backdrop-blur-xl border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                    <TrendingUp className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="text-xl font-bold text-white mb-1 drop-shadow">{totalPomodoros}</div>
-                  <div className="text-xs text-white/70">Total Sessions</div>
-                </div>
-
-                <div className="bg-white/5 backdrop-blur-2xl rounded-2xl p-4 shadow-xl border border-white/10 text-center">
-                  <div className="w-10 h-10 bg-white/20 backdrop-blur-xl border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                    <Zap className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="text-xl font-bold text-white mb-1 drop-shadow">{completedTasks}</div>
-                  <div className="text-xs text-white/70">Completed</div>
-                </div>
-
-                <div className="bg-white/5 backdrop-blur-2xl rounded-2xl p-4 shadow-xl border border-white/10 text-center">
-                  <div className="w-10 h-10 bg-white/20 backdrop-blur-xl border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                    <Users className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="text-xl font-bold text-white mb-1 drop-shadow">{inProgressTasks}</div>
-                  <div className="text-xs text-white/70">In Progress</div>
-                </div>
-              </div>
-              
-              <div className="text-center">
-                <div className="bg-white/5 backdrop-blur-2xl rounded-2xl p-6 shadow-xl border border-white/10 max-w-xl mx-auto">
-                  <h3 className="text-lg font-semibold text-white mb-3 drop-shadow">The Pomodoro Technique</h3>
-                  <p className="text-sm text-white/70 leading-relaxed mb-4">
-                    Boost productivity with 25-minute focus sessions followed by short breaks.
-                  </p>
-                  <div className="flex justify-center items-center gap-6 text-xs text-white/60">
-                    <span className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-white/80 rounded-full shadow-sm"></div>
-                      25m Focus
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-white/60 rounded-full shadow-sm"></div>
-                      5m Break
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-white/40 rounded-full shadow-sm"></div>
-                      15m Long Break
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </section>
+      </AnimatePresence>
     </div>
   );
 }

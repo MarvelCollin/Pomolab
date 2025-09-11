@@ -14,9 +14,6 @@ export class BackgroundService {
                     offset: 0,
                 });
 
-            console.log(files, error);  
-
-
             if (error) throw error;
             const backgrounds: IBackground[] = files
                 .filter(file => file.name !== '.emptyFolderPlaceholder')
