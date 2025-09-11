@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, MoreHorizontal, Play, Check, Clock, User, Edit3, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { ITask } from '../../interfaces/ITask';
 
 interface TaskListProps {
@@ -92,72 +93,101 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
   };
 
   return (
-    <div className="task-list h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4 bg-white/5 backdrop-blur-2xl rounded-xl p-3 border border-white/10 shadow-lg">
+    <motion.div 
+      className="task-list h-full flex flex-col"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, delay: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+    >
+      <motion.div 
+        className="flex items-center justify-between mb-4 bg-white/5 backdrop-blur-2xl rounded-xl p-3 border border-white/10 shadow-lg"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+      >
         <h2 className="text-lg font-semibold text-white drop-shadow">Tasks</h2>
-        <button
+        <motion.button
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, delay: 0.4 }}
           onClick={() => setIsAddingTask(true)}
           className="w-8 h-8 bg-white/10 backdrop-blur-2xl hover:bg-white/20 border border-white/10 rounded-full flex items-center justify-center transition-all duration-200 shadow-lg hover:shadow-xl"
         >
           <Plus className="w-4 h-4 text-white" />
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
-      {isAddingTask && (
-        <div className="bg-white/5 backdrop-blur-2xl rounded-xl p-3 mb-3 border border-white/10 shadow-lg">
-          <input
-            type="text"
-            value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            placeholder="Task title..."
-            className="w-full bg-white/10 backdrop-blur-2xl border border-white/10 rounded-lg px-3 py-2 outline-none text-white font-medium mb-2 placeholder-white/50 text-sm"
-            autoFocus
-          />
-          <textarea
-            value={newTaskDescription}
-            onChange={(e) => setNewTaskDescription(e.target.value)}
-            placeholder="Description (optional)..."
-            className="w-full bg-white/10 backdrop-blur-2xl border border-white/10 rounded-lg px-3 py-2 outline-none text-white/80 text-xs mb-2 placeholder-white/40 resize-none"
-            rows={2}
-          />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-white/70">Est:</span>
-              <input
-                type="number"
-                value={estimatedPomodoros}
-                onChange={(e) => setEstimatedPomodoros(Math.max(1, parseInt(e.target.value) || 1))}
-                min="1"
-                className="w-12 bg-white/15 backdrop-blur-2xl border border-white/10 rounded-lg px-2 py-1 text-xs text-center outline-none text-white"
-              />
-              <span className="text-xs">🍅</span>
+      <AnimatePresence>
+        {isAddingTask && (
+          <motion.div 
+            className="bg-white/5 backdrop-blur-2xl rounded-xl p-3 mb-3 border border-white/10 shadow-lg"
+            initial={{ opacity: 0, height: 0, y: -20 }}
+            animate={{ opacity: 1, height: "auto", y: 0 }}
+            exit={{ opacity: 0, height: 0, y: -20 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            <input
+              type="text"
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              placeholder="Task title..."
+              className="w-full bg-white/10 backdrop-blur-2xl border border-white/10 rounded-lg px-3 py-2 outline-none text-white font-medium mb-2 placeholder-white/50 text-sm"
+              autoFocus
+            />
+            <textarea
+              value={newTaskDescription}
+              onChange={(e) => setNewTaskDescription(e.target.value)}
+              placeholder="Description (optional)..."
+              className="w-full bg-white/10 backdrop-blur-2xl border border-white/10 rounded-lg px-3 py-2 outline-none text-white/80 text-xs mb-2 placeholder-white/40 resize-none"
+              rows={2}
+            />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-white/70">Est:</span>
+                <input
+                  type="number"
+                  value={estimatedPomodoros}
+                  onChange={(e) => setEstimatedPomodoros(Math.max(1, parseInt(e.target.value) || 1))}
+                  min="1"
+                  className="w-12 bg-white/15 backdrop-blur-2xl border border-white/10 rounded-lg px-2 py-1 text-xs text-center outline-none text-white"
+                />
+                <span className="text-xs">🍅</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setIsAddingTask(false)}
+                  className="px-3 py-1 bg-white/10 backdrop-blur-2xl border border-white/10 rounded-lg text-xs text-white/70 hover:bg-white/20 transition-all duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddTask}
+                  disabled={addingTask}
+                  className="px-3 py-1 bg-white/20 backdrop-blur-2xl border border-white/10 text-white rounded-lg text-xs hover:bg-white/30 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                >
+                  {addingTask && (
+                    <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin"></div>
+                  )}
+                  Add
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setIsAddingTask(false)}
-                className="px-3 py-1 bg-white/10 backdrop-blur-2xl border border-white/10 rounded-lg text-xs text-white/70 hover:bg-white/20 transition-all duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddTask}
-                disabled={addingTask}
-                className="px-3 py-1 bg-white/20 backdrop-blur-2xl border border-white/10 text-white rounded-lg text-xs hover:bg-white/30 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-              >
-                {addingTask && (
-                  <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin"></div>
-                )}
-                Add
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <div className="flex-1 space-y-2 overflow-y-auto max-h-[calc(100vh-200px)] pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20">
-        {tasks.map((task) => (
-          <div
+      <motion.div 
+        className="flex-1 space-y-2 overflow-y-auto max-h-[calc(100vh-200px)] pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.6 }}
+      >
+        {tasks.map((task, index) => (
+          <motion.div
             key={task.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.8 + (index * 0.1) }}
             onClick={() => onTaskSelect(task)}
             className={`bg-white/10 backdrop-blur-2xl rounded-xl p-3 border transition-all duration-200 cursor-pointer shadow-lg hover:shadow-xl hover:bg-white/15 transform hover:-translate-y-0.5 ${
               selectedTaskId === task.id 
@@ -261,19 +291,24 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
                 </div>
               </div>
             )}
-          </div>
+          </motion.div>
         ))}
         
         {tasks.length === 0 && !isAddingTask && (
-          <div className="text-center py-8 text-white/60">
+          <motion.div 
+            className="text-center py-8 text-white/60"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+          >
             <div className="bg-white/10 backdrop-blur-2xl rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center border border-white/10">
               <Clock className="w-8 h-8 opacity-60" />
             </div>
             <p className="text-sm font-medium mb-1">No tasks yet</p>
             <p className="text-xs opacity-80">Add a task to start your session</p>
-          </div>
+          </motion.div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

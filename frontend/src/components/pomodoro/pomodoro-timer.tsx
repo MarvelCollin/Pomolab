@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Settings, Volume2, VolumeX, X } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface PomodoroTimerProps {
   onSessionComplete: (type: 'focus' | 'short-break' | 'long-break') => void;
@@ -126,12 +127,25 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   const progress = ((sessionDurations[currentSession] - timeLeft) / sessionDurations[currentSession]) * 100;
 
   return (
-    <div className="pomodoro-timer">
+    <motion.div 
+      className="pomodoro-timer"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+    >
       <div className="text-center">
-        <div className="flex justify-center gap-2 mb-6">
-          {Object.keys(sessionDurations).map((session) => (
-            <button
+        <motion.div 
+          className="flex justify-center gap-2 mb-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          {Object.keys(sessionDurations).map((session, index) => (
+            <motion.button
               key={session}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, delay: 0.6 + (index * 0.1) }}
               onClick={() => switchSession(session as keyof typeof sessionDurations)}
               className={`px-4 py-2 rounded-xl text-xs font-medium transition-all duration-200 border backdrop-blur-2xl ${
                 currentSession === session
@@ -140,11 +154,16 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
               }`}
             >
               {sessionLabels[session as keyof typeof sessionLabels]}
-            </button>
+            </motion.button>
           ))}
-        </div>
+        </motion.div>
 
-        <div className="relative mb-6">
+        <motion.div 
+          className="relative mb-6"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
+        >
           <div className={`w-48 h-48 mx-auto rounded-full bg-white/5 backdrop-blur-2xl flex items-center justify-center relative overflow-hidden border-4 border-white/10 shadow-2xl transition-all duration-300 ${isRunning ? 'animate-pulse' : ''}`}>
             <div 
               className={`absolute inset-0 transition-all duration-1000`}
@@ -163,10 +182,18 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="flex items-center justify-center gap-3">
-          <button
+        <motion.div 
+          className="flex items-center justify-center gap-3"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 1.0 }}
+        >
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: 1.1 }}
             onClick={toggleTimer}
             className={`w-12 h-12 rounded-full bg-white/20 backdrop-blur-2xl border border-white/10 shadow-xl flex items-center justify-center hover:bg-white/30 transform hover:scale-105 transition-all duration-200 ${isRunning ? 'animate-pulse' : ''}`}
           >
@@ -175,23 +202,32 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
             ) : (
               <Play className="w-5 h-5 text-white ml-0.5" />
             )}
-          </button>
+          </motion.button>
           
-          <button
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: 1.2 }}
             onClick={resetTimer}
             className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-2xl border border-white/10 flex items-center justify-center hover:bg-white/20 shadow-lg transition-all duration-200 hover:scale-105"
           >
             <RotateCcw className="w-4 h-4 text-white/80" />
-          </button>
+          </motion.button>
 
-          <button 
+          <motion.button 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: 1.3 }}
             onClick={() => setShowSettings(!showSettings)}
             className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-2xl border border-white/10 flex items-center justify-center hover:bg-white/20 shadow-lg transition-all duration-200 hover:scale-105"
           >
             <Settings className="w-4 h-4 text-white/80" />
-          </button>
+          </motion.button>
 
-          <button 
+          <motion.button 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: 1.4 }}
             onClick={() => setSoundEnabled(!soundEnabled)}
             className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-2xl border border-white/10 flex items-center justify-center hover:bg-white/20 shadow-lg transition-all duration-200 hover:scale-105"
           >
@@ -200,12 +236,17 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
             ) : (
               <VolumeX className="w-4 h-4 text-white/80" />
             )}
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
 
-        <div className="mt-4 text-white/60 text-xs">
+        <motion.div 
+          className="mt-4 text-white/60 text-xs"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 1.5 }}
+        >
           Session #{sessionCount + 1} • {Math.floor(sessionCount / 4)} cycles completed
-        </div>
+        </motion.div>
 
         {showSettings && (
           <div className="mt-6 bg-white/10 backdrop-blur-2xl rounded-xl p-4 border border-white/20 shadow-lg">
@@ -278,6 +319,6 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

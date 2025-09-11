@@ -1,13 +1,15 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { TrendingUp, Users, Zap, Target, Timer, CheckSquare, Eye, EyeOff, Image, X, Upload } from 'lucide-react';
+import { TrendingUp, Users, Zap, Target, Timer, CheckSquare, Eye, EyeOff, Image, X, Upload, Music, Play, Pause, SkipForward, SkipBack, Volume2, VolumeX } from 'lucide-react';
 import PomodoroTimer from '../components/pomodoro/pomodoro-timer';
 import TaskList from '../components/pomodoro/task-list';
 import type { ITask } from '../interfaces/ITask';
 import { dummyTasks } from '../data/dummy-data';
 import { useBackground } from '../hooks/use-background';
+import { useMusic } from '../hooks/use-music';
 import type { IBackground } from '../interfaces/IBackground';
+import type { IMusic } from '../interfaces/IMusic';
 import '../app.css';
 
 export default function Home() {
@@ -19,9 +21,12 @@ export default function Home() {
   const [showTasks, setShowTasks] = useState(true);
   const [isMinimalMode, setIsMinimalMode] = useState(false);
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
+  const [backgroundVisible, setBackgroundVisible] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const [showBackgroundSelector, setShowBackgroundSelector] = useState(false);
+  const [showMusicPlayer, setShowMusicPlayer] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
+  const [uploadingMusic, setUploadingMusic] = useState(false);
   
   const { 
     backgrounds, 
@@ -31,6 +36,33 @@ export default function Home() {
     uploadBackground,
     deleteBackground 
   } = useBackground();
+
+  const {
+    musics,
+    currentMusic,
+    playerState,
+    loading: musicLoading,
+    playMusic,
+    togglePlayPause,
+    nextMusic,
+    previousMusic,
+    setVolume,
+    toggleMute,
+    uploadMusic,
+    deleteMusic
+  } = useMusic();
+
+  useEffect(() => {
+    if (!activeBackground && !backgroundsLoading) {
+      setTimeout(() => {
+        setBackgroundVisible(true);
+        setBackgroundLoaded(true);
+      }, 100);
+      setTimeout(() => {
+        setShowContent(true);
+      }, 800);
+    }
+  }, [activeBackground, backgroundsLoading]);
 
   const handleTaskSelect = useCallback((task: ITask) => {
     setSelectedTask(task);
@@ -80,14 +112,18 @@ export default function Home() {
   const handleBackgroundLoad = () => {
     setBackgroundLoaded(true);
     setTimeout(() => {
+      setBackgroundVisible(true);
+    }, 300);
+    setTimeout(() => {
       setShowContent(true);
-    }, 500);
+    }, 800);
   };
 
   const handleBackgroundChange = (background: IBackground) => {
     changeBackground(background);
     setShowBackgroundSelector(false);
     setBackgroundLoaded(false);
+    setBackgroundVisible(false);
     setShowContent(false);
   };
 
@@ -109,18 +145,50 @@ export default function Home() {
     await deleteBackground(background);
   };
 
+  const handleMusicUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingMusic(true);
+    const result = await uploadMusic(file);
+    setUploadingMusic(false);
+    event.target.value = '';
+  };
+
+  const handleDeleteMusic = async (music: IMusic, event: React.MouseEvent) => {
+    event.stopPropagation();
+    await deleteMusic(music);
+  };
+
+  const formatTime = (time: number): string => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
   const completedTasks = tasks.filter(t => t.status === 'completed').length;
   const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length;
 
   const renderBackground = () => {
     if (!activeBackground && !backgroundsLoading) {
       return (
-        <div 
+        <motion.div 
           className="absolute inset-0"
           style={{ background: 'var(--gradient-soft)' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: backgroundVisible ? 1 : 0 }}
+          transition={{ duration: 1.2, ease: "easeInOut" }}
+          onAnimationComplete={() => {
+            if (!backgroundLoaded) setBackgroundLoaded(true);
+          }}
         >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(251,243,213,0.1),transparent_50%)]" />
-        </div>
+          <motion.div 
+            className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(251,243,213,0.1),transparent_50%)]"
+            initial={{ scale: 1.2, opacity: 0 }}
+            animate={{ scale: 1, opacity: backgroundVisible ? 1 : 0 }}
+            transition={{ duration: 2.0, ease: "easeOut" }}
+          />
+        </motion.div>
       );
     }
 
@@ -128,7 +196,7 @@ export default function Home() {
 
     if (activeBackground.type === 'video') {
       return (
-        <video
+        <motion.video
           autoPlay
           loop
           muted
@@ -137,22 +205,32 @@ export default function Home() {
           key={activeBackground.id}
           onLoadedData={handleBackgroundLoad}
           onCanPlayThrough={handleBackgroundLoad}
+          initial={{ opacity: 0, scale: 1.05 }}
+          animate={{ opacity: backgroundVisible ? 1 : 0, scale: 1 }}
+          transition={{ 
+            opacity: { duration: 1.5, ease: "easeInOut" },
+            scale: { duration: 2.0, ease: "easeOut" }
+          }}
         >
           <source src={activeBackground.url} type="video/mp4" />
           Your browser does not support the video tag.
-        </video>
+        </motion.video>
       );
     }
 
     return (
-      <div
+      <motion.div
         className="w-full h-full bg-cover bg-center bg-no-repeat"
         style={{ 
-          backgroundImage: `url(${activeBackground.url})`,
-          opacity: backgroundLoaded ? 1 : 0,
-          transition: 'opacity 0.5s ease-in-out'
+          backgroundImage: `url(${activeBackground.url})`
         }}
         onLoad={handleBackgroundLoad}
+        initial={{ opacity: 0, scale: 1.05 }}
+        animate={{ opacity: backgroundVisible ? 1 : 0, scale: 1 }}
+        transition={{ 
+          opacity: { duration: 1.5, ease: "easeInOut" },
+          scale: { duration: 2.0, ease: "easeOut" }
+        }}
       />
     );
   };
@@ -163,7 +241,12 @@ export default function Home() {
     <div className="home-page min-h-screen relative overflow-hidden">
       <div className="fixed inset-0 z-0">
         {renderBackground()}
-        <div className="absolute inset-0 bg-gradient-to-br from-black/10 via-transparent to-black/5"></div>
+        <motion.div 
+          className="absolute inset-0 bg-gradient-to-br from-black/10 via-transparent to-black/5"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: backgroundVisible ? 1 : 0 }}
+          transition={{ duration: 1.0, delay: 0.8, ease: "easeInOut" }}
+        />
       </div>
 
       <AnimatePresence>
@@ -172,7 +255,7 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 1.2, ease: "easeInOut" }}
             className="fixed inset-0 z-50 flex items-center justify-center"
             style={{ background: 'var(--gradient-soft)' }}
           >
@@ -182,7 +265,7 @@ export default function Home() {
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
+                transition={{ duration: 1.0, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
                 className="mb-8"
               >
                 <h1 className="text-6xl font-bold mb-4">
@@ -214,26 +297,24 @@ export default function Home() {
                 ))}
               </div>
 
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.6 }}
-                className="relative"
-              >
-                <div className="w-64 h-1 bg-amber-800/20 rounded-full overflow-hidden mx-auto">
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-amber-600 to-amber-500 rounded-full"
-                    initial={{ width: "0%" }}
-                    animate={{ width: "100%" }}
-                    transition={{ duration: 2, ease: "easeInOut" }}
-                  />
-                </div>
-                <p className="text-amber-800/60 text-sm mt-4">
-                  Loading your productive environment
-                </p>
-              </motion.div>
-
-              <motion.div
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 1.0, delay: 0.8 }}
+                  className="relative"
+                >
+                  <div className="w-64 h-1 bg-amber-800/20 rounded-full overflow-hidden mx-auto">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-amber-600 to-amber-500 rounded-full"
+                      initial={{ width: "0%" }}
+                      animate={{ width: "100%" }}
+                      transition={{ duration: 2.5, ease: "easeInOut" }}
+                    />
+                  </div>
+                  <p className="text-amber-800/60 text-sm mt-4">
+                    Loading your productive environment
+                  </p>
+                </motion.div>              <motion.div
                 className="absolute inset-0 pointer-events-none"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -271,7 +352,7 @@ export default function Home() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.8 }}
+              transition={{ duration: 1.2, delay: 0.3 }}
               className="fixed top-4 right-4 z-50 flex flex-col gap-2"
             >
               <button
@@ -279,6 +360,13 @@ export default function Home() {
                 className="w-10 h-10 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 shadow-lg"
               >
                 <Image className="w-4 h-4 text-white" />
+              </button>
+
+              <button
+                onClick={() => setShowMusicPlayer(!showMusicPlayer)}
+                className="w-10 h-10 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 shadow-lg"
+              >
+                <Music className="w-4 h-4 text-white" />
               </button>
 
               <button
@@ -414,11 +502,207 @@ export default function Home() {
               )}
             </AnimatePresence>
 
-            {!isMinimalMode && (
-              <motion.section
+            <AnimatePresence>
+              {showMusicPlayer && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="fixed top-16 right-16 z-50 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl p-4 shadow-2xl w-80"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-white font-medium text-sm">Music Player</h3>
+                    <button
+                      onClick={() => setShowMusicPlayer(false)}
+                      className="w-6 h-6 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+
+                  {currentMusic && (
+                    <div className="mb-4 p-3 bg-white/5 rounded-xl border border-white/10">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-white font-medium text-sm truncate">{currentMusic.name}</h4>
+                          <div className="flex items-center gap-2 text-white/60 text-xs mt-1">
+                            <span>{formatTime(playerState.currentTime)}</span>
+                            <span>/</span>
+                            <span>{formatTime(playerState.duration)}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-center gap-2 mb-3">
+                        <button
+                          onClick={previousMusic}
+                          className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+                        >
+                          <SkipBack className="w-4 h-4 text-white" />
+                        </button>
+                        
+                        <button
+                          onClick={togglePlayPause}
+                          className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors"
+                        >
+                          {playerState.isPlaying ? (
+                            <Pause className="w-5 h-5 text-white" />
+                          ) : (
+                            <Play className="w-5 h-5 text-white ml-0.5" />
+                          )}
+                        </button>
+                        
+                        <button
+                          onClick={nextMusic}
+                          className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+                        >
+                          <SkipForward className="w-4 h-4 text-white" />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={toggleMute}
+                          className="w-6 h-6 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+                        >
+                          {playerState.isMuted ? (
+                            <VolumeX className="w-3 h-3 text-white" />
+                          ) : (
+                            <Volume2 className="w-3 h-3 text-white" />
+                          )}
+                        </button>
+                        
+                        <div className="flex-1 bg-white/10 rounded-full h-2 overflow-hidden">
+                          <div 
+                            className="h-full bg-white/60 transition-all duration-200"
+                            style={{ width: `${playerState.volume * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mb-4">
+                    <label className="block">
+                      <input
+                        type="file"
+                        accept="audio/*"
+                        onChange={handleMusicUpload}
+                        className="hidden"
+                        id="music-upload"
+                      />
+                      <button
+                        onClick={() => document.getElementById('music-upload')?.click()}
+                        disabled={uploadingMusic}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {uploadingMusic ? (
+                          <>
+                            <div className="w-4 h-4 border border-white/30 border-t-white rounded-full animate-spin"></div>
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4" />
+                            Upload Music
+                          </>
+                        )}
+                      </button>
+                    </label>
+                  </div>
+
+                  <div className="max-h-48 overflow-y-auto">
+                    <div className="space-y-2">
+                      {musics.map((music) => (
+                        <div
+                          key={music.id}
+                          className={`relative group cursor-pointer rounded-lg p-3 border transition-all ${
+                            currentMusic?.id === music.id
+                              ? 'border-white/60 bg-white/10'
+                              : 'border-white/20 hover:border-white/40 hover:bg-white/5'
+                          }`}
+                          onClick={() => playMusic(music)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                              {currentMusic?.id === music.id && playerState.isPlaying ? (
+                                <Pause className="w-4 h-4 text-white" />
+                              ) : (
+                                <Play className="w-4 h-4 text-white ml-0.5" />
+                              )}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="text-white text-sm font-medium truncate">{music.name}</div>
+                            </div>
+                            
+                            <button
+                              onClick={(e) => handleDeleteMusic(music, e)}
+                              className="w-6 h-6 bg-red-500/80 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-3 h-3 text-white" />
+                            </button>
+                          </div>
+                          
+                          {currentMusic?.id === music.id && (
+                            <div className="absolute top-2 right-2 w-2 h-2 bg-green-400 rounded-full"></div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {musics.length === 0 && (
+                      <div className="text-center py-8 text-white/50 text-sm">
+                        No music available
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {currentMusic && !showMusicPlayer && (
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="fixed bottom-4 left-4 z-40 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl p-3 shadow-xl max-w-sm"
+              >
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={togglePlayPause}
+                    className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors"
+                  >
+                    {playerState.isPlaying ? (
+                      <Pause className="w-4 h-4 text-white" />
+                    ) : (
+                      <Play className="w-4 h-4 text-white ml-0.5" />
+                    )}
+                  </button>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white text-sm font-medium truncate">{currentMusic.name}</div>
+                    <div className="text-white/60 text-xs">
+                      {formatTime(playerState.currentTime)} / {formatTime(playerState.duration)}
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={() => setShowMusicPlayer(true)}
+                    className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+                  >
+                    <Music className="w-3 h-3 text-white" />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {!isMinimalMode && (
+              <motion.section
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1.0, delay: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
                 className="relative z-10 pt-20 pb-8 min-h-screen flex items-center"
               >
                 <div className="max-w-7xl mx-auto px-4 w-full">
@@ -428,10 +712,17 @@ export default function Home() {
                       {showPomodoro && (
                         <motion.div
                           className={`${showTasks ? 'lg:col-span-7' : 'lg:col-span-8'}`}
-                          initial={{ opacity: 0, y: 40, scale: 0.98 }}
+                          initial={{ opacity: 0, y: 60, scale: 0.95 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 40, scale: 0.98 }}
-                          transition={{ duration: 0.5, ease: [0.4, 0.2, 0.2, 1] }}
+                          exit={{ opacity: 0, y: 60, scale: 0.95 }}
+                          transition={{ 
+                            duration: 0.8, 
+                            delay: 0.2,
+                            ease: [0.25, 0.46, 0.45, 0.94],
+                            type: "spring",
+                            stiffness: 100,
+                            damping: 15
+                          }}
                         >
                           <div className=" rounded-3xl p-6 h-full">
                             <div className="text-center mb-6">
@@ -441,8 +732,12 @@ export default function Home() {
                             </div>
                             <PomodoroTimer onSessionComplete={handleSessionComplete} />
                             {selectedTask && (
-                              <div className="mt-6 bg-white/5 backdrop-blur-2xl rounded-2xl p-4 border border-white/10 shadow-lg">
-                                <h3 className="text-white/90 font-medium mb-1 text-sm">Current Task</h3>
+                              <motion.div 
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.6, delay: 0.3 }}
+                                className="mt-6 bg-white/5 backdrop-blur-2xl rounded-2xl p-4 border border-white/10 shadow-lg"
+                              ><h3 className="text-white/90 font-medium mb-1 text-sm">Current Task</h3>
                                 <p className="text-white font-medium drop-shadow">{selectedTask.title}</p>
                                 {selectedTask.description && (
                                   <p className="text-white/70 text-xs mt-1">{selectedTask.description}</p>
@@ -451,16 +746,21 @@ export default function Home() {
                                   <span>🍅 {selectedTask.completed_pomodoros}/{selectedTask.estimated_pomodoros}</span>
                                   <span className="capitalize">{selectedTask.status.replace('_', ' ')}</span>
                                 </div>
-                              </div>
+                              </motion.div>
                             )}
-                            <div className="mt-6 text-center">
+                            <motion.div 
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.6, delay: 0.5 }}
+                              className="mt-6 text-center"
+                            >
                               <Link
                                 to="/learn-together"
                                 className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 text-white rounded-xl transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-xl"
                               >
                                 Join Learning Session
                               </Link>
-                            </div>
+                            </motion.div>
                           </div>
                         </motion.div>
                       )}
@@ -470,10 +770,17 @@ export default function Home() {
                       {showTasks && (
                         <motion.div
                           className={`${showPomodoro ? 'lg:col-span-5' : 'lg:col-span-4'}`}
-                          initial={{ opacity: 0, y: 40, scale: 0.98 }}
+                          initial={{ opacity: 0, y: 60, scale: 0.95 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 40, scale: 0.98 }}
-                          transition={{ duration: 0.5, ease: [0.4, 0.2, 0.2, 1] }}
+                          exit={{ opacity: 0, y: 60, scale: 0.95 }}
+                          transition={{ 
+                            duration: 0.8, 
+                            delay: 0.4,
+                            ease: [0.25, 0.46, 0.45, 0.94],
+                            type: "spring",
+                            stiffness: 100,
+                            damping: 15
+                          }}
                         >
                           <div className="rounded-3xl p-4  h-full max-h-[80vh]">
                             <TaskList
@@ -510,46 +817,39 @@ export default function Home() {
             )}
 
             <motion.section
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
+              transition={{ duration: 1.0, delay: 1.0, ease: [0.25, 0.46, 0.45, 0.94] }}
               className="relative z-10 pb-12"
             >
               <div className="max-w-6xl mx-auto px-4">
                 {!isMinimalMode && (
                   <>
                     <div className="grid md:grid-cols-4 gap-4 mb-8">
-                      <div className="bg-white/5 backdrop-blur-2xl rounded-2xl p-4 shadow-xl border border-white/10 text-center">
-                        <div className="w-10 h-10 bg-white/20 backdrop-blur-xl border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                          <Target className="w-5 h-5 text-white" />
-                        </div>
-                        <div className="text-xl font-bold text-white mb-1 drop-shadow">{todayPomodoros}</div>
-                        <div className="text-xs text-white/70">Today's Focus</div>
-                      </div>
-
-                      <div className="bg-white/5 backdrop-blur-2xl rounded-2xl p-4 shadow-xl border border-white/10 text-center">
-                        <div className="w-10 h-10 bg-white/20 backdrop-blur-xl border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                          <TrendingUp className="w-5 h-5 text-white" />
-                        </div>
-                        <div className="text-xl font-bold text-white mb-1 drop-shadow">{totalPomodoros}</div>
-                        <div className="text-xs text-white/70">Total Sessions</div>
-                      </div>
-
-                      <div className="bg-white/5 backdrop-blur-2xl rounded-2xl p-4 shadow-xl border border-white/10 text-center">
-                        <div className="w-10 h-10 bg-white/20 backdrop-blur-xl border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                          <Zap className="w-5 h-5 text-white" />
-                        </div>
-                        <div className="text-xl font-bold text-white mb-1 drop-shadow">{completedTasks}</div>
-                        <div className="text-xs text-white/70">Completed</div>
-                      </div>
-
-                      <div className="bg-white/5 backdrop-blur-2xl rounded-2xl p-4 shadow-xl border border-white/10 text-center">
-                        <div className="w-10 h-10 bg-white/20 backdrop-blur-xl border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                          <Users className="w-5 h-5 text-white" />
-                        </div>
-                        <div className="text-xl font-bold text-white mb-1 drop-shadow">{inProgressTasks}</div>
-                        <div className="text-xs text-white/70">In Progress</div>
-                      </div>
+                      {[
+                        { icon: Target, value: todayPomodoros, label: "Today's Focus" },
+                        { icon: TrendingUp, value: totalPomodoros, label: "Total Sessions" },
+                        { icon: Zap, value: completedTasks, label: "Completed" },
+                        { icon: Users, value: inProgressTasks, label: "In Progress" }
+                      ].map((stat, index) => (
+                        <motion.div
+                          key={stat.label}
+                          initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ 
+                            duration: 0.6, 
+                            delay: 0.1 + (index * 0.1),
+                            ease: [0.25, 0.46, 0.45, 0.94]
+                          }}
+                          className="bg-white/5 backdrop-blur-2xl rounded-2xl p-4 shadow-xl border border-white/10 text-center"
+                        >
+                          <div className="w-10 h-10 bg-white/20 backdrop-blur-xl border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                            <stat.icon className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="text-xl font-bold text-white mb-1 drop-shadow">{stat.value}</div>
+                          <div className="text-xs text-white/70">{stat.label}</div>
+                        </motion.div>
+                      ))}
                     </div>
                   </>
                 )}
