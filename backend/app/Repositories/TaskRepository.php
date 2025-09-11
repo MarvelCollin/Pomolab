@@ -3,7 +3,6 @@
 namespace App\Repositories;
 
 use App\Models\Task;
-use App\Events\TaskUpdated;
 use Illuminate\Database\Eloquent\Collection;
 
 class TaskRepository
@@ -25,16 +24,7 @@ class TaskRepository
 
     public function update(int $id, array $data): bool
     {
-        $updated = Task::where('id', $id)->update($data);
-        
-        if ($updated) {
-            $task = Task::find($id);
-            if ($task) {
-                broadcast(new TaskUpdated($task));
-            }
-        }
-        
-        return $updated;
+        return Task::where('id', $id)->update($data);
     }
 
     public function delete(int $id): bool
@@ -79,29 +69,11 @@ class TaskRepository
 
     public function updateTaskStatus(int $id, string $status): bool
     {
-        $updated = Task::where('id', $id)->update(['status' => $status]);
-        
-        if ($updated) {
-            $task = Task::find($id);
-            if ($task) {
-                broadcast(new TaskUpdated($task));
-            }
-        }
-        
-        return $updated;
+        return Task::where('id', $id)->update(['status' => $status]);
     }
 
     public function assignTask(int $id, int $userId): bool
     {
-        $updated = Task::where('id', $id)->update(['assigned_to_id' => $userId]);
-        
-        if ($updated) {
-            $task = Task::find($id);
-            if ($task) {
-                broadcast(new TaskUpdated($task));
-            }
-        }
-        
-        return $updated;
+        return Task::where('id', $id)->update(['assigned_to_id' => $userId]);
     }
 }

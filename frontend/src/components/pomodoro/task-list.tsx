@@ -93,7 +93,7 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
 
   return (
     <div className="task-list h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 bg-white/5 backdrop-blur-2xl rounded-xl p-3 border border-white/10 shadow-lg">
         <h2 className="text-lg font-semibold text-white drop-shadow">Tasks</h2>
         <button
           onClick={() => setIsAddingTask(true)}
@@ -154,14 +154,14 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
         </div>
       )}
 
-      <div className="flex-1 space-y-2 overflow-y-auto">
+      <div className="flex-1 space-y-2 overflow-y-auto max-h-[calc(100vh-200px)] pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20">
         {tasks.map((task) => (
           <div
             key={task.id}
             onClick={() => onTaskSelect(task)}
             className={`bg-white/10 backdrop-blur-2xl rounded-xl p-3 border transition-all duration-200 cursor-pointer shadow-lg hover:shadow-xl hover:bg-white/15 transform hover:-translate-y-0.5 ${
               selectedTaskId === task.id 
-                ? 'border-white/20 ring-1 ring-white/10 bg-white/20 scale-105' 
+                ? 'border-l-4 border-l-white border-r border-t border-b border-r-white/20 border-t-white/20 border-b-white/20 bg-white/15 shadow-xl' 
                 : 'border-white/10 hover:border-white/15'
             } ${completingTaskId === task.id ? 'animate-pulse' : ''}`}
           >
