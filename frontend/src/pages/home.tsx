@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { TrendingUp, Users, Zap, Target, Timer, CheckSquare, Eye, EyeOff, Image, X } from 'lucide-react';
+import { TrendingUp, Users, Zap, Target, Timer, CheckSquare, Eye, EyeOff, Image, X, Upload } from 'lucide-react';
 import PomodoroTimer from '../components/pomodoro/pomodoro-timer';
 import TaskList from '../components/pomodoro/task-list';
 import type { ITask } from '../interfaces/ITask';
@@ -21,6 +21,7 @@ export default function Home() {
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const [showContent, setShowContent] = useState(false);
   const [showBackgroundSelector, setShowBackgroundSelector] = useState(false);
+  const [uploadingBackground, setUploadingBackground] = useState(false);
   
   const { 
     backgrounds, 
@@ -52,6 +53,13 @@ export default function Home() {
     };
     setTasks(prev => [task, ...prev]);
   }, [tasks]);
+
+  const handleTaskDelete = useCallback((taskId: number) => {
+    setTasks(prev => prev.filter(task => task.id !== taskId));
+    if (selectedTask?.id === taskId) {
+      setSelectedTask(null);
+    }
+  }, [selectedTask]);
 
   const handleSessionComplete = useCallback((sessionType: 'focus' | 'short-break' | 'long-break') => {
     if (sessionType === 'focus' && selectedTask) {
@@ -87,10 +95,12 @@ export default function Home() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    setUploadingBackground(true);
     const result = await uploadBackground(file);
     if (result) {
       handleBackgroundChange(result);
     }
+    setUploadingBackground(false);
     event.target.value = '';
   };
 
@@ -323,7 +333,25 @@ export default function Home() {
                         accept="image/*,video/*"
                         onChange={handleFileUpload}
                         className="hidden"
+                        id="background-upload"
                       />
+                      <button
+                        onClick={() => document.getElementById('background-upload')?.click()}
+                        disabled={uploadingBackground}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {uploadingBackground ? (
+                          <>
+                            <div className="w-4 h-4 border border-white/30 border-t-white rounded-full animate-spin"></div>
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4" />
+                            Upload Background
+                          </>
+                        )}
+                      </button>
                     </label>
                   </div>
 
@@ -405,7 +433,7 @@ export default function Home() {
                           exit={{ opacity: 0, y: 40, scale: 0.98 }}
                           transition={{ duration: 0.5, ease: [0.4, 0.2, 0.2, 1] }}
                         >
-                          <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-6 shadow-2xl border border-white/10 h-full">
+                          <div className=" rounded-3xl p-6 h-full">
                             <div className="text-center mb-6">
                               <h1 className="text-4xl font-bold leading-tight mb-2">
                                 <span className="text-white drop-shadow-lg">POMOLAB</span>
@@ -447,12 +475,13 @@ export default function Home() {
                           exit={{ opacity: 0, y: 40, scale: 0.98 }}
                           transition={{ duration: 0.5, ease: [0.4, 0.2, 0.2, 1] }}
                         >
-                          <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-4 shadow-2xl border border-white/10 h-full max-h-[80vh]">
+                          <div className="rounded-3xl p-4  h-full max-h-[80vh]">
                             <TaskList
                               tasks={tasks}
                               onTaskSelect={handleTaskSelect}
                               onTaskComplete={handleTaskComplete}
                               onTaskAdd={handleTaskAdd}
+                              onTaskDelete={handleTaskDelete}
                               selectedTaskId={selectedTask?.id}
                             />
                           </div>

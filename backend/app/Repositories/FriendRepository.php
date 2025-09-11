@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Friend;
+use App\Events\FriendRequestSent;
 use Illuminate\Database\Eloquent\Collection;
 
 class FriendRepository
@@ -19,7 +20,13 @@ class FriendRepository
 
     public function create(array $data): Friend
     {
-        return Friend::create($data);
+        $friend = Friend::create($data);
+        
+        if ($friend && $friend->status === 'pending') {
+            broadcast(new FriendRequestSent($friend));
+        }
+        
+        return $friend;
     }
 
     public function update(int $id, array $data): bool

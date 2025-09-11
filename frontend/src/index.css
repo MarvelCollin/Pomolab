@@ -2,15 +2,7 @@
 
 @font-face {
   font-family: 'MateJournal';
-  src: url('./assets/fonts/MateJournal-LVLRy.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'MateJournal';
-  src: url('./assets/fonts/MateJournal-PVlAr.otf') format('opentype');
+  src: url('assets/fonts/mate-journal-font/MateJournal-LVLRy.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;

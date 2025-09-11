@@ -33,6 +33,31 @@ Route::get('/test', function () {
     return response()->json(['message' => 'Hello World']);
 });
 
+Route::get('/websocket-config', function () {
+    return response()->json([
+        'pusher' => [
+            'key' => env('PUSHER_APP_KEY', 'local-key'),
+            'cluster' => env('PUSHER_APP_CLUSTER', 'mt1'),
+            'wsHost' => env('PUSHER_HOST', '127.0.0.1'),
+            'wsPort' => env('PUSHER_PORT', 6001),
+            'wssPort' => env('PUSHER_PORT', 6001),
+            'enabledTransports' => ['ws', 'wss'],
+            'forceTLS' => env('PUSHER_SCHEME', 'http') === 'https',
+        ],
+        'reverb' => [
+            'key' => env('REVERB_APP_KEY', 'local-key'),
+            'host' => env('REVERB_HOST', '127.0.0.1'),
+            'port' => env('REVERB_PORT', 8080),
+            'scheme' => env('REVERB_SCHEME', 'http'),
+        ]
+    ]);
+});
+
+Route::post('/test-broadcast', function () {
+    broadcast(new \App\Events\MessageSent(\App\Models\Message::first()));
+    return response()->json(['message' => 'Broadcast sent']);
+});
+
 Route::apiResource('users', UserController::class);
 Route::get('/users/{id}/friends', [UserController::class, 'getUserWithFriends']);
 Route::get('/users/{id}/tasks', [UserController::class, 'getUserWithTasks']);

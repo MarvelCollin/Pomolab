@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Settings, Volume2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings, Volume2, VolumeX, X } from 'lucide-react';
 
 interface PomodoroTimerProps {
   onSessionComplete: (type: 'focus' | 'short-break' | 'long-break') => void;
@@ -7,15 +7,22 @@ interface PomodoroTimerProps {
 
 export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps) {
   const [currentSession, setCurrentSession] = useState<'focus' | 'short-break' | 'long-break'>('focus');
-  const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [sessionCount, setSessionCount] = useState(0);
+  const [showSettings, setShowSettings] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [customDurations, setCustomDurations] = useState({
+    focus: 25,
+    'short-break': 5,
+    'long-break': 15
+  });
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const sessionDurations = {
-    focus: 25 * 60,
-    'short-break': 5 * 60,
-    'long-break': 15 * 60
+    focus: customDurations.focus * 60,
+    'short-break': customDurations['short-break'] * 60,
+    'long-break': customDurations['long-break'] * 60
   };
 
   const sessionLabels = {
@@ -47,6 +54,23 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
 
   const handleSessionComplete = () => {
     setIsRunning(false);
+    
+    if (soundEnabled) {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+    }
+    
     onSessionComplete(currentSession);
     
     if (currentSession === 'focus') {
@@ -81,6 +105,18 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     setIsRunning(false);
   };
 
+  const updateDuration = (session: keyof typeof customDurations, minutes: number) => {
+    setCustomDurations(prev => ({
+      ...prev,
+      [session]: minutes
+    }));
+    
+    if (currentSession === session) {
+      setTimeLeft(minutes * 60);
+      setIsRunning(false);
+    }
+  };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -109,7 +145,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         </div>
 
         <div className="relative mb-6">
-          <div className="w-48 h-48 mx-auto rounded-full bg-white/5 backdrop-blur-2xl flex items-center justify-center relative overflow-hidden border-4 border-white/10 shadow-2xl">
+          <div className={`w-48 h-48 mx-auto rounded-full bg-white/5 backdrop-blur-2xl flex items-center justify-center relative overflow-hidden border-4 border-white/10 shadow-2xl transition-all duration-300 ${isRunning ? 'animate-pulse' : ''}`}>
             <div 
               className={`absolute inset-0 transition-all duration-1000`}
               style={{
@@ -132,7 +168,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={toggleTimer}
-            className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-2xl border border-white/10 shadow-xl flex items-center justify-center hover:bg-white/30 transform hover:scale-105 transition-all duration-200"
+            className={`w-12 h-12 rounded-full bg-white/20 backdrop-blur-2xl border border-white/10 shadow-xl flex items-center justify-center hover:bg-white/30 transform hover:scale-105 transition-all duration-200 ${isRunning ? 'animate-pulse' : ''}`}
           >
             {isRunning ? (
               <Pause className="w-5 h-5 text-white" />
@@ -143,23 +179,104 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           
           <button
             onClick={resetTimer}
-            className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-2xl border border-white/10 flex items-center justify-center hover:bg-white/20 shadow-lg transition-all duration-200"
+            className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-2xl border border-white/10 flex items-center justify-center hover:bg-white/20 shadow-lg transition-all duration-200 hover:scale-105"
           >
             <RotateCcw className="w-4 h-4 text-white/80" />
           </button>
 
-          <button className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-2xl border border-white/10 flex items-center justify-center hover:bg-white/20 shadow-lg transition-all duration-200">
+          <button 
+            onClick={() => setShowSettings(!showSettings)}
+            className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-2xl border border-white/10 flex items-center justify-center hover:bg-white/20 shadow-lg transition-all duration-200 hover:scale-105"
+          >
             <Settings className="w-4 h-4 text-white/80" />
           </button>
 
-          <button className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-2xl border border-white/10 flex items-center justify-center hover:bg-white/20 shadow-lg transition-all duration-200">
-            <Volume2 className="w-4 h-4 text-white/80" />
+          <button 
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-2xl border border-white/10 flex items-center justify-center hover:bg-white/20 shadow-lg transition-all duration-200 hover:scale-105"
+          >
+            {soundEnabled ? (
+              <Volume2 className="w-4 h-4 text-white/80" />
+            ) : (
+              <VolumeX className="w-4 h-4 text-white/80" />
+            )}
           </button>
         </div>
 
         <div className="mt-4 text-white/60 text-xs">
           Session #{sessionCount + 1} • {Math.floor(sessionCount / 4)} cycles completed
         </div>
+
+        {showSettings && (
+          <div className="mt-6 bg-white/10 backdrop-blur-2xl rounded-xl p-4 border border-white/20 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-medium text-sm">Timer Settings</h3>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="w-6 h-6 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+              >
+                <X className="w-3 h-3 text-white" />
+              </button>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-white/80 text-xs">Focus Duration</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={customDurations.focus}
+                    onChange={(e) => updateDuration('focus', Math.max(1, parseInt(e.target.value) || 1))}
+                    min="1"
+                    max="120"
+                    className="w-12 bg-white/15 backdrop-blur-2xl border border-white/10 rounded px-2 py-1 text-xs text-center outline-none text-white"
+                  />
+                  <span className="text-white/60 text-xs">min</span>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-white/80 text-xs">Short Break</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={customDurations['short-break']}
+                    onChange={(e) => updateDuration('short-break', Math.max(1, parseInt(e.target.value) || 1))}
+                    min="1"
+                    max="30"
+                    className="w-12 bg-white/15 backdrop-blur-2xl border border-white/10 rounded px-2 py-1 text-xs text-center outline-none text-white"
+                  />
+                  <span className="text-white/60 text-xs">min</span>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-white/80 text-xs">Long Break</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={customDurations['long-break']}
+                    onChange={(e) => updateDuration('long-break', Math.max(1, parseInt(e.target.value) || 1))}
+                    min="1"
+                    max="60"
+                    className="w-12 bg-white/15 backdrop-blur-2xl border border-white/10 rounded px-2 py-1 text-xs text-center outline-none text-white"
+                  />
+                  <span className="text-white/60 text-xs">min</span>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                <span className="text-white/80 text-xs">Sound Notifications</span>
+                <button
+                  onClick={() => setSoundEnabled(!soundEnabled)}
+                  className={`w-8 h-4 rounded-full relative transition-colors ${soundEnabled ? 'bg-green-500' : 'bg-white/20'}`}
+                >
+                  <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform ${soundEnabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

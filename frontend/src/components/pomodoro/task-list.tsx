@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus, MoreHorizontal, Play, Check, Clock, User } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, MoreHorizontal, Play, Check, Clock, User, Edit3, Trash2 } from 'lucide-react';
 import type { ITask } from '../../interfaces/ITask';
 
 interface TaskListProps {
@@ -7,21 +7,28 @@ interface TaskListProps {
   onTaskSelect: (task: ITask) => void;
   onTaskComplete: (taskId: number) => void;
   onTaskAdd: (task: Omit<ITask, 'id' | 'created_at' | 'updated_at'>) => void;
+  onTaskDelete?: (taskId: number) => void;
+  onTaskEdit?: (taskId: number, updates: Partial<ITask>) => void;
   selectedTaskId?: number;
 }
 
-export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, selectedTaskId }: TaskListProps) {
+export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete, onTaskEdit, selectedTaskId }: TaskListProps) {
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
   const [estimatedPomodoros, setEstimatedPomodoros] = useState(1);
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [completingTaskId, setCompletingTaskId] = useState<number | null>(null);
+  const [addingTask, setAddingTask] = useState(false);
 
-  const handleAddTask = () => {
+  const handleAddTask = async () => {
     if (newTaskTitle.trim()) {
+      setAddingTask(true);
+      
       onTaskAdd({
         title: newTaskTitle.trim(),
         description: newTaskDescription.trim() || undefined,
-        owner_id: 1, // Current user ID (dummy)
+        owner_id: 1,
         assigned_to_id: undefined,
         status: 'pending',
         estimated_pomodoros: estimatedPomodoros,
@@ -31,9 +38,41 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
       setNewTaskTitle('');
       setNewTaskDescription('');
       setEstimatedPomodoros(1);
+      setAddingTask(false);
       setIsAddingTask(false);
     }
   };
+
+  const handleCompleteTask = async (taskId: number) => {
+    setCompletingTaskId(taskId);
+    setTimeout(() => {
+      onTaskComplete(taskId);
+      setCompletingTaskId(null);
+    }, 300);
+  };
+
+  const handleDeleteTask = (taskId: number) => {
+    if (onTaskDelete) {
+      onTaskDelete(taskId);
+    }
+    setOpenMenuId(null);
+  };
+
+  const toggleMenu = (taskId: number) => {
+    setOpenMenuId(openMenuId === taskId ? null : taskId);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.task-menu')) {
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -102,8 +141,12 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
               </button>
               <button
                 onClick={handleAddTask}
-                className="px-3 py-1 bg-white/20 backdrop-blur-2xl border border-white/10 text-white rounded-lg text-xs hover:bg-white/30 transition-all duration-200 shadow-lg"
+                disabled={addingTask}
+                className="px-3 py-1 bg-white/20 backdrop-blur-2xl border border-white/10 text-white rounded-lg text-xs hover:bg-white/30 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
               >
+                {addingTask && (
+                  <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin"></div>
+                )}
                 Add
               </button>
             </div>
@@ -116,11 +159,11 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
           <div
             key={task.id}
             onClick={() => onTaskSelect(task)}
-            className={`bg-white/10 backdrop-blur-2xl rounded-xl p-3 border transition-all duration-200 cursor-pointer shadow-lg hover:shadow-xl hover:bg-white/15 ${
+            className={`bg-white/10 backdrop-blur-2xl rounded-xl p-3 border transition-all duration-200 cursor-pointer shadow-lg hover:shadow-xl hover:bg-white/15 transform hover:-translate-y-0.5 ${
               selectedTaskId === task.id 
-                ? 'border-white/20 ring-1 ring-white/10 bg-white/20' 
+                ? 'border-white/20 ring-1 ring-white/10 bg-white/20 scale-105' 
                 : 'border-white/10 hover:border-white/15'
-            }`}
+            } ${completingTaskId === task.id ? 'animate-pulse' : ''}`}
           >
             <div className="flex items-start justify-between mb-1">
               <h3 className="font-medium text-white text-sm flex-1 mr-2 drop-shadow">{task.title}</h3>
@@ -129,9 +172,42 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
                   {getStatusIcon(task.status)}
                   {task.status.replace('_', ' ')}
                 </span>
-                <button className="p-0.5 hover:bg-white/10 backdrop-blur-2xl rounded-lg">
-                  <MoreHorizontal className="w-3 h-3 text-white/60" />
-                </button>
+                <div className="relative task-menu">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleMenu(task.id);
+                    }}
+                    className="p-0.5 hover:bg-white/10 backdrop-blur-2xl rounded-lg transition-all duration-200"
+                  >
+                    <MoreHorizontal className="w-3 h-3 text-white/60" />
+                  </button>
+                  
+                  {openMenuId === task.id && (
+                    <div className="absolute right-0 top-6 z-50 bg-white/20 backdrop-blur-2xl border border-white/30 rounded-lg shadow-xl min-w-[120px] animate-in fade-in-0 zoom-in-95 duration-100">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuId(null);
+                        }}
+                        className="w-full px-3 py-2 text-xs text-white/80 hover:bg-white/10 flex items-center gap-2 rounded-t-lg transition-colors"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteTask(task.id);
+                        }}
+                        className="w-full px-3 py-2 text-xs text-red-300 hover:bg-red-500/20 flex items-center gap-2 rounded-b-lg transition-colors border-t border-white/10"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -159,10 +235,14 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      onTaskComplete(task.id);
+                      handleCompleteTask(task.id);
                     }}
-                    className="px-2 py-1 bg-green-500/50 backdrop-blur-2xl border border-green-400/20 hover:bg-green-500/70 text-white rounded-lg text-xs transition-all duration-200 shadow-lg"
+                    disabled={completingTaskId === task.id}
+                    className="px-2 py-1 bg-green-500/50 backdrop-blur-2xl border border-green-400/20 hover:bg-green-500/70 text-white rounded-lg text-xs transition-all duration-200 shadow-lg disabled:opacity-50 flex items-center gap-1"
                   >
+                    {completingTaskId === task.id && (
+                      <div className="w-2 h-2 border border-white/30 border-t-white rounded-full animate-spin"></div>
+                    )}
                     Done
                   </button>
                 )}

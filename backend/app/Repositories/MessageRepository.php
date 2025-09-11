@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Message;
+use App\Events\MessageSent;
 use Illuminate\Database\Eloquent\Collection;
 
 class MessageRepository
@@ -19,7 +20,11 @@ class MessageRepository
 
     public function create(array $data): Message
     {
-        return Message::create($data);
+        $message = Message::create($data);
+        
+        broadcast(new MessageSent($message));
+        
+        return $message;
     }
 
     public function update(int $id, array $data): bool
@@ -82,11 +87,15 @@ class MessageRepository
 
     public function sendMessage(int $fromUserId, int $toUserId, string $message, int $taskId = null): Message
     {
-        return Message::create([
+        $messageModel = Message::create([
             'from_user_id' => $fromUserId,
             'to_user_id' => $toUserId,
             'message' => $message,
             'task_id' => $taskId,
         ]);
+
+        broadcast(new MessageSent($messageModel));
+
+        return $messageModel;
     }
 }
