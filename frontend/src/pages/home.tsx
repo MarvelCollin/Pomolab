@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Timer, CheckSquare, Eye, EyeOff, Image, X, Upload, Music } from 'lucide-react';
+import { Timer, CheckSquare, Eye, EyeOff, Image, X, Upload, Music, Play, Pause, SkipForward, SkipBack, Volume2, VolumeX } from 'lucide-react';
 import PomodoroTimer from '../components/pomodoro/pomodoro-timer';
 import TaskList from '../components/pomodoro/task-list';
 import MiniMusicPlayer from '../components/common/mini-music-player';
@@ -25,6 +25,12 @@ export default function Home() {
   const [showBackgroundSelector, setShowBackgroundSelector] = useState(false);
   const [showMusicPlayer, setShowMusicPlayer] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
+
+  const formatTime = (time: number): string => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
   
   const { 
     backgrounds, 
@@ -41,7 +47,11 @@ export default function Home() {
     playerState,
     loading: musicLoading,
     playMusic,
-    deleteMusic
+    deleteMusic,
+    togglePlayPause,
+    nextMusic,
+    previousMusic,
+    toggleMute
   } = useMusic();
 
   useEffect(() => {

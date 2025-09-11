@@ -58,7 +58,18 @@ export const useMusic = () => {
       if (success) {
         setMusics(prev => prev.filter(m => m.id !== music.id));
         if (currentMusic?.id === music.id) {
-          stopMusic();
+          if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+          }
+          setCurrentMusic(null);
+          setPlayerState(prev => ({
+            ...prev,
+            isPlaying: false,
+            currentTime: 0
+          }));
+          setMusics(prev => prev.map(m => ({ ...m, isActive: false })));
+          musicService.destroyAudioElement();
         }
         return true;
       }
@@ -254,7 +265,7 @@ export const useMusic = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to play music');
     }
-  }, [playerState.volume, playerState.isMuted, autoPlay, nextMusic]);
+  }, [playerState.volume, playerState.isMuted, autoPlay]);
 
   const seekTo = useCallback((time: number) => {
     if (audioRef.current) {
