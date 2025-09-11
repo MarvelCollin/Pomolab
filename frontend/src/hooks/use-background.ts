@@ -7,6 +7,37 @@ export const useBackground = () => {
   const [activeBackground, setActiveBackground] = useState<IBackground | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasLoadedAll, setHasLoadedAll] = useState(false);
+
+  const loadFirstBackground = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const firstBackground = await backgroundService.getFirstBackground();
+      if (firstBackground) {
+        setBackgrounds([firstBackground]);
+        setActiveBackground({ ...firstBackground, isActive: true });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load first background');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadRemainingBackgrounds = useCallback(async () => {
+    if (hasLoadedAll) return;
+    
+    try {
+      const remainingBackgrounds = await backgroundService.getRemainingBackgrounds();
+      if (remainingBackgrounds.length > 0) {
+        setBackgrounds(prev => [...prev, ...remainingBackgrounds]);
+      }
+      setHasLoadedAll(true);
+    } catch (err) {
+      console.error('Error loading remaining backgrounds:', err);
+    }
+  }, [hasLoadedAll]);
 
   const loadBackgrounds = useCallback(async () => {
     setLoading(true);
@@ -19,6 +50,7 @@ export const useBackground = () => {
         const defaultBackground = fetchedBackgrounds[0];
         setActiveBackground({ ...defaultBackground, isActive: true });
       }
+      setHasLoadedAll(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load backgrounds');
     } finally {
@@ -74,8 +106,10 @@ export const useBackground = () => {
   }, []);
 
   useEffect(() => {
-    loadBackgrounds();
-  }, [loadBackgrounds]);
+    loadFirstBackground().then(() => {
+      loadRemainingBackgrounds();
+    });
+  }, [loadFirstBackground, loadRemainingBackgrounds]);
 
   return {
     backgrounds,

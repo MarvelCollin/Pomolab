@@ -5,6 +5,85 @@ export class BackgroundService {
     private bucketName = 'assets';
     private folder = 'backgrounds';
 
+    async getFirstBackground(): Promise<IBackground | null> {
+        try {
+            const { data: files, error } = await supabase.storage
+                .from(this.bucketName)
+                .list(this.folder, {
+                    limit: 1,
+                    offset: 0,
+                });
+
+            if (error) throw error;
+            const validFiles = files.filter(file => file.name !== '.emptyFolderPlaceholder');
+            
+            if (validFiles.length === 0) return null;
+
+            const file = validFiles[0];
+            const filePath = `${this.folder}/${file.name}`;
+            const { data } = supabase.storage
+                .from(this.bucketName)
+                .getPublicUrl(filePath);
+
+            const fileExtension = file.name.split('.').pop()?.toLowerCase();
+            const isVideo = ['mp4', 'webm', 'mov', 'avi'].includes(fileExtension || '');
+
+            return {
+                id: file.id || file.name,
+                name: file.name.split('.')[0],
+                url: data.publicUrl,
+                filePath,
+                type: isVideo ? 'video' : 'image',
+                isActive: false,
+                createdAt: file.created_at || new Date().toISOString(),
+                updatedAt: file.updated_at || new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Error fetching first background:', error);
+            return null;
+        }
+    }
+
+    async getRemainingBackgrounds(): Promise<IBackground[]> {
+        try {
+            const { data: files, error } = await supabase.storage
+                .from(this.bucketName)
+                .list(this.folder, {
+                    limit: 100,
+                    offset: 1,
+                });
+
+            if (error) throw error;
+            const backgrounds: IBackground[] = files
+                .filter(file => file.name !== '.emptyFolderPlaceholder')
+                .map(file => {
+                    const filePath = `${this.folder}/${file.name}`;
+                    const { data } = supabase.storage
+                        .from(this.bucketName)
+                        .getPublicUrl(filePath);
+
+                    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+                    const isVideo = ['mp4', 'webm', 'mov', 'avi'].includes(fileExtension || '');
+
+                    return {
+                        id: file.id || file.name,
+                        name: file.name.split('.')[0],
+                        url: data.publicUrl,
+                        filePath,
+                        type: isVideo ? 'video' : 'image',
+                        isActive: false,
+                        createdAt: file.created_at || new Date().toISOString(),
+                        updatedAt: file.updated_at || new Date().toISOString()
+                    };
+                });
+
+            return backgrounds;
+        } catch (error) {
+            console.error('Error fetching remaining backgrounds:', error);
+            return [];
+        }
+    }
+
     async getBackgrounds(): Promise<IBackground[]> {
         try {
             const { data: files, error } = await supabase.storage

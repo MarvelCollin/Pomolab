@@ -184,15 +184,15 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
                   </button>
                   
                   {openMenuId === task.id && (
-                    <div className="absolute right-0 top-6 z-50 bg-white/20 backdrop-blur-2xl border border-white/30 rounded-lg shadow-xl min-w-[120px] animate-in fade-in-0 zoom-in-95 duration-100">
+                    <div className="absolute right-0 top-6 z-50 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-xl shadow-2xl min-w-[140px] animate-in fade-in-0 zoom-in-95 duration-150">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setOpenMenuId(null);
                         }}
-                        className="w-full px-3 py-2 text-xs text-white/80 hover:bg-white/10 flex items-center gap-2 rounded-t-lg transition-colors"
+                        className="w-full px-4 py-2 text-xs text-white/90 hover:bg-white/20 flex items-center gap-2 rounded-t-xl transition-colors"
                       >
-                        <Edit3 className="w-3 h-3" />
+                        <Edit3 className="w-4 h-4" />
                         Edit
                       </button>
                       <button
@@ -200,9 +200,9 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
                           e.stopPropagation();
                           handleDeleteTask(task.id);
                         }}
-                        className="w-full px-3 py-2 text-xs text-red-300 hover:bg-red-500/20 flex items-center gap-2 rounded-b-lg transition-colors border-t border-white/10"
+                        className="w-full px-4 py-2 text-xs text-red-400 hover:bg-red-500/30 flex items-center gap-2 rounded-b-xl transition-colors border-t border-white/10"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-4 h-4" />
                         Delete
                       </button>
                     </div>
