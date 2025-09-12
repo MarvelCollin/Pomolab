@@ -38,8 +38,8 @@ class User extends Authenticatable
     public function friends(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'friends', 'user_id', 'friend_id')
-                    ->withPivot('status')
-                    ->withTimestamps();
+            ->withPivot('status')
+            ->withTimestamps();
     }
 
     public function friendRequests(): HasMany
@@ -70,5 +70,17 @@ class User extends Authenticatable
     public function receivedMessages(): HasMany
     {
         return $this->hasMany(Message::class, 'to_user_id');
+    }
+
+    public function createdGroups(): HasMany
+    {
+        return $this->hasMany(Group::class, 'creator_id');
+    }
+
+    public function groups(): BelongsToMany
+    {
+        return $this->belongsToMany(Group::class, 'group_members', 'user_id', 'group_id')
+            ->withPivot('role', 'joined_at')
+            ->withTimestamps();
     }
 }
