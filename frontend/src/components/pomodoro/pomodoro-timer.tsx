@@ -134,10 +134,32 @@ export default function PomodoroTimer({ onSessionComplete, isMinimized = false }
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="text-center">
+      <div className="text-center">{isMinimized && (
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <button
+              onClick={toggleTimer}
+              className={`w-8 h-8 rounded-full bg-white/20 backdrop-blur-2xl border border-white/10 shadow-lg flex items-center justify-center hover:bg-white/30 transition-all duration-200 ${isRunning ? 'animate-pulse' : ''}`}
+            >
+              {isRunning ? (
+                <Pause className="w-3 h-3 text-white" />
+              ) : (
+                <Play className="w-3 h-3 text-white ml-0.5" />
+              )}
+            </button>
+            <div className="text-white text-sm font-medium">
+              {formatTime(timeLeft)} • {sessionLabels[currentSession]}
+            </div>
+            <button
+              onClick={resetTimer}
+              className="w-6 h-6 rounded-full bg-white/10 backdrop-blur-2xl border border-white/10 flex items-center justify-center hover:bg-white/20 shadow-lg transition-all duration-200"
+            >
+              <RotateCcw className="w-3 h-3 text-white/80" />
+            </button>
+          </div>
+        )}
         <div 
-          className={`flex justify-center gap-2 mb-6 transition-all duration-300 ${
-            isMinimized ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100 h-auto'
+          className={`flex justify-center gap-2 transition-all duration-500 ease-in-out ${
+            isMinimized ? 'opacity-0 h-0 overflow-hidden mb-0' : 'opacity-100 h-auto mb-6'
           }`}
         >
           {Object.keys(sessionDurations).map((session) => (
@@ -155,8 +177,8 @@ export default function PomodoroTimer({ onSessionComplete, isMinimized = false }
           ))}
         </div>
 
-        <div className={`relative mb-6 transition-all duration-300 ${isMinimized ? 'scale-50' : 'scale-100'}`}>
-          <div className="w-48 h-48 mx-auto rounded-full bg-white/5 backdrop-blur-2xl flex items-center justify-center relative overflow-hidden border-4 border-white/10 shadow-2xl transition-all duration-300">
+        <div className={`relative transition-all duration-500 ease-in-out ${isMinimized ? 'mb-3' : 'mb-6'}`}>
+          <div className={`mx-auto rounded-full bg-white/5 backdrop-blur-2xl flex items-center justify-center relative overflow-hidden border-4 border-white/10 shadow-2xl transition-all duration-500 ease-in-out ${isMinimized ? 'w-32 h-32' : 'w-48 h-48'}`}>
             <div 
               className="absolute inset-0 transition-all duration-1000"
               style={{
@@ -165,12 +187,12 @@ export default function PomodoroTimer({ onSessionComplete, isMinimized = false }
             />
             <div className="absolute inset-2 bg-white/10 backdrop-blur-2xl rounded-full flex items-center justify-center border border-white/10">
               <div className="text-center">
-                <div className={`font-bold text-white mb-1 drop-shadow-lg transition-all duration-300 ${isMinimized ? 'text-2xl' : 'text-4xl'}`}>
+                <div className={`font-bold text-white mb-1 drop-shadow-lg transition-all duration-500 ease-in-out ${isMinimized ? 'text-xl' : 'text-4xl'}`}>
                   {formatTime(timeLeft)}
                 </div>
                 <div 
-                  className={`text-white/70 text-xs uppercase tracking-wide font-medium transition-all duration-300 ${
-                    isMinimized ? 'opacity-0 h-0' : 'opacity-100 h-auto'
+                  className={`text-white/70 text-xs uppercase tracking-wide font-medium transition-all duration-500 ease-in-out ${
+                    isMinimized ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100 h-auto'
                   }`}
                 >
                   {sessionLabels[currentSession]}
@@ -181,8 +203,8 @@ export default function PomodoroTimer({ onSessionComplete, isMinimized = false }
         </div>
 
         <div 
-          className={`flex items-center justify-center gap-3 transition-all duration-300 ${
-            isMinimized ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100 h-auto'
+          className={`flex items-center justify-center transition-all duration-500 ease-in-out ${
+            isMinimized ? 'opacity-0 h-0 overflow-hidden gap-0' : 'opacity-100 h-auto gap-3'
           }`}
         >
           <button
@@ -223,8 +245,8 @@ export default function PomodoroTimer({ onSessionComplete, isMinimized = false }
         </div>
 
         <div 
-          className={`mt-4 text-white/60 text-xs transition-all duration-300 ${
-            isMinimized ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100 h-auto'
+          className={`text-white/60 text-xs transition-all duration-500 ease-in-out ${
+            isMinimized ? 'opacity-0 h-0 overflow-hidden mt-0' : 'opacity-100 h-auto mt-4'
           }`}
         >
           Session #{sessionCount + 1} • {Math.floor(sessionCount / 4)} cycles completed

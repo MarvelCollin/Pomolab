@@ -100,14 +100,14 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="flex items-center justify-between mb-4 bg-white/5 backdrop-blur-2xl rounded-xl p-3 border border-white/10 shadow-lg">
-        <h2 className={`font-semibold text-white drop-shadow transition-all duration-300 ${isMinimized ? 'text-sm' : 'text-lg'}`}>
+      <div className={`flex items-center justify-between bg-white/5 backdrop-blur-2xl rounded-xl border border-white/10 shadow-lg transition-all duration-500 ease-in-out ${isMinimized ? 'p-2 mb-2' : 'p-3 mb-4'}`}>
+        <h2 className={`font-semibold text-white drop-shadow transition-all duration-500 ease-in-out ${isMinimized ? 'text-sm' : 'text-lg'}`}>
           Tasks {isMinimized && `(${tasks.filter(t => t.status !== 'completed').length})`}
         </h2>
         <button
           onClick={() => setIsAddingTask(true)}
-          className={`w-8 h-8 bg-white/10 backdrop-blur-2xl hover:bg-white/20 border border-white/10 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl ${
-            isMinimized ? 'opacity-0 scale-0' : 'opacity-100 scale-100'
+          className={`bg-white/10 backdrop-blur-2xl hover:bg-white/20 border border-white/10 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-500 ease-in-out ${
+            isMinimized ? 'opacity-0 scale-0 w-0 h-0 overflow-hidden' : 'opacity-100 scale-100 w-8 h-8'
           }`}
         >
           <Plus className="w-4 h-4 text-white" />
@@ -116,22 +116,22 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
 
       {isMinimized && tasks.length > 0 && (
         <div 
-          className="bg-white/10 backdrop-blur-2xl rounded-xl p-3 border border-white/10 shadow-lg transition-all duration-300"
+          className="bg-white/10 backdrop-blur-2xl rounded-xl p-2 border border-white/10 shadow-lg transition-all duration-500 ease-in-out"
         >
           {(() => {
             const activeTask = tasks.find(t => t.status === 'in_progress' || selectedTaskId === t.id) || tasks.find(t => t.status === 'pending');
             if (!activeTask) return (
-              <p className="text-white/60 text-xs text-center">No active tasks</p>
+              <p className="text-white/60 text-xs text-center py-2">No active tasks</p>
             );
             return (
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-medium truncate">{activeTask.title}</p>
+                  <p className="text-white text-xs font-medium truncate">{activeTask.title}</p>
                   <div className="flex items-center gap-2 text-white/60 text-xs mt-1">
                     <span>🍅 {activeTask.completed_pomodoros}/{activeTask.estimated_pomodoros}</span>
                     <div className="flex-1 bg-white/10 rounded-full h-1 ml-2">
                       <div
-                        className="bg-white/60 h-1 rounded-full transition-all duration-300"
+                        className="bg-white/60 h-1 rounded-full transition-all duration-500"
                         style={{
                           width: `${Math.min(100, (activeTask.completed_pomodoros / activeTask.estimated_pomodoros) * 100)}%`
                         }}
@@ -203,8 +203,8 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
         )}
 
       <div 
-        className={`flex-1 space-y-2 overflow-y-auto max-h-[calc(100vh-200px)] pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 transition-all duration-300 ${
-          isMinimized ? 'opacity-0 h-0' : 'opacity-100 h-auto'
+        className={`flex-1 space-y-2 overflow-y-auto max-h-[calc(100vh-200px)] pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 transition-all duration-500 ease-in-out ${
+          isMinimized ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100 h-auto'
         }`}
       >
         {tasks.map((task) => (

@@ -5,10 +5,9 @@ import type { IMusic, IMusicPlayerState } from '../../interfaces/IMusic';
 interface AudioVisualProps {
   currentMusic: IMusic | null;
   playerState: IMusicPlayerState;
-  showContent: boolean;
 }
 
-export default function AudioVisual({ currentMusic, playerState, showContent }: AudioVisualProps) {
+export default function AudioVisual({ currentMusic, playerState }: AudioVisualProps) {
   const [audioData, setAudioData] = useState<number[]>(new Array(120).fill(0));
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -86,34 +85,12 @@ export default function AudioVisual({ currentMusic, playerState, showContent }: 
       };
 
       animate();
-    } else {
-      const animateFallback = () => {
-        if (!playerState.isPlaying) return;
-        
-        const time = Date.now() * 0.003;
-        const newAudioData = Array.from({ length: 120 }, (_, index) => {
-          const frequency = index * 0.1 + 1;
-          const amplitude = Math.sin(time * frequency) * 0.4 + 
-                           Math.sin(time * frequency * 1.3) * 0.3 + 
-                           Math.random() * 0.2;
-          return Math.max(0.1, Math.min(0.8, amplitude + 0.2));
-        });
-        
-        setAudioData(newAudioData);
-        animationRef.current = requestAnimationFrame(animateFallback);
-      };
-
-      animateFallback();
     }
   };
 
   useEffect(() => {
     if (playerState.isPlaying && currentMusic) {
-      const timeoutId = setTimeout(() => {
-        setupAudioAnalyser();
-      }, 100);
-      
-      return () => clearTimeout(timeoutId);
+      setupAudioAnalyser();
     } else {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
@@ -130,7 +107,7 @@ export default function AudioVisual({ currentMusic, playerState, showContent }: 
     };
   }, []);
 
-  if (!currentMusic || !showContent) return null;
+  if (!currentMusic) return null;
 
   return (
     <AnimatePresence>
@@ -145,16 +122,16 @@ export default function AudioVisual({ currentMusic, playerState, showContent }: 
             {audioData.map((amplitude, index) => (
               <motion.div
                 key={index}
-                className="bg-gradient-to-t from-white/20 via-white/10 to-transparent flex-1 rounded-t-sm"
+                className="bg-gradient-to-t from-white/40 via-white/20 to-transparent flex-1"
                 style={{
-                  minHeight: '2px',
+                  minHeight: '4px',
                   maxWidth: '100%'
                 }}
                 animate={{
                   height: playerState.isPlaying 
-                    ? `${Math.max(2, amplitude * 60 + 2)}px` 
-                    : `${2 + Math.sin(index * 0.1) * 1}px`,
-                  opacity: playerState.isPlaying ? amplitude * 0.8 + 0.2 : 0.15
+                    ? `${Math.max(4, amplitude * 80 + 4)}px` 
+                    : '4px',
+                  opacity: playerState.isPlaying ? amplitude * 0.9 + 0.3 : 0.3
                 }}
                 transition={{
                   duration: playerState.isPlaying ? 0.1 : 3,

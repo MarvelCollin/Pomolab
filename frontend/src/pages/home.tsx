@@ -55,16 +55,13 @@ export default function Home() {
 
 
   useEffect(() => {
-    if (!activeBackground && !backgroundsLoading) {
-      setTimeout(() => {
-        setBackgroundVisible(true);
-        setBackgroundLoaded(true);
-      }, 100);
-      setTimeout(() => {
-        setShowContent(true);
-      }, 800);
+    if (!backgroundsLoading && !musicLoading && !initialLoadComplete) {
+      setBackgroundVisible(true);
+      setBackgroundLoaded(true);
+      setShowContent(true);
+      setInitialLoadComplete(true);
     }
-  }, [activeBackground, backgroundsLoading]);
+  }, [backgroundsLoading, musicLoading, initialLoadComplete]);
 
 
 
@@ -218,7 +215,7 @@ export default function Home() {
     );
   };
 
-  const isLoading = backgroundsLoading || !backgroundLoaded || !showContent;
+  const isLoading = backgroundsLoading || musicLoading || !backgroundLoaded || !showContent || !initialLoadComplete;
 
   return (
     <div className="home-page min-h-screen relative overflow-hidden">
@@ -235,7 +232,6 @@ export default function Home() {
       <AudioVisual 
         currentMusic={currentMusic}
         playerState={playerState}
-        showContent={showContent}
       />
 
       <AnimatePresence>
@@ -383,11 +379,11 @@ export default function Home() {
                 <div className="max-w-7xl mx-auto px-4 w-full">
                   <div className="grid lg:grid-cols-12 gap-6 items-start">
                     
-                    <div className={`${tasksMinimized ? 'lg:col-span-8' : 'lg:col-span-7'} transition-all duration-300`}>
-                      <div className="rounded-3xl p-6 h-full">
+                    <div className={`${(tasksMinimized && !pomodoroMinimized) ? 'lg:col-span-8' : (pomodoroMinimized && !tasksMinimized) ? 'lg:col-span-6' : (pomodoroMinimized && tasksMinimized) ? 'lg:col-span-10' : 'lg:col-span-7'} transition-all duration-500 ease-in-out`}>
+                      <div className={`rounded-3xl transition-all duration-500 ease-in-out ${pomodoroMinimized ? 'p-3' : 'p-6'} h-full`}>
                         <div 
-                          className={`text-center mb-6 transition-all duration-300 ${
-                            pomodoroMinimized ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100 h-auto'
+                          className={`text-center transition-all duration-500 ease-in-out ${
+                            pomodoroMinimized ? 'opacity-0 h-0 overflow-hidden mb-0' : 'opacity-100 h-auto mb-6'
                           }`}
                         >
                           <h1 className="text-4xl font-bold leading-tight mb-2">
@@ -403,21 +399,23 @@ export default function Home() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.6, delay: 0.3 }}
-                                className="mt-6 bg-white/5 backdrop-blur-2xl rounded-2xl p-4 border border-white/10 shadow-lg"
-                              ><h3 className="text-white/90 font-medium mb-1 text-sm">Current Task</h3>
-                                <p className="text-white font-medium drop-shadow">{selectedTask.title}</p>
-                                {selectedTask.description && (
+                                className={`bg-white/5 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-lg transition-all duration-500 ease-in-out ${
+                                  pomodoroMinimized ? 'mt-3 p-2' : 'mt-6 p-4'
+                                }`}
+                              ><h3 className={`text-white/90 font-medium mb-1 transition-all duration-500 ${pomodoroMinimized ? 'text-xs' : 'text-sm'}`}>Current Task</h3>
+                                <p className={`text-white font-medium drop-shadow transition-all duration-500 ${pomodoroMinimized ? 'text-sm' : 'text-base'}`}>{selectedTask.title}</p>
+                                {selectedTask.description && !pomodoroMinimized && (
                                   <p className="text-white/70 text-xs mt-1">{selectedTask.description}</p>
                                 )}
-                                <div className="flex items-center gap-3 mt-2 text-white/60 text-xs">
+                                <div className={`flex items-center gap-3 text-white/60 text-xs transition-all duration-500 ${pomodoroMinimized ? 'mt-1' : 'mt-2'}`}>
                                   <span>🍅 {selectedTask.completed_pomodoros}/{selectedTask.estimated_pomodoros}</span>
-                                  <span className="capitalize">{selectedTask.status.replace('_', ' ')}</span>
+                                  {!pomodoroMinimized && <span className="capitalize">{selectedTask.status.replace('_', ' ')}</span>}
                                 </div>
                               </motion.div>
                             )}
                         <div 
-                          className={`mt-6 text-center transition-all duration-300 ${
-                            pomodoroMinimized ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100 h-auto'
+                          className={`text-center transition-all duration-500 ease-in-out ${
+                            pomodoroMinimized ? 'opacity-0 h-0 overflow-hidden mt-0' : 'opacity-100 h-auto mt-6'
                           }`}
                         >
                           <Link
@@ -430,8 +428,8 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className={`${pomodoroMinimized ? 'lg:col-span-4' : 'lg:col-span-5'} transition-all duration-300`}>
-                      <div className={`rounded-3xl p-4 h-full transition-all duration-300 ${tasksMinimized ? 'max-h-[120px]' : 'max-h-[80vh]'}`}>
+                    <div className={`${(pomodoroMinimized && !tasksMinimized) ? 'lg:col-span-6' : (tasksMinimized && !pomodoroMinimized) ? 'lg:col-span-4' : (pomodoroMinimized && tasksMinimized) ? 'lg:col-span-2' : 'lg:col-span-5'} transition-all duration-500 ease-in-out`}>
+                      <div className={`rounded-3xl transition-all duration-500 ease-in-out ${tasksMinimized ? 'p-2 max-h-[120px]' : 'p-4 max-h-[80vh]'} h-full overflow-hidden`}>
                         <TaskList
                           tasks={tasks}
                           onTaskSelect={handleTaskSelect}
