@@ -11,6 +11,11 @@ Route::get('/test', function () {
     return response()->json(['message' => 'Hello World']);
 });
 
+Route::post('/auth/login', [UserController::class, 'login']);
+Route::post('/auth/register', [UserController::class, 'register']);
+Route::middleware('auth:sanctum')->post('/auth/logout', [UserController::class, 'logout']);
+Route::middleware('auth:sanctum')->get('/auth/user', [UserController::class, 'getCurrentUser']);
+
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
