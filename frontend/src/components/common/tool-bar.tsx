@@ -255,8 +255,17 @@ export default function ToolBar({
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Music className="w-5 h-5 text-white/90" />
-                  <span className="text-white text-sm font-medium">Music Player</span>
+                  <div className="relative">
+                    <Music className="w-5 h-5 text-white/90" />
+                    {currentMusic && (
+                      <motion.div
+                        className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full"
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                    )}
+                  </div>
+                  <span className="text-white text-sm font-medium">Music Library</span>
                 </motion.button>
 
                 <motion.button
@@ -334,7 +343,7 @@ export default function ToolBar({
 
 
                 <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                  {backgrounds.slice(0, 6).map((background, index) => (
+                  {backgrounds.map((background, index) => (
                     <motion.div
                       key={background.id}
                       className={`relative aspect-video rounded-lg overflow-hidden cursor-pointer border-2 transition-all duration-200 ${
@@ -369,17 +378,6 @@ export default function ToolBar({
                     </motion.div>
                   ))}
                 </div>
-
-                {backgrounds.length > 6 && (
-                  <motion.button
-                    onClick={loadRemainingBackgrounds}
-                    className="w-full p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-xs transition-colors"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    Load More Backgrounds
-                  </motion.button>
-                )}
               </motion.div>
             </motion.div>
           )}
@@ -419,7 +417,7 @@ export default function ToolBar({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
               >
-                {musics.slice(0, 8).map((music, index) => (
+                {musics.map((music, index) => (
                   <motion.div
                     key={music.id}
                     className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${
@@ -427,7 +425,10 @@ export default function ToolBar({
                         ? 'bg-white/30 border border-white/40'
                         : 'bg-white/10 hover:bg-white/20 border border-white/10'
                     }`}
-                    onClick={() => onPlayMusic(music)}
+                    onClick={() => {
+                      onPlayMusic(music);
+                      setShowMusicPlayer(false);
+                    }}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.2 + index * 0.05 }}
@@ -436,25 +437,29 @@ export default function ToolBar({
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-medium truncate">{music.name}</p>
-                        <p className="text-white/60 text-xs truncate">{music.artist || 'Unknown Artist'}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-white text-sm font-medium truncate">{music.name}</p>
+                          {currentMusic?.id === music.id && (
+                            <motion.div
+                              className="flex items-center gap-1"
+                              animate={{ opacity: [0.5, 1, 0.5] }}
+                              transition={{ duration: 1.5, repeat: Infinity }}
+                            >
+                              <div className="w-1 h-1 bg-green-400 rounded-full"></div>
+                              <div className="w-1 h-1 bg-green-400 rounded-full"></div>
+                              <div className="w-1 h-1 bg-green-400 rounded-full"></div>
+                            </motion.div>
+                          )}
+                        </div>
+                        {currentMusic?.id === music.id && (
+                          <p className="text-green-400 text-xs font-medium">Now Playing</p>
+                        )}
                       </div>
 
                     </div>
                   </motion.div>
                 ))}
               </motion.div>
-
-              {musics.length > 8 && (
-                <motion.button
-                  onClick={loadRemainingMusics}
-                  className="w-full p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-xs transition-colors mt-3"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Load More Music
-                </motion.button>
-              )}
             </motion.div>
           )}
         </AnimatePresence>

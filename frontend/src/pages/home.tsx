@@ -85,8 +85,11 @@ export default function Home() {
       setBackgroundLoaded(true);
       setShowContent(true);
       setInitialLoadComplete(true);
+      
+      loadRemainingBackgrounds();
+      loadRemainingMusics();
     }
-  }, [backgroundsLoading, musicLoading, initialLoadComplete]);
+  }, [backgroundsLoading, musicLoading, initialLoadComplete, loadRemainingBackgrounds, loadRemainingMusics]);
 
 
 
@@ -116,6 +119,17 @@ export default function Home() {
     setTasks(prev => prev.filter(task => task.id !== taskId));
     if (selectedTask?.id === taskId) {
       setSelectedTask(null);
+    }
+  }, [selectedTask]);
+
+  const handleTaskEdit = useCallback((taskId: number, updates: Partial<ITask>) => {
+    setTasks(prev => prev.map(task => 
+      task.id === taskId 
+        ? { ...task, ...updates, updated_at: new Date().toISOString() }
+        : task
+    ));
+    if (selectedTask?.id === taskId) {
+      setSelectedTask(prev => prev ? { ...prev, ...updates, updated_at: new Date().toISOString() } : null);
     }
   }, [selectedTask]);
 
@@ -484,14 +498,15 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className={`${(pomodoroMinimized && !tasksMinimized) ? 'lg:col-span-6' : (tasksMinimized && !pomodoroMinimized) ? 'lg:col-span-4' : (pomodoroMinimized && tasksMinimized) ? 'lg:col-span-2' : 'lg:col-span-5'} transition-all duration-500 ease-in-out`}>
-                      <div className={`rounded-3xl transition-all duration-500 ease-in-out ${tasksMinimized ? 'p-2 max-h-[120px]' : 'p-4 max-h-[80vh]'} h-full overflow-hidden`}>
+                    <div className={`${(pomodoroMinimized && !tasksMinimized) ? 'lg:col-span-6' : (tasksMinimized && !pomodoroMinimized) ? 'lg:col-span-4' : (pomodoroMinimized && tasksMinimized) ? 'lg:col-span-2' : 'lg:col-span-5'} transition-all duration-500 ease-in-out flex flex-col`}>
+                      <div className={`rounded-3xl transition-all duration-500 ease-in-out ${tasksMinimized ? 'p-2 max-h-[120px]' : 'p-4 flex-1 min-h-0'} ${tasksMinimized ? 'overflow-hidden' : 'flex flex-col'}`}>
                         <TaskList
                           tasks={tasks}
                           onTaskSelect={handleTaskSelect}
                           onTaskComplete={handleTaskComplete}
                           onTaskAdd={handleTaskAdd}
                           onTaskDelete={handleTaskDelete}
+                          onTaskEdit={handleTaskEdit}
                           selectedTaskId={selectedTask?.id}
                           isMinimized={tasksMinimized}
                         />

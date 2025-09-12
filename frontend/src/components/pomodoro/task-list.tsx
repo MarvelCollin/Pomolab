@@ -22,6 +22,11 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [completingTaskId, setCompletingTaskId] = useState<number | null>(null);
   const [addingTask, setAddingTask] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [editingField, setEditingField] = useState<'title' | 'description' | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editEstimatedPomodoros, setEditEstimatedPomodoros] = useState(1);
 
   const handleAddTask = async () => {
     if (newTaskTitle.trim()) {
@@ -64,17 +69,64 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
     setOpenMenuId(openMenuId === taskId ? null : taskId);
   };
 
+  const startEditing = (task: ITask, field?: 'title' | 'description') => {
+    setEditingTaskId(task.id);
+    setEditingField(field || null);
+    setEditTitle(task.title);
+    setEditDescription(task.description || '');
+    setEditEstimatedPomodoros(task.estimated_pomodoros);
+    setOpenMenuId(null);
+  };
+
+  const cancelEditing = () => {
+    setEditingTaskId(null);
+    setEditingField(null);
+    setEditTitle('');
+    setEditDescription('');
+    setEditEstimatedPomodoros(1);
+  };
+
+  const saveEdit = () => {
+    if (editingTaskId && onTaskEdit) {
+      const updates: Partial<ITask> = {
+        title: editTitle.trim(),
+        description: editDescription.trim() || undefined,
+        estimated_pomodoros: editEstimatedPomodoros
+      };
+      onTaskEdit(editingTaskId, updates);
+      cancelEditing();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveEdit();
+    } else if (e.key === 'Escape') {
+      cancelEditing();
+    }
+  };
+
+  const handleDoubleClick = (task: ITask, field: 'title' | 'description') => {
+    if (!isMinimized) {
+      startEditing(task, field);
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-      if (!target.closest('.task-menu')) {
+      if (!target.closest('.task-menu') && !target.closest('.edit-form')) {
         setOpenMenuId(null);
+        if (editingTaskId && !target.closest('.task-edit-input')) {
+          cancelEditing();
+        }
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [editingTaskId]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -95,7 +147,7 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
 
   return (
     <motion.div 
-      className="task-list h-full flex flex-col"
+      className="task-list h-full flex flex-col min-h-0"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
@@ -203,9 +255,13 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
         )}
 
       <div 
-        className={`flex-1 space-y-2 overflow-y-auto max-h-[calc(100vh-200px)] pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 transition-all duration-500 ease-in-out ${
-          isMinimized ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100 h-auto'
+        className={`flex-1 space-y-2 overflow-y-auto pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/40 transition-all duration-500 ease-in-out ${
+          isMinimized ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'
         }`}
+        style={{
+          maxHeight: isMinimized ? '0' : 'calc(80vh - 180px)',
+          minHeight: isMinimized ? '0' : '200px'
+        }}
       >
         {tasks.map((task) => (
           <div
@@ -218,7 +274,52 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
             } ${completingTaskId === task.id ? 'animate-pulse' : ''}`}
           >
             <div className="flex items-start justify-between mb-1">
-              <h3 className="font-medium text-white text-sm flex-1 mr-2 drop-shadow">{task.title}</h3>
+              {editingTaskId === task.id && (editingField === 'title' || editingField === null) ? (
+                <div className="flex-1 mr-2 edit-form">
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="w-full bg-white/15 backdrop-blur-2xl border border-white/20 rounded-lg px-2 py-1 text-white text-sm font-medium outline-none focus:border-white/40 task-edit-input"
+                    autoFocus
+                  />
+                  {editingField === null && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-xs text-white/70">Est:</span>
+                      <input
+                        type="number"
+                        value={editEstimatedPomodoros}
+                        onChange={(e) => setEditEstimatedPomodoros(Math.max(1, parseInt(e.target.value) || 1))}
+                        min="1"
+                        className="w-12 bg-white/15 backdrop-blur-2xl border border-white/10 rounded-lg px-2 py-1 text-xs text-center outline-none text-white task-edit-input"
+                      />
+                      <span className="text-xs">🍅</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1 mt-2">
+                    <button
+                      onClick={cancelEditing}
+                      className="px-2 py-1 bg-white/10 backdrop-blur-2xl border border-white/10 rounded-lg text-xs text-white/70 hover:bg-white/20 transition-all duration-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={saveEdit}
+                      className="px-2 py-1 bg-white/20 backdrop-blur-2xl border border-white/10 text-white rounded-lg text-xs hover:bg-white/30 transition-all duration-200"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <h3 
+                  className="font-medium text-white text-sm flex-1 mr-2 drop-shadow cursor-pointer hover:text-white/80 transition-colors"
+                  onDoubleClick={() => handleDoubleClick(task, 'title')}
+                >
+                  {task.title}
+                </h3>
+              )}
               <div className="flex items-center gap-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(task.status)}`}>
                   {getStatusIcon(task.status)}
@@ -240,7 +341,7 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setOpenMenuId(null);
+                          startEditing(task);
                         }}
                         className="w-full px-4 py-2 text-xs text-white/90 hover:bg-white/20 flex items-center gap-2 rounded-t-xl transition-colors"
                       >
@@ -263,8 +364,46 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
               </div>
             </div>
             
-            {task.description && (
-              <p className="text-xs text-white/70 mb-2 line-clamp-2">{task.description}</p>
+            {editingTaskId === task.id && editingField === 'description' ? (
+              <div className="mb-2 edit-form">
+                <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Description (optional)..."
+                  className="w-full bg-white/15 backdrop-blur-2xl border border-white/20 rounded-lg px-2 py-1 text-white text-xs outline-none focus:border-white/40 resize-none task-edit-input"
+                  rows={2}
+                  autoFocus
+                />
+                <div className="flex items-center gap-1 mt-2">
+                  <button
+                    onClick={cancelEditing}
+                    className="px-2 py-1 bg-white/10 backdrop-blur-2xl border border-white/10 rounded-lg text-xs text-white/70 hover:bg-white/20 transition-all duration-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveEdit}
+                    className="px-2 py-1 bg-white/20 backdrop-blur-2xl border border-white/10 text-white rounded-lg text-xs hover:bg-white/30 transition-all duration-200"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            ) : task.description ? (
+              <p 
+                className="text-xs text-white/70 mb-2 line-clamp-2 cursor-pointer hover:text-white/50 transition-colors"
+                onDoubleClick={() => handleDoubleClick(task, 'description')}
+              >
+                {task.description}
+              </p>
+            ) : (
+              <p 
+                className="text-xs text-white/40 mb-2 italic cursor-pointer hover:text-white/30 transition-colors"
+                onDoubleClick={() => handleDoubleClick(task, 'description')}
+              >
+                Double-click to add description
+              </p>
             )}
             
             <div className="flex items-center justify-between text-xs">

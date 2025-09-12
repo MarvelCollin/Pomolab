@@ -75,7 +75,7 @@ export default function MiniMusicPlayer({
     };
   }, [showMusicSettings]);
 
-  if (!currentMusic || showMusicPlayer) return null;
+  if (!currentMusic) return null;
 
   return (
     <motion.div
@@ -85,12 +85,16 @@ export default function MiniMusicPlayer({
       className="fixed bottom-4 left-4 z-40"
     >
       <div className="relative group music-settings-container">
-        <div className="bg-black/20 backdrop-blur-3xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl max-w-sm">
+        <div className={`bg-black/20 backdrop-blur-3xl border rounded-3xl overflow-hidden shadow-2xl max-w-sm transition-all duration-500 ${
+          playerState.isPlaying 
+            ? 'border-green-400/30 shadow-green-400/10' 
+            : 'border-white/10'
+        }`}>
           <div className="px-4 pt-3 pb-3">
             <div className="flex items-center gap-3 mb-2">
               <button
                 onClick={onTogglePlayPause}
-                className="w-9 h-9 bg-white/15 hover:bg-white/25 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-105"
+                className={`w-9 h-9 ${playerState.isPlaying ? 'bg-green-500/20' : 'bg-white/15'} hover:bg-white/25 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-105 relative`}
               >
                 {playerState.isPlaying ? (
                   <Pause className="w-4 h-4 text-white drop-shadow-sm" />

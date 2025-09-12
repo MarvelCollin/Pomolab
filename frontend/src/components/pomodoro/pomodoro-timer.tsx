@@ -1,13 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Settings, Volume2, VolumeX, X } from 'lucide-react';
 import { motion } from 'framer-motion';
+import type { IPomodoroTimer } from '../../interfaces/IPomodoroTimer';
 
-interface PomodoroTimerProps {
-  onSessionComplete: (type: 'focus' | 'short-break' | 'long-break') => void;
-  isMinimized?: boolean;
-}
-
-export default function PomodoroTimer({ onSessionComplete, isMinimized = false }: PomodoroTimerProps) {
+export default function PomodoroTimer({ onSessionComplete, isMinimized = false }: IPomodoroTimer) {
   const [currentSession, setCurrentSession] = useState<'focus' | 'short-break' | 'long-break'>('focus');
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(false);

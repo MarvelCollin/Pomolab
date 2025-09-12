@@ -20,6 +20,7 @@ export const useMusic = () => {
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isChangingTrack = useRef(false);
 
   const loadFirstMusic = useCallback(async () => {
     setLoading(true);
@@ -117,7 +118,9 @@ export const useMusic = () => {
   }, [currentMusic]);
 
   const nextMusic = useCallback(() => {
-    if (musics.length === 0 || !currentMusic) return;
+    if (musics.length === 0 || !currentMusic || isChangingTrack.current) return;
+    
+    isChangingTrack.current = true;
     
     const currentIndex = musics.findIndex(m => m.id === currentMusic.id);
     const nextIndex = (currentIndex + 1) % musics.length;
@@ -154,8 +157,8 @@ export const useMusic = () => {
           isPlaying: false,
           currentTime: 0
         }));
-        if (autoPlay) {
-          setTimeout(() => nextMusic(), 500);
+        if (!isChangingTrack.current) {
+          nextMusic();
         }
       });
 
@@ -169,15 +172,21 @@ export const useMusic = () => {
           setMusics(prev => 
             prev.map(m => ({ ...m, isActive: m.id === nextTrack.id }))
           );
+          isChangingTrack.current = false;
         })
         .catch(() => {
           setError('Failed to play next music');
+          isChangingTrack.current = false;
         });
+    } else {
+      isChangingTrack.current = false;
     }
-  }, [musics, currentMusic, playerState.volume, playerState.isMuted, autoPlay]);
+  }, [musics, currentMusic, playerState.volume, playerState.isMuted]);
 
   const previousMusic = useCallback(() => {
-    if (musics.length === 0 || !currentMusic) return;
+    if (musics.length === 0 || !currentMusic || isChangingTrack.current) return;
+    
+    isChangingTrack.current = true;
     
     const currentIndex = musics.findIndex(m => m.id === currentMusic.id);
     const prevIndex = currentIndex === 0 ? musics.length - 1 : currentIndex - 1;
@@ -214,8 +223,8 @@ export const useMusic = () => {
           isPlaying: false,
           currentTime: 0
         }));
-        if (autoPlay) {
-          setTimeout(() => nextMusic(), 500);
+        if (!isChangingTrack.current) {
+          nextMusic();
         }
       });
 
@@ -229,15 +238,21 @@ export const useMusic = () => {
           setMusics(prev => 
             prev.map(m => ({ ...m, isActive: m.id === prevTrack.id }))
           );
+          isChangingTrack.current = false;
         })
         .catch(() => {
           setError('Failed to play previous music');
+          isChangingTrack.current = false;
         });
+    } else {
+      isChangingTrack.current = false;
     }
-  }, [musics, currentMusic, playerState.volume, playerState.isMuted, autoPlay]);
+  }, [musics, currentMusic, playerState.volume, playerState.isMuted]);
 
   const playMusic = useCallback((music: IMusic) => {
     try {
+      isChangingTrack.current = true;
+      
       if (audioRef.current) {
         audioRef.current.pause();
       }
@@ -268,8 +283,8 @@ export const useMusic = () => {
           isPlaying: false,
           currentTime: 0
         }));
-        if (autoPlay) {
-          setTimeout(() => nextMusic(), 500);
+        if (!isChangingTrack.current) {
+          nextMusic();
         }
       });
 
@@ -279,6 +294,7 @@ export const useMusic = () => {
           ...prev,
           isPlaying: false
         }));
+        isChangingTrack.current = false;
       });
 
       audio.play()
@@ -291,15 +307,18 @@ export const useMusic = () => {
           setMusics(prev => 
             prev.map(m => ({ ...m, isActive: m.id === music.id }))
           );
+          isChangingTrack.current = false;
         })
         .catch(() => {
           setError('Failed to play music');
+          isChangingTrack.current = false;
         });
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to play music');
+      isChangingTrack.current = false;
     }
-  }, [playerState.volume, playerState.isMuted, autoPlay]);
+  }, [playerState.volume, playerState.isMuted]);
 
   const seekTo = useCallback((time: number) => {
     if (audioRef.current) {
@@ -423,8 +442,8 @@ export const useMusic = () => {
             isPlaying: false,
             currentTime: 0
           }));
-          if (autoPlay) {
-            setTimeout(() => nextMusic(), 500);
+          if (!isChangingTrack.current) {
+            nextMusic();
           }
         });
 
@@ -462,12 +481,12 @@ export const useMusic = () => {
           }
         };
 
-        setTimeout(attemptAutoPlay, 1000);
+        attemptAutoPlay();
       };
       
       initializeFirstMusic();
     }
-  }, [musics, currentMusic, autoPlay, playerState.volume, playerState.isMuted, nextMusic]);
+  }, [musics, currentMusic, autoPlay, playerState.volume, playerState.isMuted]);
 
   useEffect(() => {
     return () => {
