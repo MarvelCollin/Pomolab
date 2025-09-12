@@ -10,8 +10,10 @@ import type { ITask } from '../interfaces/ITask';
 import { dummyTasks } from '../data/dummy-data';
 import { useBackground } from '../hooks/use-background';
 import { useMusic } from '../hooks/use-music';
+import { useAudioEffect } from '../hooks/use-audio-effect';
 import type { IBackground } from '../interfaces/IBackground';
 import type { IMusic } from '../interfaces/IMusic';
+import type { IAudioEffect } from '../interfaces/IAudioEffect';
 import '../app.css';
 
 export default function Home() {
@@ -25,6 +27,7 @@ export default function Home() {
   const [showContent, setShowContent] = useState(false);
   const [showBackgroundSelector, setShowBackgroundSelector] = useState(false);
   const [showMusicPlayer, setShowMusicPlayer] = useState(false);
+  const [showAudioEffects, setShowAudioEffects] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   
@@ -51,6 +54,24 @@ export default function Home() {
     toggleMute,
     loadRemainingMusics
   } = useMusic();
+
+  const {
+    audioEffects,
+    loading: audioEffectsLoading,
+    playEffect,
+    pauseEffect,
+    stopEffect,
+    setEffectVolume,
+    setEffectMuted,
+    toggleEffectMute,
+    pauseAllEffects,
+    stopAllEffects,
+    getMasterVolume,
+    setMasterVolume,
+    toggleMasterMute,
+    uploadAudioEffect,
+    deleteAudioEffect
+  } = useAudioEffect();
 
 
 
@@ -147,6 +168,11 @@ export default function Home() {
   const handleDeleteMusic = async (music: IMusic, event: React.MouseEvent) => {
     event.stopPropagation();
     await deleteMusic(music);
+  };
+
+  const handleDeleteAudioEffect = async (effect: IAudioEffect, event: React.MouseEvent) => {
+    event.stopPropagation();
+    await deleteAudioEffect(effect);
   };
 
   const renderBackground = () => {
@@ -339,6 +365,8 @@ export default function Home() {
               setShowBackgroundSelector={setShowBackgroundSelector}
               showMusicPlayer={showMusicPlayer}
               setShowMusicPlayer={setShowMusicPlayer}
+              showAudioEffects={showAudioEffects}
+              setShowAudioEffects={setShowAudioEffects}
               isMinimalMode={isMinimalMode}
               setIsMinimalMode={setIsMinimalMode}
               pomodoroMinimized={pomodoroMinimized}
@@ -362,6 +390,20 @@ export default function Home() {
               onToggleMute={toggleMute}
               loadRemainingBackgrounds={loadRemainingBackgrounds}
               loadRemainingMusics={loadRemainingMusics}
+              audioEffects={audioEffects}
+              onPlayEffect={playEffect}
+              onPauseEffect={pauseEffect}
+              onStopEffect={stopEffect}
+              onSetEffectVolume={setEffectVolume}
+              onSetEffectMuted={setEffectMuted}
+              onToggleEffectMute={toggleEffectMute}
+              onPauseAllEffects={pauseAllEffects}
+              onStopAllEffects={stopAllEffects}
+              getMasterVolume={getMasterVolume}
+              onSetMasterVolume={setMasterVolume}
+              onToggleMasterMute={toggleMasterMute}
+              onUploadAudioEffect={uploadAudioEffect}
+              onDeleteAudioEffect={handleDeleteAudioEffect}
             />
 
             <MiniMusicPlayer 

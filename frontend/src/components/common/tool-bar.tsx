@@ -19,16 +19,21 @@ import {
   CheckSquare,
   Menu,
   Eye,
-  EyeOff
+  EyeOff,
+  Waves,
+  Square
 } from 'lucide-react';
 import type { IBackground } from '../../interfaces/IBackground';
 import type { IMusic } from '../../interfaces/IMusic';
+import type { IAudioEffect } from '../../interfaces/IAudioEffect';
 
 interface ToolBarProps {
   showBackgroundSelector: boolean;
   setShowBackgroundSelector: (show: boolean) => void;
   showMusicPlayer: boolean;
   setShowMusicPlayer: (show: boolean) => void;
+  showAudioEffects: boolean;
+  setShowAudioEffects: (show: boolean) => void;
   isMinimalMode: boolean;
   setIsMinimalMode: (minimal: boolean) => void;
   pomodoroMinimized: boolean;
@@ -52,6 +57,20 @@ interface ToolBarProps {
   onToggleMute: () => void;
   loadRemainingBackgrounds: () => void;
   loadRemainingMusics: () => void;
+  audioEffects: IAudioEffect[];
+  onPlayEffect: (effect: IAudioEffect) => void;
+  onPauseEffect: (effectId: string) => void;
+  onStopEffect: (effectId: string) => void;
+  onSetEffectVolume: (effectId: string, volume: number) => void;
+  onSetEffectMuted: (effectId: string, muted: boolean) => void;
+  onToggleEffectMute: (effectId: string) => void;
+  onPauseAllEffects: () => void;
+  onStopAllEffects: () => void;
+  getMasterVolume: () => number;
+  onSetMasterVolume: (volume: number) => void;
+  onToggleMasterMute: () => void;
+  onUploadAudioEffect: (file: File) => Promise<IAudioEffect | null>;
+  onDeleteAudioEffect: (effect: IAudioEffect, event: React.MouseEvent) => void;
 }
 
 export default function ToolBar({ 
@@ -59,6 +78,8 @@ export default function ToolBar({
   setShowBackgroundSelector,
   showMusicPlayer,
   setShowMusicPlayer,
+  showAudioEffects,
+  setShowAudioEffects,
   isMinimalMode,
   setIsMinimalMode,
   pomodoroMinimized,
@@ -81,7 +102,21 @@ export default function ToolBar({
   onPreviousMusic,
   onToggleMute,
   loadRemainingBackgrounds,
-  loadRemainingMusics
+  loadRemainingMusics,
+  audioEffects,
+  onPlayEffect,
+  onPauseEffect,
+  onStopEffect,
+  onSetEffectVolume,
+  onSetEffectMuted,
+  onToggleEffectMute,
+  onPauseAllEffects,
+  onStopAllEffects,
+  getMasterVolume,
+  onSetMasterVolume,
+  onToggleMasterMute,
+  onUploadAudioEffect,
+  onDeleteAudioEffect
 }: ToolBarProps) {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -225,6 +260,19 @@ export default function ToolBar({
                 >
                   <Music className="w-5 h-5 text-white/90" />
                   <span className="text-white text-sm font-medium">Music Player</span>
+                </motion.button>
+
+                <motion.button
+                  onClick={() => {
+                    setShowAudioEffects(!showAudioEffects);
+                    setShowMainMenu(false);
+                  }}
+                  className="w-full flex items-center gap-3 p-3 hover:bg-white/20 rounded-xl transition-all duration-200 group"
+                  whileHover={{ x: 4 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Waves className="w-5 h-5 text-white/90" />
+                  <span className="text-white text-sm font-medium">Audio Effects</span>
                 </motion.button>
 
                 <div className="h-px bg-white/20 my-2" />
@@ -447,6 +495,224 @@ export default function ToolBar({
                   Load More Music
                 </motion.button>
               )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showAudioEffects && (
+            <motion.div
+              className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl p-4 shadow-2xl max-w-sm"
+              initial={{ opacity: 0, scale: 0.9, x: 20 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              exit={{ opacity: 0, scale: 0.9, x: 20 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <motion.h3 
+                  className="text-white font-medium text-sm"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  Audio Effects
+                </motion.h3>
+                <motion.button
+                  onClick={() => setShowAudioEffects(false)}
+                  className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <X className="w-4 h-4 text-white" />
+                </motion.button>
+              </div>
+
+              <motion.div 
+                className="space-y-3 mb-4"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+              >
+                <div className="bg-white/10 backdrop-blur-2xl rounded-xl p-3 border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white text-xs font-medium">Master Controls</span>
+                    <div className="flex items-center gap-2">
+                      <motion.button
+                        onClick={onToggleMasterMute}
+                        className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        {audioEffects.some(e => e.isActive && !e.isMuted) ? (
+                          <Volume2 className="w-3 h-3 text-white/90" />
+                        ) : (
+                          <VolumeX className="w-3 h-3 text-white/60" />
+                        )}
+                      </motion.button>
+                      <motion.button
+                        onClick={onStopAllEffects}
+                        className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        <Square className="w-3 h-3 text-white/70" />
+                      </motion.button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <VolumeX className="w-3 h-3 text-white/60" />
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={getMasterVolume()}
+                      onChange={(e) => onSetMasterVolume(parseFloat(e.target.value))}
+                      className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer slider"
+                      style={{
+                        background: `linear-gradient(to right, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.6) ${getMasterVolume() * 100}%, rgba(255,255,255,0.2) ${getMasterVolume() * 100}%, rgba(255,255,255,0.2) 100%)`
+                      }}
+                    />
+                    <Volume2 className="w-3 h-3 text-white/60" />
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                className="space-y-2 max-h-60 overflow-y-auto"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                {audioEffects.map((effect, index) => (
+                  <motion.div
+                    key={effect.id}
+                    className={`p-3 rounded-lg border transition-all duration-200 ${
+                      effect.isActive
+                        ? 'bg-white/20 border-white/30'
+                        : 'bg-white/10 hover:bg-white/15 border-white/10'
+                    }`}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25 + index * 0.05 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium truncate">{effect.name}</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <motion.button
+                          onClick={() => effect.isActive ? onPauseEffect(effect.id) : onPlayEffect(effect)}
+                          className={`p-1 rounded-full transition-colors ${
+                            effect.isActive 
+                              ? 'bg-white/20 hover:bg-white/30' 
+                              : 'bg-white/10 hover:bg-white/20'
+                          }`}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          {effect.isActive ? (
+                            <Pause className="w-3 h-3 text-white" />
+                          ) : (
+                            <Play className="w-3 h-3 text-white ml-0.5" />
+                          )}
+                        </motion.button>
+                        <motion.button
+                          onClick={() => onToggleEffectMute(effect.id)}
+                          className="p-1 hover:bg-white/20 rounded-full transition-colors"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          {effect.isMuted ? (
+                            <VolumeX className="w-3 h-3 text-white/60" />
+                          ) : (
+                            <Volume2 className="w-3 h-3 text-white/90" />
+                          )}
+                        </motion.button>
+                        <motion.button
+                          onClick={(e) => onDeleteAudioEffect(effect, e)}
+                          className="p-1 hover:bg-white/20 rounded-full transition-colors"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          <Trash2 className="w-3 h-3 text-white/70" />
+                        </motion.button>
+                      </div>
+                    </div>
+                    {effect.isActive && (
+                      <motion.div 
+                        className="flex items-center gap-2"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <VolumeX className="w-3 h-3 text-white/60" />
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          value={effect.volume}
+                          onChange={(e) => onSetEffectVolume(effect.id, parseFloat(e.target.value))}
+                          className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer slider"
+                          style={{
+                            background: `linear-gradient(to right, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.6) ${effect.volume * 100}%, rgba(255,255,255,0.2) ${effect.volume * 100}%, rgba(255,255,255,0.2) 100%)`
+                          }}
+                        />
+                        <Volume2 className="w-3 h-3 text-white/60" />
+                      </motion.div>
+                    )}
+                  </motion.div>
+                ))}
+
+                {audioEffects.length === 0 && (
+                  <motion.div 
+                    className="text-center py-8 text-white/60"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                  >
+                    <div className="bg-white/10 backdrop-blur-2xl rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center border border-white/10">
+                      <Waves className="w-6 h-6 opacity-60" />
+                    </div>
+                    <p className="text-sm font-medium mb-1">No audio effects</p>
+                    <p className="text-xs opacity-80">Upload some effects to enhance your focus</p>
+                  </motion.div>
+                )}
+              </motion.div>
+
+              <motion.div 
+                className="mt-4 pt-3 border-t border-white/10"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        await onUploadAudioEffect(file);
+                        e.target.value = '';
+                      }
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <motion.div 
+                    className="border-2 border-dashed border-white/30 rounded-xl p-3 text-center hover:border-white/50 transition-colors"
+                    whileHover={{ scale: 1.02, borderColor: "rgba(255, 255, 255, 0.6)" }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Upload className="w-5 h-5 text-white/70 mx-auto mb-1" />
+                    <p className="text-white/70 text-xs">Upload Audio Effect</p>
+                  </motion.div>
+                </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
