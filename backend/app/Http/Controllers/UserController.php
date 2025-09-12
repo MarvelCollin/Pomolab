@@ -324,6 +324,9 @@ class UserController extends Controller
                     'id' => $user->id,
                     'username' => $user->username,
                     'email' => $user->email,
+                    'google_id' => $user->google_id,
+                    'avatar' => $user->avatar,
+                    'email_verified_at' => $user->email_verified_at,
                     'created_at' => $user->created_at,
                     'updated_at' => $user->updated_at,
                 ],
@@ -379,6 +382,9 @@ class UserController extends Controller
                     'id' => $user->id,
                     'username' => $user->username,
                     'email' => $user->email,
+                    'google_id' => $user->google_id,
+                    'avatar' => $user->avatar,
+                    'email_verified_at' => $user->email_verified_at,
                     'created_at' => $user->created_at,
                     'updated_at' => $user->updated_at,
                 ],
@@ -429,8 +435,103 @@ class UserController extends Controller
             'id' => $request->user()->id,
             'username' => $request->user()->username,
             'email' => $request->user()->email,
+            'google_id' => $request->user()->google_id,
+            'avatar' => $request->user()->avatar,
+            'email_verified_at' => $request->user()->email_verified_at,
             'created_at' => $request->user()->created_at,
             'updated_at' => $request->user()->updated_at,
         ]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/auth/google",
+     *     summary="Authenticate with Google OAuth",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"google_token"},
+     *             @OA\Property(property="google_token", type="string", example="google_oauth_token_here")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Google authentication successful",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="user", type="object"),
+     *             @OA\Property(property="token", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="Invalid Google token")
+     * )
+     */
+    public function googleAuth(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'google_token' => 'required|string',
+            ]);
+
+            $googleUser = $this->verifyGoogleToken($validated['google_token']);
+            
+            if (!$googleUser) {
+                return response()->json(['message' => 'Invalid Google token'], 401);
+            }
+
+            $user = $this->userRepository->findOrCreateGoogleUser($googleUser);
+            $token = $user->createToken('auth-token')->plainTextToken;
+
+            return response()->json([
+                'user' => [
+                    'id' => $user->id,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'google_id' => $user->google_id,
+                    'avatar' => $user->avatar,
+                    'email_verified_at' => $user->email_verified_at,
+                    'created_at' => $user->created_at,
+                    'updated_at' => $user->updated_at,
+                ],
+                'token' => $token
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Google authentication failed'], 500);
+        }
+    }
+
+    private function verifyGoogleToken(string $token): ?array
+    {
+        try {
+            $response = file_get_contents("https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=" . $token);
+            
+            if ($response === false) {
+                return null;
+            }
+
+            $tokenInfo = json_decode($response, true);
+            
+            if (isset($tokenInfo['error'])) {
+                return null;
+            }
+
+            $userResponse = file_get_contents("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" . $token);
+            
+            if ($userResponse === false) {
+                return null;
+            }
+
+            $userData = json_decode($userResponse, true);
+            
+            if (isset($userData['error'])) {
+                return null;
+            }
+
+            return $userData;
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 }

@@ -13,6 +13,7 @@ Route::get('/test', function () {
 
 Route::post('/auth/login', [UserController::class, 'login']);
 Route::post('/auth/register', [UserController::class, 'register']);
+Route::post('/auth/google', [UserController::class, 'googleAuth']);
 Route::middleware('auth:sanctum')->post('/auth/logout', [UserController::class, 'logout']);
 Route::middleware('auth:sanctum')->get('/auth/user', [UserController::class, 'getCurrentUser']);
 
