@@ -6,86 +6,7 @@ export const useBackground = () => {
   const [backgrounds, setBackgrounds] = useState<IBackground[]>([]);
   const [activeBackground, setActiveBackground] = useState<IBackground | null>(null);
   const [loading, setLoading] = useState(false);
-  const [loadingRemaining, setLoadingRemaining] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasLoadedAll, setHasLoadedAll] = useState(false);
-
-  const createDefaultBackground = (): IBackground => {
-    return {
-      id: 'default-gradient',
-      name: 'Default Background',
-      url: '',
-      filePath: '',
-      type: 'image' as const,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-  };
-
-  const loadFirstBackground = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const cached = localStorage.getItem('pomolab-last-background');
-      if (cached) {
-        const cachedBg = JSON.parse(cached);
-        setActiveBackground(cachedBg);
-        setBackgrounds([cachedBg]);
-        setLoading(false);
-        return;
-      }
-    } catch (e) {
-      console.warn('Failed to load cached background');
-    }
-
-    setActiveBackground(createDefaultBackground());
-    setLoading(false);
-    
-    try {
-      const firstBackground = await backgroundService.getFirstRandomBackground();
-      if (firstBackground) {
-        setActiveBackground(firstBackground);
-        setBackgrounds([firstBackground]);
-        localStorage.setItem('pomolab-last-background', JSON.stringify(firstBackground));
-      }
-    } catch (err) {
-      console.warn('Failed to load background, using default');
-    }
-  }, []);
-
-  const loadRemainingBackgrounds = useCallback(async () => {
-    if (loadingRemaining || hasLoadedAll) return;
-    
-    setLoadingRemaining(true);
-    try {
-      const currentFileName = activeBackground?.filePath.split('/').pop();
-      let allRemaining: IBackground[] = [];
-      let offset = 0;
-      const batchSize = 20;
-      
-      while (true) {
-        const batch = await backgroundService.getRemainingBackgroundsBatch(currentFileName, offset, batchSize);
-        if (batch.length === 0) break;
-        
-        allRemaining = [...allRemaining, ...batch];
-        offset += batchSize;
-        
-        if (batch.length < batchSize) break;
-      }
-      
-      setBackgrounds(prev => {
-        const existing = prev.filter(bg => bg.isActive);
-        return [...existing, ...allRemaining];
-      });
-      setHasLoadedAll(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load remaining backgrounds');
-    } finally {
-      setLoadingRemaining(false);
-    }
-  }, [activeBackground, loadingRemaining, hasLoadedAll]);
 
   const loadBackgrounds = useCallback(async () => {
     setLoading(true);
@@ -97,12 +18,15 @@ export const useBackground = () => {
       if (result.defaultBackground) {
         setActiveBackground(result.defaultBackground);
       }
-      setHasLoadedAll(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load backgrounds');
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const loadRemainingBackgrounds = useCallback(async () => {
+    return Promise.resolve();
   }, []);
 
   const uploadBackground = useCallback(async (file: File) => {
@@ -153,21 +77,18 @@ export const useBackground = () => {
   }, []);
 
   useEffect(() => {
-    loadFirstBackground();
-  }, [loadFirstBackground]);
+    loadBackgrounds();
+  }, [loadBackgrounds]);
 
   return {
     backgrounds,
     activeBackground,
     loading,
-    loadingRemaining,
     error,
-    hasLoadedAll,
     uploadBackground,
     deleteBackground,
     changeBackground,
     refreshBackgrounds: loadBackgrounds,
-    loadRemainingBackgrounds,
-    loadFirstBackground
+    loadRemainingBackgrounds
   };
 };

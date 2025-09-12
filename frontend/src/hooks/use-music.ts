@@ -13,76 +13,11 @@ export const useMusic = () => {
     isMuted: false,
   });
   const [loading, setLoading] = useState(false);
-  const [loadingRemaining, setLoadingRemaining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoPlay, setAutoPlay] = useState(true);
-  const [hasLoadedAll, setHasLoadedAll] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isChangingTrack = useRef(false);
-
-  const loadFirstMusic = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const cached = localStorage.getItem('pomolab-last-music');
-      if (cached) {
-        const cachedMusic = JSON.parse(cached);
-        setCurrentMusic(cachedMusic);
-        setMusics([cachedMusic]);
-        setLoading(false);
-        return;
-      }
-    } catch (e) {
-      console.warn('Failed to load cached music');
-    }
-
-    setLoading(false);
-    
-    try {
-      const firstMusic = await musicService.getFirstRandomMusic();
-      if (firstMusic) {
-        setCurrentMusic(firstMusic);
-        setMusics([firstMusic]);
-        localStorage.setItem('pomolab-last-music', JSON.stringify(firstMusic));
-      }
-    } catch (err) {
-      console.warn('Failed to load music');
-    }
-  }, []);
-
-  const loadRemainingMusics = useCallback(async () => {
-    if (loadingRemaining || hasLoadedAll) return;
-    
-    setLoadingRemaining(true);
-    try {
-      const currentFileName = currentMusic?.filePath.split('/').pop();
-      let allRemaining: IMusic[] = [];
-      let offset = 0;
-      const batchSize = 20;
-      
-      while (true) {
-        const batch = await musicService.getRemainingMusicsBatch(currentFileName, offset, batchSize);
-        if (batch.length === 0) break;
-        
-        allRemaining = [...allRemaining, ...batch];
-        offset += batchSize;
-        
-        if (batch.length < batchSize) break;
-      }
-      
-      setMusics(prev => {
-        const existing = prev.filter(m => m.isActive);
-        return [...existing, ...allRemaining];
-      });
-      setHasLoadedAll(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load remaining musics');
-    } finally {
-      setLoadingRemaining(false);
-    }
-  }, [currentMusic, loadingRemaining, hasLoadedAll]);
 
   const loadMusics = useCallback(async () => {
     setLoading(true);
@@ -90,12 +25,15 @@ export const useMusic = () => {
     try {
       const result = await musicService.getMusicsWithDefault();
       setMusics(result.musics);
-      setHasLoadedAll(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load musics');
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const loadRemainingMusics = useCallback(async () => {
+    return Promise.resolve();
   }, []);
 
   const uploadMusic = useCallback(async (file: File) => {
@@ -435,8 +373,8 @@ export const useMusic = () => {
   }, []);
 
   useEffect(() => {
-    loadFirstMusic();
-  }, [loadFirstMusic]);
+    loadMusics();
+  }, [loadMusics]);
 
   useEffect(() => {
     if (musics.length > 0 && !currentMusic && autoPlay) {
@@ -533,10 +471,8 @@ export const useMusic = () => {
     currentMusic,
     playerState,
     loading,
-    loadingRemaining,
     error,
     autoPlay,
-    hasLoadedAll,
     playMusic,
     pauseMusic,
     resumeMusic,
@@ -551,7 +487,6 @@ export const useMusic = () => {
     uploadMusic,
     deleteMusic,
     refreshMusics: loadMusics,
-    loadRemainingMusics,
-    loadFirstMusic
+    loadRemainingMusics
   };
 };

@@ -11,7 +11,7 @@ export default function AudioVisual({ currentMusic, playerState }: AudioVisualPr
   const [audioData, setAudioData] = useState<number[]>(new Array(150).fill(0));
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const animationRef = useRef<number | null>(null);
+  const animationRef = useRef<number>();
 
   const setupAudioAnalyser = async () => {
     try {
