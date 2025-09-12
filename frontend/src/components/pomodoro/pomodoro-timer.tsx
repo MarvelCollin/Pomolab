@@ -3,27 +3,51 @@ import { Play, Pause, RotateCcw, Settings, Volume2, VolumeX, X } from 'lucide-re
 import { motion } from 'framer-motion';
 import type { IPomodoroTimer } from '../../interfaces/IPomodoroTimer';
 
-export default function PomodoroTimer({ onSessionComplete, isMinimized = false }: IPomodoroTimer) {
-  const [currentSession, setCurrentSession] = useState<'focus' | 'short-break' | 'long-break'>('focus');
-  const [timeLeft, setTimeLeft] = useState(25 * 60);
-  const [isRunning, setIsRunning] = useState(false);
-  const [sessionCount, setSessionCount] = useState(0);
+export default function PomodoroTimer({ 
+  onSessionComplete, 
+  isMinimized = false,
+  currentSession: propCurrentSession,
+  timeLeft: propTimeLeft,
+  isRunning: propIsRunning,
+  sessionCount: propSessionCount,
+  soundEnabled: propSoundEnabled,
+  customDurations: propCustomDurations,
+  sessionDurations: propSessionDurations,
+  sessionLabels: propSessionLabels,
+  onToggleTimer: propOnToggleTimer,
+  onResetTimer: propOnResetTimer,
+  onSetCurrentSession,
+  onSetTimeLeft,
+  onSetSoundEnabled,
+  onSetCustomDurations
+}: IPomodoroTimer) {
+  const [internalCurrentSession, setInternalCurrentSession] = useState<'focus' | 'short-break' | 'long-break'>('focus');
+  const [internalTimeLeft, setInternalTimeLeft] = useState(25 * 60);
+  const [internalIsRunning, setInternalIsRunning] = useState(false);
+  const [internalSessionCount, setInternalSessionCount] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [customDurations, setCustomDurations] = useState({
+  const [internalSoundEnabled, setInternalSoundEnabled] = useState(true);
+  const [internalCustomDurations, setInternalCustomDurations] = useState({
     focus: 25,
     'short-break': 5,
     'long-break': 15
   });
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const sessionDurations = {
+  const currentSession = propCurrentSession ?? internalCurrentSession;
+  const timeLeft = propTimeLeft ?? internalTimeLeft;
+  const isRunning = propIsRunning ?? internalIsRunning;
+  const sessionCount = propSessionCount ?? internalSessionCount;
+  const soundEnabled = propSoundEnabled ?? internalSoundEnabled;
+  const customDurations = propCustomDurations ?? internalCustomDurations;
+  
+  const sessionDurations = propSessionDurations ?? {
     focus: customDurations.focus * 60,
     'short-break': customDurations['short-break'] * 60,
     'long-break': customDurations['long-break'] * 60
   };
 
-  const sessionLabels = {
+  const sessionLabels = propSessionLabels ?? {
     focus: 'Focus Time',
     'short-break': 'Short Break',
     'long-break': 'Long Break'
@@ -33,7 +57,11 @@ export default function PomodoroTimer({ onSessionComplete, isMinimized = false }
   useEffect(() => {
     if (isRunning && timeLeft > 0) {
       intervalRef.current = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
+        if (onSetTimeLeft) {
+          onSetTimeLeft((prev) => prev - 1);
+        } else {
+          setInternalTimeLeft((prev) => prev - 1);
+        }
       }, 1000);
     } else if (timeLeft === 0) {
       handleSessionComplete();
@@ -48,7 +76,7 @@ export default function PomodoroTimer({ onSessionComplete, isMinimized = false }
         clearInterval(intervalRef.current);
       }
     };
-  }, [isRunning, timeLeft]);
+  }, [isRunning, timeLeft, onSetTimeLeft]);
 
   const handleSessionComplete = () => {
     setIsRunning(false);
@@ -89,29 +117,59 @@ export default function PomodoroTimer({ onSessionComplete, isMinimized = false }
   };
 
   const toggleTimer = () => {
-    setIsRunning(!isRunning);
+    if (propOnToggleTimer) {
+      propOnToggleTimer();
+    } else {
+      setInternalIsRunning(!isRunning);
+    }
   };
 
   const resetTimer = () => {
-    setIsRunning(false);
-    setTimeLeft(sessionDurations[currentSession]);
+    if (propOnResetTimer) {
+      propOnResetTimer();
+    } else {
+      setInternalIsRunning(false);
+      setInternalTimeLeft(sessionDurations[currentSession]);
+    }
   };
 
   const switchSession = (session: 'focus' | 'short-break' | 'long-break') => {
-    setCurrentSession(session);
-    setTimeLeft(sessionDurations[session]);
-    setIsRunning(false);
+    if (onSetCurrentSession && onSetTimeLeft) {
+      onSetCurrentSession(session);
+      onSetTimeLeft(sessionDurations[session]);
+      if (propOnToggleTimer && isRunning) {
+        propOnToggleTimer();
+      }
+    } else {
+      setInternalCurrentSession(session);
+      setInternalTimeLeft(sessionDurations[session]);
+      setInternalIsRunning(false);
+    }
   };
 
   const updateDuration = (session: keyof typeof customDurations, minutes: number) => {
-    setCustomDurations(prev => ({
-      ...prev,
-      [session]: minutes
-    }));
-    
-    if (currentSession === session) {
-      setTimeLeft(minutes * 60);
-      setIsRunning(false);
+    if (onSetCustomDurations) {
+      onSetCustomDurations(prev => ({
+        ...prev,
+        [session]: minutes
+      }));
+      
+      if (currentSession === session && onSetTimeLeft) {
+        onSetTimeLeft(minutes * 60);
+        if (propOnToggleTimer && isRunning) {
+          propOnToggleTimer();
+        }
+      }
+    } else {
+      setInternalCustomDurations(prev => ({
+        ...prev,
+        [session]: minutes
+      }));
+      
+      if (currentSession === session) {
+        setInternalTimeLeft(minutes * 60);
+        setInternalIsRunning(false);
+      }
     }
   };
 
@@ -229,7 +287,7 @@ export default function PomodoroTimer({ onSessionComplete, isMinimized = false }
           </button>
 
           <button 
-            onClick={() => setSoundEnabled(!soundEnabled)}
+            onClick={() => onSetSoundEnabled ? onSetSoundEnabled(!soundEnabled) : setInternalSoundEnabled(!soundEnabled)}
             className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-2xl border border-white/10 flex items-center justify-center hover:bg-white/20 shadow-lg transition-all duration-200 hover:scale-105"
           >
             {soundEnabled ? (
@@ -309,7 +367,7 @@ export default function PomodoroTimer({ onSessionComplete, isMinimized = false }
               <div className="flex items-center justify-between pt-2 border-t border-white/10">
                 <span className="text-white/80 text-xs">Sound Notifications</span>
                 <button
-                  onClick={() => setSoundEnabled(!soundEnabled)}
+                  onClick={() => onSetSoundEnabled ? onSetSoundEnabled(!soundEnabled) : setInternalSoundEnabled(!soundEnabled)}
                   className={`w-8 h-4 rounded-full relative transition-colors ${soundEnabled ? 'bg-green-500' : 'bg-white/20'}`}
                 >
                   <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform ${soundEnabled ? 'translate-x-4' : 'translate-x-0.5'}`} />

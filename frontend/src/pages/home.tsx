@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import PomodoroTimer from '../components/pomodoro/pomodoro-timer';
+import MiniPomodoroTimer from '../components/common/mini-pomodoro-timer';
 import TaskList from '../components/pomodoro/task-list';
 import MiniMusicPlayer from '../components/common/mini-music-player';
 import ToolBar from '../components/common/tool-bar';
@@ -30,6 +31,30 @@ export default function Home() {
   const [showAudioEffects, setShowAudioEffects] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  
+  const [currentSession, setCurrentSession] = useState<'focus' | 'short-break' | 'long-break'>('focus');
+  const [timeLeft, setTimeLeft] = useState(25 * 60);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [sessionCount, setSessionCount] = useState(0);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [customDurations, setCustomDurations] = useState({
+    focus: 25,
+    'short-break': 5,
+    'long-break': 15
+  });
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const sessionDurations = {
+    focus: customDurations.focus * 60,
+    'short-break': customDurations['short-break'] * 60,
+    'long-break': customDurations['long-break'] * 60
+  };
+
+  const sessionLabels = {
+    focus: 'Focus Time',
+    'short-break': 'Short Break',
+    'long-break': 'Long Break'
+  };
   
   const { 
     backgrounds, 
@@ -146,6 +171,77 @@ export default function Home() {
       ));
     }
   }, [selectedTask]);
+
+  useEffect(() => {
+    if (isTimerRunning && timeLeft > 0) {
+      intervalRef.current = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0) {
+      handleTimerComplete();
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [isTimerRunning, timeLeft]);
+
+  const handleTimerComplete = () => {
+    setIsTimerRunning(false);
+    
+    if (soundEnabled) {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+    }
+    
+    handleSessionComplete(currentSession);
+    
+    if (currentSession === 'focus') {
+      const newCount = sessionCount + 1;
+      setSessionCount(newCount);
+      
+      if (newCount % 4 === 0) {
+        setCurrentSession('long-break');
+        setTimeLeft(sessionDurations['long-break']);
+      } else {
+        setCurrentSession('short-break');
+        setTimeLeft(sessionDurations['short-break']);
+      }
+    } else {
+      setCurrentSession('focus');
+      setTimeLeft(sessionDurations.focus);
+    }
+  };
+
+  const toggleTimer = () => {
+    setIsTimerRunning(!isTimerRunning);
+  };
+
+  const resetTimer = () => {
+    setIsTimerRunning(false);
+    setTimeLeft(sessionDurations[currentSession]);
+  };
+
+  const closeMiniTimer = () => {
+    setPomodoroMinimized(false);
+  };
 
   const handleBackgroundLoad = () => {
     setBackgroundLoaded(true);
@@ -460,10 +556,26 @@ export default function Home() {
                             <span className="text-white drop-shadow-lg">POMOLAB</span>
                           </h1>
                         </div>
-                        <PomodoroTimer 
-                          onSessionComplete={handleSessionComplete} 
-                          isMinimized={pomodoroMinimized}
-                        />
+                        {!pomodoroMinimized && (
+                          <PomodoroTimer 
+                            onSessionComplete={handleSessionComplete} 
+                            isMinimized={false}
+                            currentSession={currentSession}
+                            timeLeft={timeLeft}
+                            isRunning={isTimerRunning}
+                            sessionCount={sessionCount}
+                            soundEnabled={soundEnabled}
+                            customDurations={customDurations}
+                            sessionDurations={sessionDurations}
+                            sessionLabels={sessionLabels}
+                            onToggleTimer={toggleTimer}
+                            onResetTimer={resetTimer}
+                            onSetCurrentSession={setCurrentSession}
+                            onSetTimeLeft={setTimeLeft}
+                            onSetSoundEnabled={setSoundEnabled}
+                            onSetCustomDurations={setCustomDurations}
+                          />
+                        )}
                             {selectedTask && (
                               <motion.div 
                                 initial={{ opacity: 0, y: 20 }}
@@ -526,6 +638,18 @@ export default function Home() {
               <div className="max-w-6xl mx-auto px-4">
               </div>
             </motion.section>
+
+            {pomodoroMinimized && (
+              <MiniPomodoroTimer
+                currentSession={currentSession}
+                timeLeft={timeLeft}
+                isRunning={isTimerRunning}
+                onToggleTimer={toggleTimer}
+                onResetTimer={resetTimer}
+                onClose={closeMiniTimer}
+                sessionLabels={sessionLabels}
+              />
+            )}
           </>
         )}
       </AnimatePresence>
