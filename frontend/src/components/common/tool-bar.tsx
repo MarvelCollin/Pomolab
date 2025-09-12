@@ -4,11 +4,8 @@ import {
   Settings, 
   Music, 
   Image as ImageIcon, 
-  Upload, 
-  Trash2, 
   X, 
   Play, 
-  Pause, 
   SkipForward, 
   SkipBack, 
   Volume2, 
@@ -334,30 +331,7 @@ export default function ToolBar({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
               >
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept="image/*,video/*"
-                    onChange={onFileUpload}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    disabled={uploadingBackground}
-                  />
-                  <motion.div 
-                    className="border-2 border-dashed border-white/30 rounded-xl p-4 text-center hover:border-white/50 transition-colors"
-                    whileHover={{ scale: 1.02, borderColor: "rgba(255, 255, 255, 0.6)" }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <motion.div
-                      animate={{ y: uploadingBackground ? [0, -2, 0] : 0 }}
-                      transition={{ duration: 1, repeat: uploadingBackground ? Infinity : 0 }}
-                    >
-                      <Upload className="w-6 h-6 text-white/70 mx-auto mb-2" />
-                    </motion.div>
-                    <p className="text-white/70 text-xs">
-                      {uploadingBackground ? 'Uploading...' : 'Upload Background'}
-                    </p>
-                  </motion.div>
-                </div>
+
 
                 <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
                   {backgrounds.slice(0, 6).map((background, index) => (
@@ -391,14 +365,7 @@ export default function ToolBar({
                         />
                       )}
                       <div className="absolute inset-0 bg-black/20" />
-                      <motion.button
-                        onClick={(e) => onDeleteBackground(background, e)}
-                        className="absolute top-1 right-1 p-1 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        <Trash2 className="w-3 h-3 text-white" />
-                      </motion.button>
+
                     </motion.div>
                   ))}
                 </div>
@@ -472,14 +439,7 @@ export default function ToolBar({
                         <p className="text-white text-sm font-medium truncate">{music.name}</p>
                         <p className="text-white/60 text-xs truncate">{music.artist || 'Unknown Artist'}</p>
                       </div>
-                      <motion.button
-                        onClick={(e) => onDeleteMusic(music, e)}
-                        className="p-1 hover:bg-white/20 rounded-full transition-colors ml-2"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        <Trash2 className="w-3 h-3 text-white/70" />
-                      </motion.button>
+
                     </div>
                   </motion.div>
                 ))}
@@ -604,7 +564,7 @@ export default function ToolBar({
                       </div>
                       <div className="flex items-center gap-1">
                         <motion.button
-                          onClick={() => effect.isActive ? onPauseEffect(effect.id) : onPlayEffect(effect)}
+                          onClick={() => effect.isActive ? onStopEffect(effect.id) : onPlayEffect(effect)}
                           className={`p-1 rounded-full transition-colors ${
                             effect.isActive 
                               ? 'bg-white/20 hover:bg-white/30' 
@@ -614,7 +574,7 @@ export default function ToolBar({
                           whileTap={{ scale: 0.9 }}
                         >
                           {effect.isActive ? (
-                            <Pause className="w-3 h-3 text-white" />
+                            <Square className="w-3 h-3 text-white" />
                           ) : (
                             <Play className="w-3 h-3 text-white ml-0.5" />
                           )}
@@ -631,14 +591,7 @@ export default function ToolBar({
                             <Volume2 className="w-3 h-3 text-white/90" />
                           )}
                         </motion.button>
-                        <motion.button
-                          onClick={(e) => onDeleteAudioEffect(effect, e)}
-                          className="p-1 hover:bg-white/20 rounded-full transition-colors"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          <Trash2 className="w-3 h-3 text-white/70" />
-                        </motion.button>
+
                       </div>
                     </div>
                     {effect.isActive && (
@@ -684,35 +637,7 @@ export default function ToolBar({
                 )}
               </motion.div>
 
-              <motion.div 
-                className="mt-4 pt-3 border-t border-white/10"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept="audio/*"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        await onUploadAudioEffect(file);
-                        e.target.value = '';
-                      }
-                    }}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                  <motion.div 
-                    className="border-2 border-dashed border-white/30 rounded-xl p-3 text-center hover:border-white/50 transition-colors"
-                    whileHover={{ scale: 1.02, borderColor: "rgba(255, 255, 255, 0.6)" }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Upload className="w-5 h-5 text-white/70 mx-auto mb-1" />
-                    <p className="text-white/70 text-xs">Upload Audio Effect</p>
-                  </motion.div>
-                </div>
-              </motion.div>
+
             </motion.div>
           )}
         </AnimatePresence>

@@ -19,7 +19,6 @@ export default function AudioVisual({ currentMusic, playerState }: AudioVisualPr
       const audioElement = musicService.getAudioElement();
       
       if (!audioElement) {
-        console.warn('No audio element found, using fallback visualization');
         startVisualization();
         return;
       }
@@ -33,7 +32,7 @@ export default function AudioVisual({ currentMusic, playerState }: AudioVisualPr
         await audioContext.resume();
       }
 
-      if (!analyserRef.current || !audioElement.getAttribute('data-connected')) {
+      if (!audioElement.getAttribute('data-connected')) {
         const analyser = audioContext.createAnalyser();
         analyser.fftSize = 1024;
         analyser.smoothingTimeConstant = 0.7;
@@ -46,38 +45,34 @@ export default function AudioVisual({ currentMusic, playerState }: AudioVisualPr
           analyser.connect(audioContext.destination);
           audioElement.setAttribute('data-connected', 'true');
           analyserRef.current = analyser;
-          console.log('Audio analyser connected successfully');
         } catch (sourceError) {
-          console.warn('Could not connect audio source:', sourceError);
           if (sourceError instanceof Error && sourceError.message.includes('already connected')) {
-            analyserRef.current = analyser;
-          } else {
-            analyserRef.current = null;
+            if (analyserRef.current) {
+              startVisualization();
+              return;
+            }
           }
+          analyserRef.current = null;
         }
       }
 
       startVisualization();
     } catch (error) {
-      console.warn('Audio context failed, using fallback visualization:', error);
       analyserRef.current = null;
       startVisualization();
     }
   };
 
   const startVisualization = () => {
-    if (analyserRef.current) {
-      const bufferLength = analyserRef.current.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
+    const animate = () => {
+      if (!playerState.isPlaying) {
+        setAudioData(new Array(150).fill(0));
+        return;
+      }
 
-      const animate = () => {
-        if (!analyserRef.current || !playerState.isPlaying) {
-          if (animationRef.current) {
-            animationRef.current = requestAnimationFrame(animate);
-          }
-          return;
-        }
-
+      if (analyserRef.current) {
+        const bufferLength = analyserRef.current.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
         analyserRef.current.getByteFrequencyData(dataArray);
         
         const bars = 150;
@@ -95,20 +90,12 @@ export default function AudioVisual({ currentMusic, playerState }: AudioVisualPr
           
           const average = sum / (endIndex - startIndex);
           let normalizedValue = average / 255;
-          
           normalizedValue = Math.pow(normalizedValue, 0.7);
           newAudioData.push(Math.min(normalizedValue, 1));
         }
 
         setAudioData(newAudioData);
-        animationRef.current = requestAnimationFrame(animate);
-      };
-
-      animate();
-    } else {
-      const animateFallback = () => {
-        if (!playerState.isPlaying) return;
-        
+      } else {
         const bars = 150;
         const newAudioData = [];
         
@@ -120,13 +107,12 @@ export default function AudioVisual({ currentMusic, playerState }: AudioVisualPr
         }
         
         setAudioData(newAudioData);
-        animationRef.current = requestAnimationFrame(animateFallback);
-      };
-      
-      if (playerState.isPlaying) {
-        animateFallback();
       }
-    }
+
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animate();
   };
 
   useEffect(() => {
@@ -134,27 +120,29 @@ export default function AudioVisual({ currentMusic, playerState }: AudioVisualPr
       cancelAnimationFrame(animationRef.current);
     }
     
-    if (currentMusic) {
-      analyserRef.current = null;
-      import('../../services/music-service').then(({ musicService }) => {
-        const audioElement = musicService.getAudioElement();
-        if (audioElement) {
-          audioElement.removeAttribute('data-connected');
-        }
-      });
-    }
-    
     if (playerState.isPlaying && currentMusic) {
-      const retrySetup = () => {
+      const connectAnalyser = async () => {
+        const { musicService } = await import('../../services/music-service');
+        const audioElement = musicService.getAudioElement();
+        
+        if (audioElement && !audioElement.getAttribute('data-connected')) {
+          analyserRef.current = null;
+        }
+        
         setupAudioAnalyser();
       };
-      retrySetup();
-    } else if (playerState.isPlaying) {
-      startVisualization();
-    } else {
+      
+      connectAnalyser();
+    } else if (!playerState.isPlaying) {
       setAudioData(new Array(150).fill(0));
     }
   }, [playerState.isPlaying, currentMusic]);
+
+  useEffect(() => {
+    if (playerState.isPlaying && !animationRef.current) {
+      startVisualization();
+    }
+  }, [playerState.isPlaying]);
 
   useEffect(() => {
     return () => {

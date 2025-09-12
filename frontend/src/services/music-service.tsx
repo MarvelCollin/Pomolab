@@ -156,10 +156,12 @@ export class MusicService {
         if (this.audioElement) {
             this.audioElement.pause();
             this.audioElement.src = '';
+            this.audioElement.removeAttribute('data-connected');
         }
         
         this.audioElement = new Audio(url);
         this.audioElement.crossOrigin = 'anonymous';
+        this.audioElement.preload = 'auto';
         return this.audioElement;
     }
 

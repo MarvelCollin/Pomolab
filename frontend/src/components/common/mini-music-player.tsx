@@ -1,28 +1,38 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Settings, Music, X } from 'lucide-react';
-import { useMusic } from '../../hooks/use-music';
+import type { IMusic, IMusicPlayerState } from '../../interfaces/IMusic';
 
 interface MiniMusicPlayerProps {
   showMusicPlayer: boolean;
   setShowMusicPlayer: (show: boolean) => void;
+  currentMusic: IMusic | null;
+  playerState: IMusicPlayerState;
+  autoPlay: boolean;
+  onTogglePlayPause: () => void;
+  onNextMusic: () => void;
+  onPreviousMusic: () => void;
+  onSetVolume: (volume: number) => void;
+  onToggleMute: () => void;
+  onToggleAutoPlay: () => void;
+  onSeekTo: (time: number) => void;
 }
 
-export default function MiniMusicPlayer({ showMusicPlayer, setShowMusicPlayer }: MiniMusicPlayerProps) {
+export default function MiniMusicPlayer({ 
+  showMusicPlayer, 
+  setShowMusicPlayer,
+  currentMusic,
+  playerState,
+  autoPlay,
+  onTogglePlayPause,
+  onNextMusic,
+  onPreviousMusic,
+  onSetVolume,
+  onToggleMute,
+  onToggleAutoPlay,
+  onSeekTo
+}: MiniMusicPlayerProps) {
   const [showMusicSettings, setShowMusicSettings] = useState(false);
-
-  const {
-    currentMusic,
-    playerState,
-    autoPlay,
-    togglePlayPause,
-    nextMusic,
-    previousMusic,
-    setVolume,
-    toggleMute,
-    toggleAutoPlay,
-    seekTo
-  } = useMusic();
 
   const formatTime = (time: number): string => {
     const minutes = Math.floor(time / 60);
@@ -36,7 +46,7 @@ export default function MiniMusicPlayer({ showMusicPlayer, setShowMusicPlayer }:
     const clickX = event.clientX - rect.left;
     const percentage = clickX / rect.width;
     const newTime = percentage * playerState.duration;
-    seekTo(newTime);
+    onSeekTo(newTime);
   };
 
   const handleVolumeClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -44,7 +54,7 @@ export default function MiniMusicPlayer({ showMusicPlayer, setShowMusicPlayer }:
     const rect = volumeBar.getBoundingClientRect();
     const clickX = event.clientX - rect.left;
     const percentage = Math.max(0, Math.min(1, clickX / rect.width));
-    setVolume(percentage);
+    onSetVolume(percentage);
   };
 
 
@@ -79,7 +89,7 @@ export default function MiniMusicPlayer({ showMusicPlayer, setShowMusicPlayer }:
           <div className="px-4 pt-3 pb-3">
             <div className="flex items-center gap-3 mb-2">
               <button
-                onClick={togglePlayPause}
+                onClick={onTogglePlayPause}
                 className="w-9 h-9 bg-white/15 hover:bg-white/25 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-105"
               >
                 {playerState.isPlaying ? (
@@ -149,7 +159,7 @@ export default function MiniMusicPlayer({ showMusicPlayer, setShowMusicPlayer }:
                 <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
                   <span className="text-white/80 text-sm">Auto Next Play</span>
                   <button
-                    onClick={toggleAutoPlay}
+                    onClick={onToggleAutoPlay}
                     className={`relative w-11 h-6 rounded-full transition-all duration-300 ${
                       autoPlay ? 'bg-gradient-to-r from-green-500 to-green-400' : 'bg-white/20'
                     }`}
@@ -173,7 +183,7 @@ export default function MiniMusicPlayer({ showMusicPlayer, setShowMusicPlayer }:
                   </div>
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={toggleMute}
+                      onClick={onToggleMute}
                       className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300"
                     >
                       {playerState.isMuted ? (
@@ -198,7 +208,7 @@ export default function MiniMusicPlayer({ showMusicPlayer, setShowMusicPlayer }:
 
                 <div className="flex items-center gap-2 pt-2 border-t border-white/10">
                   <button
-                    onClick={previousMusic}
+                    onClick={onPreviousMusic}
                     className="flex-1 bg-white/10 hover:bg-white/20 rounded-xl p-3 flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105"
                   >
                     <SkipBack className="w-4 h-4 text-white/80" />
@@ -206,7 +216,7 @@ export default function MiniMusicPlayer({ showMusicPlayer, setShowMusicPlayer }:
                   </button>
                   
                   <button
-                    onClick={nextMusic}
+                    onClick={onNextMusic}
                     className="flex-1 bg-white/10 hover:bg-white/20 rounded-xl p-3 flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105"
                   >
                     <SkipForward className="w-4 h-4 text-white/80" />

@@ -46,12 +46,16 @@ export default function Home() {
     currentMusic,
     playerState,
     loading: musicLoading,
+    autoPlay,
     playMusic,
     deleteMusic,
     togglePlayPause,
     nextMusic,
     previousMusic,
     toggleMute,
+    toggleAutoPlay,
+    seekTo,
+    setVolume,
     loadRemainingMusics
   } = useMusic();
 
@@ -408,7 +412,17 @@ export default function Home() {
 
             <MiniMusicPlayer 
               showMusicPlayer={showMusicPlayer} 
-              setShowMusicPlayer={setShowMusicPlayer} 
+              setShowMusicPlayer={setShowMusicPlayer}
+              currentMusic={currentMusic}
+              playerState={playerState}
+              autoPlay={autoPlay}
+              onTogglePlayPause={togglePlayPause}
+              onSeekTo={seekTo}
+              onSetVolume={setVolume}
+              onToggleMute={toggleMute}
+              onToggleAutoPlay={toggleAutoPlay}
+              onPreviousMusic={previousMusic}
+              onNextMusic={nextMusic}
             />
 
             {!isMinimalMode && (
