@@ -33,10 +33,7 @@ class Group extends Model
         return $this->belongsTo(User::class, 'creator_id');
     }
 
-    /**
-     * Get all members of this group (many-to-many relationship)
-     * Note: This will require a group_members pivot table in the future
-     */
+
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'group_members', 'group_id', 'user_id')
