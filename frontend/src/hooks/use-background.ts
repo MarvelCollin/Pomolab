@@ -10,19 +10,48 @@ export const useBackground = () => {
   const [error, setError] = useState<string | null>(null);
   const [hasLoadedAll, setHasLoadedAll] = useState(false);
 
+  const createDefaultBackground = (): IBackground => {
+    return {
+      id: 'default-gradient',
+      name: 'Default Background',
+      url: '',
+      filePath: '',
+      type: 'image' as const,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  };
+
   const loadFirstBackground = useCallback(async () => {
     setLoading(true);
     setError(null);
+    
+    try {
+      const cached = localStorage.getItem('pomolab-last-background');
+      if (cached) {
+        const cachedBg = JSON.parse(cached);
+        setActiveBackground(cachedBg);
+        setBackgrounds([cachedBg]);
+        setLoading(false);
+        return;
+      }
+    } catch (e) {
+      console.warn('Failed to load cached background');
+    }
+
+    setActiveBackground(createDefaultBackground());
+    setLoading(false);
+    
     try {
       const firstBackground = await backgroundService.getFirstRandomBackground();
       if (firstBackground) {
         setActiveBackground(firstBackground);
         setBackgrounds([firstBackground]);
+        localStorage.setItem('pomolab-last-background', JSON.stringify(firstBackground));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load first background');
-    } finally {
-      setLoading(false);
+      console.warn('Failed to load background, using default');
     }
   }, []);
 

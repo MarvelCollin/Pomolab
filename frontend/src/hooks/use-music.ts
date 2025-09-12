@@ -24,16 +24,31 @@ export const useMusic = () => {
   const loadFirstMusic = useCallback(async () => {
     setLoading(true);
     setError(null);
+    
+    try {
+      const cached = localStorage.getItem('pomolab-last-music');
+      if (cached) {
+        const cachedMusic = JSON.parse(cached);
+        setCurrentMusic(cachedMusic);
+        setMusics([cachedMusic]);
+        setLoading(false);
+        return;
+      }
+    } catch (e) {
+      console.warn('Failed to load cached music');
+    }
+
+    setLoading(false);
+    
     try {
       const firstMusic = await musicService.getFirstRandomMusic();
       if (firstMusic) {
         setCurrentMusic(firstMusic);
         setMusics([firstMusic]);
+        localStorage.setItem('pomolab-last-music', JSON.stringify(firstMusic));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load first music');
-    } finally {
-      setLoading(false);
+      console.warn('Failed to load music');
     }
   }, []);
 

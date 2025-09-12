@@ -71,7 +71,6 @@ export default function Home() {
     musics,
     currentMusic,
     playerState,
-    loading: musicLoading,
     autoPlay,
     playMusic,
     deleteMusic,
@@ -122,7 +121,9 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!backgroundsLoading && !musicLoading && !initialLoadComplete) {
+    const hasVisitedBefore = localStorage.getItem('pomolab-visited');
+    
+    if (hasVisitedBefore && !backgroundsLoading && !initialLoadComplete) {
       setBackgroundVisible(true);
       setBackgroundLoaded(true);
       setShowContent(true);
@@ -131,9 +132,20 @@ export default function Home() {
       setTimeout(() => {
         loadRemainingBackgrounds();
         loadRemainingMusics();
-      }, 1000);
+      }, 3000);
+    } else if (!backgroundsLoading && !initialLoadComplete) {
+      setBackgroundVisible(true);
+      setBackgroundLoaded(true);
+      setShowContent(true);
+      setInitialLoadComplete(true);
+      localStorage.setItem('pomolab-visited', 'true');
+      
+      setTimeout(() => {
+        loadRemainingBackgrounds();
+        loadRemainingMusics();
+      }, 5000);
     }
-  }, [backgroundsLoading, musicLoading, initialLoadComplete, loadRemainingBackgrounds, loadRemainingMusics]);
+  }, [backgroundsLoading, initialLoadComplete, loadRemainingBackgrounds, loadRemainingMusics]);
 
 
 
@@ -398,7 +410,28 @@ export default function Home() {
       );
     }
 
-    if (!activeBackground) return null;
+    if (!activeBackground) return (
+      <motion.div 
+        className="absolute inset-0"
+        style={{ background: 'var(--gradient-soft)' }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      />
+    );
+
+    if (activeBackground.id === 'default-gradient') {
+      return (
+        <motion.div 
+          className="absolute inset-0"
+          style={{ background: 'var(--gradient-soft)' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          onAnimationComplete={handleBackgroundLoad}
+        />
+      );
+    }
 
     if (activeBackground.type === 'video') {
       return (
@@ -441,7 +474,7 @@ export default function Home() {
     );
   };
 
-  const isLoading = backgroundsLoading || musicLoading || !backgroundLoaded || !showContent || !initialLoadComplete || tasksLoading;
+  const isLoading = backgroundsLoading || !initialLoadComplete || tasksLoading;
 
   return (
     <div className="home-page min-h-screen relative overflow-hidden">

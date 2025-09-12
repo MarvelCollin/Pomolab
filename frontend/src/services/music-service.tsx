@@ -5,15 +5,24 @@ export class MusicService {
     private bucketName = 'assets';
     private folder = 'musics';
     private audioElement: HTMLAudioElement | null = null;
+    private allFilesCache: any[] | null = null;
+    private cacheTimestamp: number = 0;
+    private readonly CACHE_DURATION = 5 * 60 * 1000;
 
     async getFirstRandomMusic(): Promise<IMusic | null> {
         try {
-            const { data: files, error } = await supabase.storage
+            const timeoutPromise = new Promise<never>((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout')), 2000)
+            );
+            
+            const loadPromise = supabase.storage
                 .from(this.bucketName)
                 .list(this.folder, {
-                    limit: 100,
+                    limit: 3,
                     offset: 0,
                 });
+
+            const { data: files, error } = await Promise.race([loadPromise, timeoutPromise]);
 
             if (error) throw error;
             const validFiles = files.filter(file => file.name !== '.emptyFolderPlaceholder');
@@ -44,17 +53,22 @@ export class MusicService {
 
     async getRemainingMusicsBatch(excludeFileName?: string, offset: number = 0, limit: number = 20): Promise<IMusic[]> {
         try {
-            const { data: files, error } = await supabase.storage
-                .from(this.bucketName)
-                .list(this.folder, {
-                    limit: 100,
-                    offset: 0,
-                });
+            const now = Date.now();
+            if (!this.allFilesCache || (now - this.cacheTimestamp) > this.CACHE_DURATION) {
+                const { data: files, error } = await supabase.storage
+                    .from(this.bucketName)
+                    .list(this.folder, {
+                        limit: 100,
+                        offset: 0,
+                    });
 
-            if (error) throw error;
-            const validFiles = files.filter(file => 
-                file.name !== '.emptyFolderPlaceholder' && 
-                (!excludeFileName || file.name !== excludeFileName)
+                if (error) throw error;
+                this.allFilesCache = files.filter(file => file.name !== '.emptyFolderPlaceholder');
+                this.cacheTimestamp = now;
+            }
+
+            const validFiles = this.allFilesCache.filter(file => 
+                !excludeFileName || file.name !== excludeFileName
             );
 
             const batchFiles = validFiles.slice(offset, offset + limit);
