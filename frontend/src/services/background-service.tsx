@@ -5,7 +5,7 @@ export class BackgroundService {
     private bucketName = 'assets';
     private folder = 'backgrounds';
 
-    async getFirstBackground(): Promise<IBackground | null> {
+    async getFirstRandomBackground(): Promise<IBackground | null> {
         try {
             const { data: files, error } = await supabase.storage
                 .from(this.bucketName)
@@ -35,7 +35,7 @@ export class BackgroundService {
                 url: data.publicUrl,
                 filePath,
                 type: isVideo ? 'video' : 'image',
-                isActive: false,
+                isActive: true,
                 createdAt: file.created_at || new Date().toISOString(),
                 updatedAt: file.updated_at || new Date().toISOString()
             };
@@ -45,7 +45,7 @@ export class BackgroundService {
         }
     }
 
-    async getRemainingBackgrounds(excludeFileName?: string): Promise<IBackground[]> {
+    async getRemainingBackgroundsBatch(excludeFileName?: string, offset: number = 0, limit: number = 20): Promise<IBackground[]> {
         try {
             const { data: files, error } = await supabase.storage
                 .from(this.bucketName)
@@ -55,30 +55,100 @@ export class BackgroundService {
                 });
 
             if (error) throw error;
-            const backgrounds: IBackground[] = files
-                .filter(file => file.name !== '.emptyFolderPlaceholder' && file.name !== excludeFileName)
-                .map(file => {
-                    const filePath = `${this.folder}/${file.name}`;
-                    const { data } = supabase.storage
-                        .from(this.bucketName)
-                        .getPublicUrl(filePath);
+            const validFiles = files.filter(file => 
+                file.name !== '.emptyFolderPlaceholder' && 
+                (!excludeFileName || file.name !== excludeFileName)
+            );
 
-                    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-                    const isVideo = ['mp4', 'webm', 'mov', 'avi'].includes(fileExtension || '');
+            const batchFiles = validFiles.slice(offset, offset + limit);
 
-                    return {
-                        id: file.id || file.name,
-                        name: `Background ${Math.floor(Math.random() * 1000)}`,
-                        url: data.publicUrl,
-                        filePath,
-                        type: isVideo ? 'video' : 'image',
-                        isActive: false,
-                        createdAt: file.created_at || new Date().toISOString(),
-                        updatedAt: file.updated_at || new Date().toISOString()
-                    };
+            return batchFiles.map(file => {
+                const filePath = `${this.folder}/${file.name}`;
+                const { data } = supabase.storage
+                    .from(this.bucketName)
+                    .getPublicUrl(filePath);
+
+                const fileExtension = file.name.split('.').pop()?.toLowerCase();
+                const isVideo = ['mp4', 'webm', 'mov', 'avi'].includes(fileExtension || '');
+
+                return {
+                    id: file.id || file.name,
+                    name: `Background ${Math.floor(Math.random() * 1000)}`,
+                    url: data.publicUrl,
+                    filePath,
+                    type: isVideo ? 'video' : 'image',
+                    isActive: false,
+                    createdAt: file.created_at || new Date().toISOString(),
+                    updatedAt: file.updated_at || new Date().toISOString()
+                };
+            });
+        } catch (error) {
+            console.error('Error fetching remaining backgrounds:', error);
+            return [];
+        }
+    }
+
+    async getBackgroundsWithDefault(): Promise<{ backgrounds: IBackground[], defaultBackground: IBackground | null }> {
+        try {
+            const { data: files, error } = await supabase.storage
+                .from(this.bucketName)
+                .list(this.folder, {
+                    limit: 100,
+                    offset: 0,
                 });
 
-            return backgrounds;
+            if (error) throw error;
+            const validFiles = files.filter(file => file.name !== '.emptyFolderPlaceholder');
+            
+            if (validFiles.length === 0) return { backgrounds: [], defaultBackground: null };
+
+            const backgrounds: IBackground[] = validFiles.map(file => {
+                const filePath = `${this.folder}/${file.name}`;
+                const { data } = supabase.storage
+                    .from(this.bucketName)
+                    .getPublicUrl(filePath);
+
+                const fileExtension = file.name.split('.').pop()?.toLowerCase();
+                const isVideo = ['mp4', 'webm', 'mov', 'avi'].includes(fileExtension || '');
+
+                return {
+                    id: file.id || file.name,
+                    name: `Background ${Math.floor(Math.random() * 1000)}`,
+                    url: data.publicUrl,
+                    filePath,
+                    type: isVideo ? 'video' : 'image',
+                    isActive: false,
+                    createdAt: file.created_at || new Date().toISOString(),
+                    updatedAt: file.updated_at || new Date().toISOString()
+                };
+            });
+
+            const randomIndex = Math.floor(Math.random() * backgrounds.length);
+            const defaultBackground = { ...backgrounds[randomIndex], isActive: true };
+
+            return { backgrounds, defaultBackground };
+        } catch (error) {
+            console.error('Error fetching backgrounds:', error);
+            return { backgrounds: [], defaultBackground: null };
+        }
+    }
+
+    async getFirstBackground(): Promise<IBackground | null> {
+        try {
+            const result = await this.getBackgroundsWithDefault();
+            return result.defaultBackground;
+        } catch (error) {
+            console.error('Error fetching first background:', error);
+            return null;
+        }
+    }
+
+    async getRemainingBackgrounds(excludeFileName?: string): Promise<IBackground[]> {
+        try {
+            const result = await this.getBackgroundsWithDefault();
+            return result.backgrounds.filter(bg => 
+                excludeFileName ? !bg.filePath.includes(excludeFileName) : true
+            );
         } catch (error) {
             console.error('Error fetching remaining backgrounds:', error);
             return [];

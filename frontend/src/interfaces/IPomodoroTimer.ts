@@ -20,7 +20,8 @@ export interface IPomodoroTimer {
   onToggleTimer?: () => void;
   onResetTimer?: () => void;
   onSetCurrentSession?: (session: 'focus' | 'short-break' | 'long-break') => void;
-  onSetTimeLeft?: (time: number) => void;
+  onSetTimeLeft?: (time: number | ((prev: number) => number)) => void;
   onSetSoundEnabled?: (enabled: boolean) => void;
-  onSetCustomDurations?: (durations: { focus: number; 'short-break': number; 'long-break': number; }) => void;
+  onSetCustomDurations?: (durations: { focus: number; 'short-break': number; 'long-break': number; } | ((prev: { focus: number; 'short-break': number; 'long-break': number; }) => { focus: number; 'short-break': number; 'long-break': number; })) => void;
+  onSetSessionCount?: (count: number) => void;
 }

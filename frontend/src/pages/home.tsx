@@ -8,7 +8,7 @@ import MiniMusicPlayer from '../components/common/mini-music-player';
 import ToolBar from '../components/common/tool-bar';
 import AudioVisual from '../components/pomodoro/audio-visual';
 import type { ITask } from '../interfaces/ITask';
-import { dummyTasks } from '../data/dummy-data';
+import { TaskApi } from '../apis/task-api';
 import { useBackground } from '../hooks/use-background';
 import { useMusic } from '../hooks/use-music';
 import { useAudioEffect } from '../hooks/use-audio-effect';
@@ -18,8 +18,9 @@ import type { IAudioEffect } from '../interfaces/IAudioEffect';
 import '../app.css';
 
 export default function Home() {
-  const [tasks, setTasks] = useState<ITask[]>(dummyTasks);
-  const [selectedTask, setSelectedTask] = useState<ITask | null>(tasks.find(t => t.status === 'in_progress') || null);
+  const [tasks, setTasks] = useState<ITask[]>([]);
+  const [selectedTask, setSelectedTask] = useState<ITask | null>(null);
+  const [tasksLoading, setTasksLoading] = useState(true);
   const [pomodoroMinimized, setPomodoroMinimized] = useState(false);
   const [tasksMinimized, setTasksMinimized] = useState(false);
   const [isMinimalMode, setIsMinimalMode] = useState(false);
@@ -59,7 +60,7 @@ export default function Home() {
   const { 
     backgrounds, 
     activeBackground, 
-    loading: backgroundsLoading, 
+    loading: backgroundsLoading,
     changeBackground,
     uploadBackground,
     deleteBackground,
@@ -86,7 +87,6 @@ export default function Home() {
 
   const {
     audioEffects,
-    loading: audioEffectsLoading,
     playEffect,
     pauseEffect,
     stopEffect,
@@ -105,14 +105,33 @@ export default function Home() {
 
 
   useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const fetchedTasks = await TaskApi.getAllTasks();
+        setTasks(fetchedTasks);
+        const activeTask = fetchedTasks.find(t => t.status === 'in_progress') || null;
+        setSelectedTask(activeTask);
+      } catch (error) {
+        console.error('Failed to fetch tasks:', error);
+      } finally {
+        setTasksLoading(false);
+      }
+    };
+    
+    fetchTasks();
+  }, []);
+
+  useEffect(() => {
     if (!backgroundsLoading && !musicLoading && !initialLoadComplete) {
       setBackgroundVisible(true);
       setBackgroundLoaded(true);
       setShowContent(true);
       setInitialLoadComplete(true);
       
-      loadRemainingBackgrounds();
-      loadRemainingMusics();
+      setTimeout(() => {
+        loadRemainingBackgrounds();
+        loadRemainingMusics();
+      }, 1000);
     }
   }, [backgroundsLoading, musicLoading, initialLoadComplete, loadRemainingBackgrounds, loadRemainingMusics]);
 
@@ -122,53 +141,120 @@ export default function Home() {
     setSelectedTask(task);
   }, []);
 
-  const handleTaskComplete = useCallback((taskId: number) => {
-    setTasks(prev => prev.map(task => 
-      task.id === taskId 
-        ? { ...task, status: 'completed' as const, completed_pomodoros: task.estimated_pomodoros }
-        : task
+  const handleTaskComplete = useCallback(async (taskId: number) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    const updatedTask = { ...task, status: 'completed' as const, completed_pomodoros: task.estimated_pomodoros };
+    
+    setTasks(prev => prev.map(t => 
+      t.id === taskId ? updatedTask : t
     ));
-  }, []);
-
-  const handleTaskAdd = useCallback((newTask: Omit<ITask, 'id' | 'created_at' | 'updated_at'>) => {
-    const task: ITask = {
-      ...newTask,
-      id: Math.max(...tasks.map(t => t.id)) + 1,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    setTasks(prev => [task, ...prev]);
+    
+    try {
+      await TaskApi.updateTask(taskId, {
+        status: 'completed',
+        completed_pomodoros: task.estimated_pomodoros
+      });
+    } catch (error) {
+      console.error('Failed to update task:', error);
+      setTasks(prev => prev.map(t => 
+        t.id === taskId ? task : t
+      ));
+    }
   }, [tasks]);
 
-  const handleTaskDelete = useCallback((taskId: number) => {
+  const handleTaskAdd = useCallback(async (newTask: Omit<ITask, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const createdTask = await TaskApi.createTask({
+        title: newTask.title,
+        description: newTask.description,
+        owner_id: newTask.owner_id,
+        assigned_to_id: newTask.assigned_to_id,
+        status: newTask.status,
+        estimated_pomodoros: newTask.estimated_pomodoros,
+        completed_pomodoros: newTask.completed_pomodoros
+      });
+      setTasks(prev => [createdTask, ...prev]);
+    } catch (error) {
+      console.error('Failed to create task:', error);
+    }
+  }, []);
+
+  const handleTaskDelete = useCallback(async (taskId: number) => {
     setTasks(prev => prev.filter(task => task.id !== taskId));
     if (selectedTask?.id === taskId) {
       setSelectedTask(null);
     }
-  }, [selectedTask]);
+    
+    try {
+      await TaskApi.deleteTask(taskId);
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      const deletedTask = tasks.find(t => t.id === taskId);
+      if (deletedTask) {
+        setTasks(prev => [deletedTask, ...prev]);
+        if (selectedTask?.id === taskId) {
+          setSelectedTask(deletedTask);
+        }
+      }
+    }
+  }, [selectedTask, tasks]);
 
-  const handleTaskEdit = useCallback((taskId: number, updates: Partial<ITask>) => {
+  const handleTaskEdit = useCallback(async (taskId: number, updates: Partial<ITask>) => {
+    const originalTask = tasks.find(t => t.id === taskId);
+    if (!originalTask) return;
+    
+    const updatedTask = { ...originalTask, ...updates, updated_at: new Date().toISOString() };
+    
     setTasks(prev => prev.map(task => 
-      task.id === taskId 
-        ? { ...task, ...updates, updated_at: new Date().toISOString() }
-        : task
+      task.id === taskId ? updatedTask : task
     ));
     if (selectedTask?.id === taskId) {
-      setSelectedTask(prev => prev ? { ...prev, ...updates, updated_at: new Date().toISOString() } : null);
+      setSelectedTask(updatedTask);
     }
-  }, [selectedTask]);
-
-  const handleSessionComplete = useCallback((sessionType: 'focus' | 'short-break' | 'long-break') => {
-    if (sessionType === 'focus' && selectedTask) {
+    
+    try {
+      await TaskApi.updateTask(taskId, updates);
+    } catch (error) {
+      console.error('Failed to update task:', error);
       setTasks(prev => prev.map(task => 
-        task.id === selectedTask.id 
-          ? { 
-              ...task, 
-              completed_pomodoros: Math.min(task.completed_pomodoros + 1, task.estimated_pomodoros),
-              status: task.completed_pomodoros + 1 >= task.estimated_pomodoros ? 'completed' : 'in_progress'
-            }
-          : task
+        task.id === taskId ? originalTask : task
       ));
+      if (selectedTask?.id === taskId) {
+        setSelectedTask(originalTask);
+      }
+    }
+  }, [selectedTask, tasks]);
+
+  const handleSessionComplete = useCallback(async (sessionType: 'focus' | 'short-break' | 'long-break') => {
+    if (sessionType === 'focus' && selectedTask) {
+      const newCompletedPomodoros = Math.min(selectedTask.completed_pomodoros + 1, selectedTask.estimated_pomodoros);
+      const newStatus = newCompletedPomodoros >= selectedTask.estimated_pomodoros ? 'completed' as const : 'in_progress' as const;
+      
+      const updatedTask = {
+        ...selectedTask,
+        completed_pomodoros: newCompletedPomodoros,
+        status: newStatus
+      };
+      
+      setTasks(prev => prev.map(task => 
+        task.id === selectedTask.id ? updatedTask : task
+      ));
+      setSelectedTask(updatedTask);
+      
+      try {
+        await TaskApi.updateTask(selectedTask.id, {
+          completed_pomodoros: newCompletedPomodoros,
+          status: newStatus
+        });
+      } catch (error) {
+        console.error('Failed to update task pomodoros:', error);
+        setTasks(prev => prev.map(task => 
+          task.id === selectedTask.id ? selectedTask : task
+        ));
+        setSelectedTask(selectedTask);
+      }
     }
   }, [selectedTask]);
 
@@ -355,7 +441,7 @@ export default function Home() {
     );
   };
 
-  const isLoading = backgroundsLoading || musicLoading || !backgroundLoaded || !showContent || !initialLoadComplete;
+  const isLoading = backgroundsLoading || musicLoading || !backgroundLoaded || !showContent || !initialLoadComplete || tasksLoading;
 
   return (
     <div className="home-page min-h-screen relative overflow-hidden">
@@ -502,8 +588,6 @@ export default function Home() {
               onNextMusic={nextMusic}
               onPreviousMusic={previousMusic}
               onToggleMute={toggleMute}
-              loadRemainingBackgrounds={loadRemainingBackgrounds}
-              loadRemainingMusics={loadRemainingMusics}
               audioEffects={audioEffects}
               onPlayEffect={playEffect}
               onPauseEffect={pauseEffect}
@@ -574,6 +658,7 @@ export default function Home() {
                             onSetTimeLeft={setTimeLeft}
                             onSetSoundEnabled={setSoundEnabled}
                             onSetCustomDurations={setCustomDurations}
+                            onSetSessionCount={setSessionCount}
                           />
                         )}
                             {selectedTask && (

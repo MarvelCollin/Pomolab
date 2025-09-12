@@ -1,4 +1,4 @@
-import { IMessage } from '../interfaces/IMessage';
+import type { IMessage } from '../interfaces/IMessage';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 

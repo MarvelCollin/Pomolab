@@ -52,8 +52,6 @@ interface ToolBarProps {
   onNextMusic: () => void;
   onPreviousMusic: () => void;
   onToggleMute: () => void;
-  loadRemainingBackgrounds: () => void;
-  loadRemainingMusics: () => void;
   audioEffects: IAudioEffect[];
   onPlayEffect: (effect: IAudioEffect) => void;
   onPauseEffect: (effectId: string) => void;
@@ -98,8 +96,6 @@ export default function ToolBar({
   onNextMusic,
   onPreviousMusic,
   onToggleMute,
-  loadRemainingBackgrounds,
-  loadRemainingMusics,
   audioEffects,
   onPlayEffect,
   onPauseEffect,

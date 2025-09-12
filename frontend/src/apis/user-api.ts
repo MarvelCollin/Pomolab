@@ -1,6 +1,22 @@
-import { IUser } from '../interfaces/IUser';
+import type { IUser } from '../interfaces/IUser';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
+interface AuthResponse {
+  user: IUser;
+  token: string;
+}
+
+interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+interface RegisterRequest {
+  username: string;
+  email: string;
+  password: string;
+}
 
 export class UserApi {
   static async getAllUsers(): Promise<IUser[]> {
@@ -67,6 +83,77 @@ export class UserApi {
     const response = await fetch(`${API_BASE_URL}/api/users/${id}/tasks`);
     if (!response.ok) {
       throw new Error('Failed to fetch user with tasks');
+    }
+    return response.json();
+  }
+
+  static async login(credentials: LoginRequest): Promise<AuthResponse> {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Login failed');
+    }
+    return response.json();
+  }
+
+  static async register(userData: RegisterRequest): Promise<AuthResponse> {
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Registration failed');
+    }
+    return response.json();
+  }
+
+  static async logout(token: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Logout failed');
+    }
+  }
+
+  static async getCurrentUser(token: string): Promise<IUser> {
+    const response = await fetch(`${API_BASE_URL}/auth/user`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Failed to get current user');
+    }
+    return response.json();
+  }
+
+  static async googleAuth(googleToken: string): Promise<AuthResponse> {
+    const response = await fetch(`${API_BASE_URL}/auth/google`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ google_token: googleToken }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Google authentication failed');
     }
     return response.json();
   }

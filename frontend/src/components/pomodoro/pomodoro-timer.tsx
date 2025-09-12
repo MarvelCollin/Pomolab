@@ -19,7 +19,8 @@ export default function PomodoroTimer({
   onSetCurrentSession,
   onSetTimeLeft,
   onSetSoundEnabled,
-  onSetCustomDurations
+  onSetCustomDurations,
+  onSetSessionCount
 }: IPomodoroTimer) {
   const [internalCurrentSession, setInternalCurrentSession] = useState<'focus' | 'short-break' | 'long-break'>('focus');
   const [internalTimeLeft, setInternalTimeLeft] = useState(25 * 60);
@@ -79,7 +80,11 @@ export default function PomodoroTimer({
   }, [isRunning, timeLeft, onSetTimeLeft]);
 
   const handleSessionComplete = () => {
-    setIsRunning(false);
+    if (propOnToggleTimer && isRunning) {
+      propOnToggleTimer();
+    } else {
+      setInternalIsRunning(false);
+    }
     
     if (soundEnabled) {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -101,18 +106,38 @@ export default function PomodoroTimer({
     
     if (currentSession === 'focus') {
       const newCount = sessionCount + 1;
-      setSessionCount(newCount);
       
-      if (newCount % 4 === 0) {
-        setCurrentSession('long-break');
-        setTimeLeft(sessionDurations['long-break']);
+      if (onSetSessionCount) {
+        onSetSessionCount(newCount);
       } else {
-        setCurrentSession('short-break');
-        setTimeLeft(sessionDurations['short-break']);
+        setInternalSessionCount(newCount);
+      }
+      
+      if (onSetCurrentSession && onSetTimeLeft) {
+        if (newCount % 4 === 0) {
+          onSetCurrentSession('long-break');
+          onSetTimeLeft(sessionDurations['long-break']);
+        } else {
+          onSetCurrentSession('short-break');
+          onSetTimeLeft(sessionDurations['short-break']);
+        }
+      } else {
+        if (newCount % 4 === 0) {
+          setInternalCurrentSession('long-break');
+          setInternalTimeLeft(sessionDurations['long-break']);
+        } else {
+          setInternalCurrentSession('short-break');
+          setInternalTimeLeft(sessionDurations['short-break']);
+        }
       }
     } else {
-      setCurrentSession('focus');
-      setTimeLeft(sessionDurations.focus);
+      if (onSetCurrentSession && onSetTimeLeft) {
+        onSetCurrentSession('focus');
+        onSetTimeLeft(sessionDurations.focus);
+      } else {
+        setInternalCurrentSession('focus');
+        setInternalTimeLeft(sessionDurations.focus);
+      }
     }
   };
 

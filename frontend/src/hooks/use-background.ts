@@ -6,20 +6,18 @@ export const useBackground = () => {
   const [backgrounds, setBackgrounds] = useState<IBackground[]>([]);
   const [activeBackground, setActiveBackground] = useState<IBackground | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingRemaining, setLoadingRemaining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasLoadedAll, setHasLoadedAll] = useState(false);
-  const [firstBackgroundFileName, setFirstBackgroundFileName] = useState<string | null>(null);
 
   const loadFirstBackground = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const firstBackground = await backgroundService.getFirstBackground();
+      const firstBackground = await backgroundService.getFirstRandomBackground();
       if (firstBackground) {
-        const fileName = firstBackground.filePath.split('/').pop() || '';
-        setFirstBackgroundFileName(fileName);
+        setActiveBackground(firstBackground);
         setBackgrounds([firstBackground]);
-        setActiveBackground({ ...firstBackground, isActive: true });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load first background');
@@ -29,29 +27,46 @@ export const useBackground = () => {
   }, []);
 
   const loadRemainingBackgrounds = useCallback(async () => {
-    if (hasLoadedAll) return;
+    if (loadingRemaining || hasLoadedAll) return;
     
+    setLoadingRemaining(true);
     try {
-      const remainingBackgrounds = await backgroundService.getRemainingBackgrounds(firstBackgroundFileName || undefined);
-      if (remainingBackgrounds.length > 0) {
-        setBackgrounds(prev => [...prev, ...remainingBackgrounds]);
+      const currentFileName = activeBackground?.filePath.split('/').pop();
+      let allRemaining: IBackground[] = [];
+      let offset = 0;
+      const batchSize = 20;
+      
+      while (true) {
+        const batch = await backgroundService.getRemainingBackgroundsBatch(currentFileName, offset, batchSize);
+        if (batch.length === 0) break;
+        
+        allRemaining = [...allRemaining, ...batch];
+        offset += batchSize;
+        
+        if (batch.length < batchSize) break;
       }
+      
+      setBackgrounds(prev => {
+        const existing = prev.filter(bg => bg.isActive);
+        return [...existing, ...allRemaining];
+      });
       setHasLoadedAll(true);
     } catch (err) {
-      console.error('Error loading remaining backgrounds:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load remaining backgrounds');
+    } finally {
+      setLoadingRemaining(false);
     }
-  }, [hasLoadedAll, firstBackgroundFileName]);
+  }, [activeBackground, loadingRemaining, hasLoadedAll]);
 
   const loadBackgrounds = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const fetchedBackgrounds = await backgroundService.getBackgrounds();
-      setBackgrounds(fetchedBackgrounds);
+      const result = await backgroundService.getBackgroundsWithDefault();
+      setBackgrounds(result.backgrounds);
       
-      if (fetchedBackgrounds.length > 0 && !activeBackground) {
-        const defaultBackground = fetchedBackgrounds[0];
-        setActiveBackground({ ...defaultBackground, isActive: true });
+      if (result.defaultBackground) {
+        setActiveBackground(result.defaultBackground);
       }
       setHasLoadedAll(true);
     } catch (err) {
@@ -59,7 +74,7 @@ export const useBackground = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeBackground]);
+  }, []);
 
   const uploadBackground = useCallback(async (file: File) => {
     setLoading(true);
@@ -116,11 +131,14 @@ export const useBackground = () => {
     backgrounds,
     activeBackground,
     loading,
+    loadingRemaining,
     error,
+    hasLoadedAll,
     uploadBackground,
     deleteBackground,
     changeBackground,
     refreshBackgrounds: loadBackgrounds,
-    loadRemainingBackgrounds
+    loadRemainingBackgrounds,
+    loadFirstBackground
   };
 };
