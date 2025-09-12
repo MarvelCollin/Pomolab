@@ -10,7 +10,7 @@ export class BackgroundService {
             const { data: files, error } = await supabase.storage
                 .from(this.bucketName)
                 .list(this.folder, {
-                    limit: 1,
+                    limit: 100,
                     offset: 0,
                 });
 
@@ -19,7 +19,8 @@ export class BackgroundService {
             
             if (validFiles.length === 0) return null;
 
-            const file = validFiles[0];
+            const randomIndex = Math.floor(Math.random() * validFiles.length);
+            const file = validFiles[randomIndex];
             const filePath = `${this.folder}/${file.name}`;
             const { data } = supabase.storage
                 .from(this.bucketName)
@@ -30,7 +31,7 @@ export class BackgroundService {
 
             return {
                 id: file.id || file.name,
-                name: file.name.split('.')[0],
+                name: `Background ${Math.floor(Math.random() * 1000)}`,
                 url: data.publicUrl,
                 filePath,
                 type: isVideo ? 'video' : 'image',
@@ -44,18 +45,18 @@ export class BackgroundService {
         }
     }
 
-    async getRemainingBackgrounds(): Promise<IBackground[]> {
+    async getRemainingBackgrounds(excludeFileName?: string): Promise<IBackground[]> {
         try {
             const { data: files, error } = await supabase.storage
                 .from(this.bucketName)
                 .list(this.folder, {
                     limit: 100,
-                    offset: 1,
+                    offset: 0,
                 });
 
             if (error) throw error;
             const backgrounds: IBackground[] = files
-                .filter(file => file.name !== '.emptyFolderPlaceholder')
+                .filter(file => file.name !== '.emptyFolderPlaceholder' && file.name !== excludeFileName)
                 .map(file => {
                     const filePath = `${this.folder}/${file.name}`;
                     const { data } = supabase.storage
@@ -67,7 +68,7 @@ export class BackgroundService {
 
                     return {
                         id: file.id || file.name,
-                        name: file.name.split('.')[0],
+                        name: `Background ${Math.floor(Math.random() * 1000)}`,
                         url: data.publicUrl,
                         filePath,
                         type: isVideo ? 'video' : 'image',
@@ -107,7 +108,7 @@ export class BackgroundService {
 
                     return {
                         id: file.id || file.name,
-                        name: file.name.split('.')[0],
+                        name: `Background ${Math.floor(Math.random() * 1000)}`,
                         url: data.publicUrl,
                         filePath,
                         type: isVideo ? 'video' : 'image',
@@ -144,7 +145,7 @@ export class BackgroundService {
 
             return {
                 id: fileName,
-                name: file.name.split('.')[0],
+                name: `Background ${Math.floor(Math.random() * 1000)}`,
                 url: data.publicUrl,
                 filePath,
                 type: isVideo ? 'video' : 'image',

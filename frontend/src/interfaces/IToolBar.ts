@@ -33,4 +33,6 @@ export interface IToolBarProps {
     onNextMusic: () => void;
     onPreviousMusic: () => void;
     onToggleMute: () => void;
+    loadRemainingBackgrounds: () => void;
+    loadRemainingMusics: () => void;
 }

@@ -8,6 +8,7 @@ export const useBackground = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasLoadedAll, setHasLoadedAll] = useState(false);
+  const [firstBackgroundFileName, setFirstBackgroundFileName] = useState<string | null>(null);
 
   const loadFirstBackground = useCallback(async () => {
     setLoading(true);
@@ -15,6 +16,8 @@ export const useBackground = () => {
     try {
       const firstBackground = await backgroundService.getFirstBackground();
       if (firstBackground) {
+        const fileName = firstBackground.filePath.split('/').pop() || '';
+        setFirstBackgroundFileName(fileName);
         setBackgrounds([firstBackground]);
         setActiveBackground({ ...firstBackground, isActive: true });
       }
@@ -29,7 +32,7 @@ export const useBackground = () => {
     if (hasLoadedAll) return;
     
     try {
-      const remainingBackgrounds = await backgroundService.getRemainingBackgrounds();
+      const remainingBackgrounds = await backgroundService.getRemainingBackgrounds(firstBackgroundFileName || undefined);
       if (remainingBackgrounds.length > 0) {
         setBackgrounds(prev => [...prev, ...remainingBackgrounds]);
       }
@@ -37,7 +40,7 @@ export const useBackground = () => {
     } catch (err) {
       console.error('Error loading remaining backgrounds:', err);
     }
-  }, [hasLoadedAll]);
+  }, [hasLoadedAll, firstBackgroundFileName]);
 
   const loadBackgrounds = useCallback(async () => {
     setLoading(true);
@@ -106,10 +109,8 @@ export const useBackground = () => {
   }, []);
 
   useEffect(() => {
-    loadFirstBackground().then(() => {
-      loadRemainingBackgrounds();
-    });
-  }, [loadFirstBackground, loadRemainingBackgrounds]);
+    loadFirstBackground();
+  }, [loadFirstBackground]);
 
   return {
     backgrounds,
@@ -119,6 +120,7 @@ export const useBackground = () => {
     uploadBackground,
     deleteBackground,
     changeBackground,
-    refreshBackgrounds: loadBackgrounds
+    refreshBackgrounds: loadBackgrounds,
+    loadRemainingBackgrounds
   };
 };

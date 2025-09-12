@@ -27,7 +27,9 @@ export default function ToolBar({
   onTogglePlayPause,
   onNextMusic,
   onPreviousMusic,
-  onToggleMute
+  onToggleMute,
+  loadRemainingBackgrounds,
+  loadRemainingMusics
 }: IToolBarProps) {
   const formatTime = (time: number): string => {
     const minutes = Math.floor(time / 60);
@@ -44,14 +46,24 @@ export default function ToolBar({
         className="fixed top-4 right-4 z-50 flex flex-col gap-2"
       >
         <button
-          onClick={() => setShowBackgroundSelector(!showBackgroundSelector)}
+          onClick={() => {
+            if (!showBackgroundSelector) {
+              loadRemainingBackgrounds();
+            }
+            setShowBackgroundSelector(!showBackgroundSelector);
+          }}
           className="w-10 h-10 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 shadow-lg"
         >
           <Image className="w-4 h-4 text-white" />
         </button>
 
         <button
-          onClick={() => setShowMusicPlayer(!showMusicPlayer)}
+          onClick={() => {
+            if (!showMusicPlayer) {
+              loadRemainingMusics();
+            }
+            setShowMusicPlayer(!showMusicPlayer);
+          }}
           className="w-10 h-10 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 shadow-lg"
         >
           <Music className="w-4 h-4 text-white" />
@@ -166,12 +178,6 @@ export default function ToolBar({
                     >
                       <X className="w-3 h-3 text-white" />
                     </button>
-                    
-                    <div className="absolute bottom-1 left-1 right-1">
-                      <div className="text-white text-xs bg-black/50 rounded px-1 py-0.5 truncate">
-                        {background.name}
-                      </div>
-                    </div>
                     
                     {activeBackground?.id === background.id && (
                       <div className="absolute top-1 left-1 w-2 h-2 bg-green-400 rounded-full"></div>

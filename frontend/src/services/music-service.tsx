@@ -6,6 +6,76 @@ export class MusicService {
     private folder = 'musics';
     private audioElement: HTMLAudioElement | null = null;
 
+    async getFirstMusic(): Promise<IMusic | null> {
+        try {
+            const { data: files, error } = await supabase.storage
+                .from(this.bucketName)
+                .list(this.folder, {
+                    limit: 100,
+                    offset: 0,
+                });
+
+            if (error) throw error;
+            const validFiles = files.filter(file => file.name !== '.emptyFolderPlaceholder');
+            
+            if (validFiles.length === 0) return null;
+
+            const randomIndex = Math.floor(Math.random() * validFiles.length);
+            const file = validFiles[randomIndex];
+            const filePath = `${this.folder}/${file.name}`;
+            const { data } = supabase.storage
+                .from(this.bucketName)
+                .getPublicUrl(filePath);
+
+            return {
+                id: file.id || file.name,
+                name: file.name.replace(/\.[^/.]+$/, ''),
+                url: data.publicUrl,
+                filePath,
+                isActive: false,
+                createdAt: file.created_at || new Date().toISOString(),
+                updatedAt: file.updated_at || new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Error fetching first music:', error);
+            return null;
+        }
+    }
+
+    async getRemainingMusics(excludeFileName?: string): Promise<IMusic[]> {
+        try {
+            const { data: files, error } = await supabase.storage
+                .from(this.bucketName)
+                .list(this.folder, {
+                    limit: 100,
+                    offset: 0,
+                });
+
+            if (error) throw error;
+            const validFiles = files.filter(file => file.name !== '.emptyFolderPlaceholder' && file.name !== excludeFileName);
+            
+            return validFiles.map(file => {
+                const filePath = `${this.folder}/${file.name}`;
+                const { data } = supabase.storage
+                    .from(this.bucketName)
+                    .getPublicUrl(filePath);
+
+                return {
+                    id: file.id || file.name,
+                    name: file.name.replace(/\.[^/.]+$/, ''),
+                    url: data.publicUrl,
+                    filePath,
+                    isActive: false,
+                    createdAt: file.created_at || new Date().toISOString(),
+                    updatedAt: file.updated_at || new Date().toISOString()
+                };
+            });
+        } catch (error) {
+            console.error('Error fetching remaining musics:', error);
+            return [];
+        }
+    }
+
     async getMusics(): Promise<IMusic[]> {
         try {
             const { data: files, error } = await supabase.storage

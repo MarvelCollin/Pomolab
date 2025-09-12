@@ -32,7 +32,8 @@ export default function Home() {
     loading: backgroundsLoading, 
     changeBackground,
     uploadBackground,
-    deleteBackground 
+    deleteBackground,
+    loadRemainingBackgrounds
   } = useBackground();
 
   const {
@@ -45,7 +46,8 @@ export default function Home() {
     togglePlayPause,
     nextMusic,
     previousMusic,
-    toggleMute
+    toggleMute,
+    loadRemainingMusics
   } = useMusic();
 
   useEffect(() => {
@@ -350,6 +352,8 @@ export default function Home() {
               onNextMusic={nextMusic}
               onPreviousMusic={previousMusic}
               onToggleMute={toggleMute}
+              loadRemainingBackgrounds={loadRemainingBackgrounds}
+              loadRemainingMusics={loadRemainingMusics}
             />
 
 

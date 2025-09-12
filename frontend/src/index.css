@@ -288,3 +288,83 @@ audio {
 .overflow-auto {
   cursor: url('assets/blupoint/BluPointmed.cur'), auto !important;
 }
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(251, 243, 213, 0.1);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgba(214, 169, 157, 0.6) 0%, rgba(156, 175, 170, 0.8) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(214, 169, 157, 0.8) 0%, rgba(156, 175, 170, 1) 100%);
+  box-shadow: 0 4px 12px rgba(214, 169, 157, 0.3);
+  transform: scale(1.1);
+}
+
+::-webkit-scrollbar-corner {
+  background: rgba(251, 243, 213, 0.1);
+  backdrop-filter: blur(8px);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(214, 169, 157, 0.6) rgba(251, 243, 213, 0.1);
+}
+
+.scrollbar-primary::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgba(255, 140, 66, 0.6) 0%, rgba(214, 169, 157, 0.8) 100%);
+}
+
+.scrollbar-primary::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(255, 140, 66, 0.8) 0%, rgba(214, 169, 157, 1) 100%);
+  box-shadow: 0 4px 12px rgba(255, 140, 66, 0.3);
+}
+
+.scrollbar-purple::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgba(107, 91, 149, 0.6) 0%, rgba(232, 225, 245, 0.8) 100%);
+}
+
+.scrollbar-purple::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(107, 91, 149, 0.8) 0%, rgba(232, 225, 245, 1) 100%);
+  box-shadow: 0 4px 12px rgba(107, 91, 149, 0.3);
+}
+
+.scrollbar-minimal::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.scrollbar-minimal::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  border: none;
+}
+
+.scrollbar-minimal::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+  transform: none;
+  box-shadow: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

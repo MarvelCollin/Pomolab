@@ -15,9 +15,42 @@ export const useMusic = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoPlay, setAutoPlay] = useState(true);
+  const [hasLoadedAll, setHasLoadedAll] = useState(false);
+  const [firstMusicFileName, setFirstMusicFileName] = useState<string | null>(null);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const loadFirstMusic = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const firstMusic = await musicService.getFirstMusic();
+      if (firstMusic) {
+        const fileName = firstMusic.filePath.split('/').pop() || '';
+        setFirstMusicFileName(fileName);
+        setMusics([firstMusic]);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load first music');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadRemainingMusics = useCallback(async () => {
+    if (hasLoadedAll) return;
+    
+    try {
+      const remainingMusics = await musicService.getRemainingMusics(firstMusicFileName || undefined);
+      if (remainingMusics.length > 0) {
+        setMusics(prev => [...prev, ...remainingMusics]);
+      }
+      setHasLoadedAll(true);
+    } catch (err) {
+      console.error('Error loading remaining musics:', err);
+    }
+  }, [hasLoadedAll, firstMusicFileName]);
 
   const loadMusics = useCallback(async () => {
     setLoading(true);
@@ -25,6 +58,7 @@ export const useMusic = () => {
     try {
       const fetchedMusics = await musicService.getMusics();
       setMusics(fetchedMusics);
+      setHasLoadedAll(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load musics');
     } finally {
@@ -351,8 +385,8 @@ export const useMusic = () => {
   }, []);
 
   useEffect(() => {
-    loadMusics();
-  }, [loadMusics]);
+    loadFirstMusic();
+  }, [loadFirstMusic]);
 
   useEffect(() => {
     if (musics.length > 0 && !currentMusic && autoPlay) {
@@ -437,6 +471,7 @@ export const useMusic = () => {
     toggleAutoPlay,
     uploadMusic,
     deleteMusic,
-    refreshMusics: loadMusics
+    refreshMusics: loadMusics,
+    loadRemainingMusics
   };
 };
