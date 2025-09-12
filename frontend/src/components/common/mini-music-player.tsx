@@ -162,20 +162,16 @@ export default function MiniMusicPlayer({
 
                 <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
                   <span className="text-white/80 text-sm">Auto Next Play</span>
-                  <button
-                    onClick={onToggleAutoPlay}
-                    className={`relative w-11 h-6 rounded-full transition-all duration-300 ${
-                      autoPlay ? 'bg-gradient-to-r from-green-500 to-green-400' : 'bg-white/20'
-                    }`}
-                  >
-                    <motion.div 
-                      className="w-4 h-4 bg-white rounded-full shadow-lg absolute top-1"
-                      animate={{
-                        x: autoPlay ? 20 : 4
-                      }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                    />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-400 text-xs font-medium">Always On</span>
+                    <div className="relative w-11 h-6 rounded-full bg-gradient-to-r from-green-500 to-green-400">
+                      <motion.div 
+                        className="w-4 h-4 bg-white rounded-full shadow-lg absolute top-1"
+                        animate={{ x: 20 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-3 p-3 bg-white/5 rounded-xl">
