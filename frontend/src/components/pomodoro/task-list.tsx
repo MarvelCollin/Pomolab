@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, MoreHorizontal, Play, Check, Clock, User, Edit3, Trash2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import type { ITask } from '../../interfaces/ITask';
 
 interface TaskListProps {
@@ -11,9 +11,10 @@ interface TaskListProps {
   onTaskDelete?: (taskId: number) => void;
   onTaskEdit?: (taskId: number, updates: Partial<ITask>) => void;
   selectedTaskId?: number;
+  isMinimized?: boolean;
 }
 
-export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete, onTaskEdit, selectedTaskId }: TaskListProps) {
+export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete, onTaskEdit, selectedTaskId, isMinimized = false }: TaskListProps) {
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
@@ -95,30 +96,56 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
   return (
     <motion.div 
       className="task-list h-full flex flex-col"
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8, delay: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
     >
-      <motion.div 
-        className="flex items-center justify-between mb-4 bg-white/5 backdrop-blur-2xl rounded-xl p-3 border border-white/10 shadow-lg"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-      >
-        <h2 className="text-lg font-semibold text-white drop-shadow">Tasks</h2>
-        <motion.button
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, delay: 0.4 }}
+      <div className="flex items-center justify-between mb-4 bg-white/5 backdrop-blur-2xl rounded-xl p-3 border border-white/10 shadow-lg">
+        <h2 className={`font-semibold text-white drop-shadow transition-all duration-300 ${isMinimized ? 'text-sm' : 'text-lg'}`}>
+          Tasks {isMinimized && `(${tasks.filter(t => t.status !== 'completed').length})`}
+        </h2>
+        <button
           onClick={() => setIsAddingTask(true)}
-          className="w-8 h-8 bg-white/10 backdrop-blur-2xl hover:bg-white/20 border border-white/10 rounded-full flex items-center justify-center transition-all duration-200 shadow-lg hover:shadow-xl"
+          className={`w-8 h-8 bg-white/10 backdrop-blur-2xl hover:bg-white/20 border border-white/10 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl ${
+            isMinimized ? 'opacity-0 scale-0' : 'opacity-100 scale-100'
+          }`}
         >
           <Plus className="w-4 h-4 text-white" />
-        </motion.button>
-      </motion.div>
+        </button>
+      </div>
 
-      <AnimatePresence>
-        {isAddingTask && (
+      {isMinimized && tasks.length > 0 && (
+        <div 
+          className="bg-white/10 backdrop-blur-2xl rounded-xl p-3 border border-white/10 shadow-lg transition-all duration-300"
+        >
+          {(() => {
+            const activeTask = tasks.find(t => t.status === 'in_progress' || selectedTaskId === t.id) || tasks.find(t => t.status === 'pending');
+            if (!activeTask) return (
+              <p className="text-white/60 text-xs text-center">No active tasks</p>
+            );
+            return (
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm font-medium truncate">{activeTask.title}</p>
+                  <div className="flex items-center gap-2 text-white/60 text-xs mt-1">
+                    <span>🍅 {activeTask.completed_pomodoros}/{activeTask.estimated_pomodoros}</span>
+                    <div className="flex-1 bg-white/10 rounded-full h-1 ml-2">
+                      <div
+                        className="bg-white/60 h-1 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${Math.min(100, (activeTask.completed_pomodoros / activeTask.estimated_pomodoros) * 100)}%`
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {isAddingTask && !isMinimized && (
           <motion.div 
             className="bg-white/5 backdrop-blur-2xl rounded-xl p-3 mb-3 border border-white/10 shadow-lg"
             initial={{ opacity: 0, height: 0, y: -20 }}
@@ -174,20 +201,15 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
 
-      <motion.div 
-        className="flex-1 space-y-2 overflow-y-auto max-h-[calc(100vh-200px)] pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.6 }}
+      <div 
+        className={`flex-1 space-y-2 overflow-y-auto max-h-[calc(100vh-200px)] pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 transition-all duration-300 ${
+          isMinimized ? 'opacity-0 h-0' : 'opacity-100 h-auto'
+        }`}
       >
-        {tasks.map((task, index) => (
-          <motion.div
+        {tasks.map((task) => (
+          <div
             key={task.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.8 + (index * 0.1) }}
             onClick={() => onTaskSelect(task)}
             className={`bg-white/10 backdrop-blur-2xl rounded-xl p-3 border transition-all duration-200 cursor-pointer shadow-lg hover:shadow-xl hover:bg-white/15 transform hover:-translate-y-0.5 ${
               selectedTaskId === task.id 
@@ -291,7 +313,7 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
                 </div>
               </div>
             )}
-          </motion.div>
+          </div>
         ))}
         
         {tasks.length === 0 && !isAddingTask && (
@@ -308,7 +330,7 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
             <p className="text-xs opacity-80">Add a task to start your session</p>
           </motion.div>
         )}
-      </motion.div>
+      </div>
     </motion.div>
   );
 }

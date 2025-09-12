@@ -391,7 +391,8 @@ export const useMusic = () => {
   useEffect(() => {
     if (musics.length > 0 && !currentMusic && autoPlay) {
       const firstMusic = musics[0];
-      setTimeout(() => {
+      
+      const initializeFirstMusic = () => {
         if (audioRef.current) {
           audioRef.current.pause();
         }
@@ -422,10 +423,14 @@ export const useMusic = () => {
             isPlaying: false,
             currentTime: 0
           }));
+          if (autoPlay) {
+            setTimeout(() => nextMusic(), 500);
+          }
         });
 
-        audio.play()
-          .then(() => {
+        const attemptAutoPlay = async () => {
+          try {
+            await audio.play();
             setCurrentMusic(firstMusic);
             setPlayerState(prev => ({
               ...prev,
@@ -434,13 +439,35 @@ export const useMusic = () => {
             setMusics(prev => 
               prev.map(m => ({ ...m, isActive: m.id === firstMusic.id }))
             );
-          })
-          .catch(() => {
-            setError('Failed to auto-play music');
-          });
-      }, 500);
+          } catch (error) {
+            setCurrentMusic(firstMusic);
+            setMusics(prev => 
+              prev.map(m => ({ ...m, isActive: m.id === firstMusic.id }))
+            );
+            
+            const handleUserInteraction = async () => {
+              try {
+                await audio.play();
+                setPlayerState(prev => ({
+                  ...prev,
+                  isPlaying: true
+                }));
+                document.removeEventListener('click', handleUserInteraction);
+                document.removeEventListener('keydown', handleUserInteraction);
+              } catch {}
+            };
+            
+            document.addEventListener('click', handleUserInteraction, { once: true });
+            document.addEventListener('keydown', handleUserInteraction, { once: true });
+          }
+        };
+
+        setTimeout(attemptAutoPlay, 1000);
+      };
+      
+      initializeFirstMusic();
     }
-  }, [musics, currentMusic, autoPlay, playerState.volume, playerState.isMuted]);
+  }, [musics, currentMusic, autoPlay, playerState.volume, playerState.isMuted, nextMusic]);
 
   useEffect(() => {
     return () => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Settings, Music, X } from 'lucide-react';
 import { useMusic } from '../../hooks/use-music';
@@ -47,6 +47,8 @@ export default function MiniMusicPlayer({ showMusicPlayer, setShowMusicPlayer }:
     setVolume(percentage);
   };
 
+
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (showMusicSettings) {
@@ -73,50 +75,53 @@ export default function MiniMusicPlayer({ showMusicPlayer, setShowMusicPlayer }:
       className="fixed bottom-4 left-4 z-40"
     >
       <div className="relative group music-settings-container">
-        <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl p-3 shadow-xl max-w-sm">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={togglePlayPause}
-              className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors"
-            >
-              {playerState.isPlaying ? (
-                <Pause className="w-4 h-4 text-white" />
-              ) : (
-                <Play className="w-4 h-4 text-white ml-0.5" />
-              )}
-            </button>
-            
-            <div className="flex-1 min-w-0">
-              <div className="text-white text-sm font-medium truncate">{currentMusic.name}</div>
-              <div className="text-white/60 text-xs flex items-center gap-2 mt-1">
-                <span>{formatTime(playerState.currentTime)}</span>
-                <div 
-                  className="flex-1 bg-white/20 rounded-full h-1 overflow-hidden cursor-pointer"
-                  onClick={handleProgressClick}
-                >
-                  <div 
-                    className="h-full bg-white/80 transition-all duration-200"
-                    style={{ width: `${(playerState.currentTime / playerState.duration) * 100}%` }}
-                  />
+        <div className="bg-black/20 backdrop-blur-3xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl max-w-sm">
+          <div className="px-4 pt-3 pb-3">
+            <div className="flex items-center gap-3 mb-2">
+              <button
+                onClick={togglePlayPause}
+                className="w-9 h-9 bg-white/15 hover:bg-white/25 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-105"
+              >
+                {playerState.isPlaying ? (
+                  <Pause className="w-4 h-4 text-white drop-shadow-sm" />
+                ) : (
+                  <Play className="w-4 h-4 text-white ml-0.5 drop-shadow-sm" />
+                )}
+              </button>
+              
+              <div className="flex-1 min-w-0">
+                <div className="text-white text-sm font-medium truncate drop-shadow-sm">{currentMusic.name}</div>
+                <div className="text-white/50 text-xs mt-0.5">
+                  {formatTime(playerState.currentTime)} / {formatTime(playerState.duration)}
                 </div>
-                <span>{formatTime(playerState.duration)}</span>
+              </div>
+              
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setShowMusicPlayer(true)}
+                  className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300"
+                >
+                  <Music className="w-3 h-3 text-white/80" />
+                </button>
+                
+                <button
+                  onClick={() => setShowMusicSettings(!showMusicSettings)}
+                  className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300"
+                >
+                  <Settings className="w-3 h-3 text-white/80" />
+                </button>
               </div>
             </div>
             
-            <div className="flex gap-1">
-              <button
-                onClick={() => setShowMusicPlayer(true)}
-                className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
-              >
-                <Music className="w-3 h-3 text-white" />
-              </button>
-              
-              <button
-                onClick={() => setShowMusicSettings(!showMusicSettings)}
-                className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
-              >
-                <Settings className="w-3 h-3 text-white" />
-              </button>
+            <div 
+              className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden cursor-pointer"
+              onClick={handleProgressClick}
+            >
+              <motion.div 
+                className="h-full bg-gradient-to-r from-white/90 to-white/70 rounded-full"
+                style={{ width: `${(playerState.currentTime / playerState.duration) * 100}%` }}
+                transition={{ duration: 0.1 }}
+              />
             </div>
           </div>
         </div>
@@ -124,82 +129,88 @@ export default function MiniMusicPlayer({ showMusicPlayer, setShowMusicPlayer }:
         <AnimatePresence>
           {showMusicSettings && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              initial={{ opacity: 0, scale: 0.9, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              transition={{ duration: 0.2 }}
-              className="absolute bottom-full left-0 mb-2 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-xl p-3 shadow-2xl w-64"
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="absolute bottom-full left-0 mb-3 bg-black/30 backdrop-blur-3xl border border-white/10 rounded-2xl p-4 shadow-2xl w-72"
             >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-white text-sm font-medium">Music Settings</span>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-white text-sm font-medium drop-shadow-sm">Music Settings</span>
                   <button
                     onClick={() => setShowMusicSettings(false)}
-                    className="w-5 h-5 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+                    className="w-6 h-6 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300"
                   >
-                    <X className="w-3 h-3 text-white" />
+                    <X className="w-3 h-3 text-white/80" />
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-white/80 text-sm">Auto Play</span>
+                <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                  <span className="text-white/80 text-sm">Auto Next Play</span>
                   <button
                     onClick={toggleAutoPlay}
-                    className={`w-10 h-6 rounded-full transition-colors ${
-                      autoPlay ? 'bg-green-500' : 'bg-white/20'
+                    className={`relative w-11 h-6 rounded-full transition-all duration-300 ${
+                      autoPlay ? 'bg-gradient-to-r from-green-500 to-green-400' : 'bg-white/20'
                     }`}
                   >
-                    <div className={`w-4 h-4 bg-white rounded-full transition-transform ${
-                      autoPlay ? 'translate-x-5' : 'translate-x-1'
-                    }`} />
+                    <motion.div 
+                      className="w-4 h-4 bg-white rounded-full shadow-lg absolute top-1"
+                      animate={{
+                        x: autoPlay ? 20 : 4
+                      }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                    />
                   </button>
                 </div>
 
-                <div className="space-y-2">
-                  <span className="text-white/80 text-sm">Volume</span>
-                  <div className="flex items-center gap-2">
+                <div className="space-y-3 p-3 bg-white/5 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/80 text-sm">Volume</span>
+                    <span className="text-white/60 text-xs font-mono">
+                      {Math.round(playerState.volume * 100)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
                     <button
                       onClick={toggleMute}
-                      className="w-6 h-6 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+                      className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300"
                     >
                       {playerState.isMuted ? (
-                        <VolumeX className="w-3 h-3 text-white" />
+                        <VolumeX className="w-3 h-3 text-white/80" />
                       ) : (
-                        <Volume2 className="w-3 h-3 text-white" />
+                        <Volume2 className="w-3 h-3 text-white/80" />
                       )}
                     </button>
                     
                     <div 
-                      className="flex-1 bg-white/20 rounded-full h-2 overflow-hidden cursor-pointer"
+                      className="flex-1 bg-white/10 rounded-full h-2 overflow-hidden cursor-pointer"
                       onClick={handleVolumeClick}
                     >
-                      <div 
-                        className="h-full bg-white/80 transition-all duration-200"
+                      <motion.div 
+                        className="h-full bg-gradient-to-r from-white/90 to-white/70 rounded-full"
                         style={{ width: `${playerState.volume * 100}%` }}
+                        transition={{ duration: 0.1 }}
                       />
                     </div>
-                    
-                    <span className="text-white/60 text-xs min-w-[2.5rem]">
-                      {Math.round(playerState.volume * 100)}%
-                    </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 pt-2 border-t border-white/10">
                   <button
                     onClick={previousMusic}
-                    className="flex-1 bg-white/10 hover:bg-white/20 rounded-lg p-2 flex items-center justify-center gap-2 transition-colors"
+                    className="flex-1 bg-white/10 hover:bg-white/20 rounded-xl p-3 flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105"
                   >
-                    <SkipBack className="w-3 h-3 text-white" />
-                    <span className="text-white text-xs">Previous</span>
+                    <SkipBack className="w-4 h-4 text-white/80" />
+                    <span className="text-white/80 text-xs font-medium">Previous</span>
                   </button>
                   
                   <button
                     onClick={nextMusic}
-                    className="flex-1 bg-white/10 hover:bg-white/20 rounded-lg p-2 flex items-center justify-center gap-2 transition-colors"
+                    className="flex-1 bg-white/10 hover:bg-white/20 rounded-xl p-3 flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105"
                   >
-                    <SkipForward className="w-3 h-3 text-white" />
-                    <span className="text-white text-xs">Next</span>
+                    <SkipForward className="w-4 h-4 text-white/80" />
+                    <span className="text-white/80 text-xs font-medium">Next</span>
                   </button>
                 </div>
               </div>

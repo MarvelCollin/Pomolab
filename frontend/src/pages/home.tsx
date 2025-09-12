@@ -1,10 +1,11 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import PomodoroTimer from '../components/pomodoro/pomodoro-timer';
 import TaskList from '../components/pomodoro/task-list';
 import MiniMusicPlayer from '../components/common/mini-music-player';
 import ToolBar from '../components/common/tool-bar';
+import AudioVisual from '../components/pomodoro/audio-visual';
 import type { ITask } from '../interfaces/ITask';
 import { dummyTasks } from '../data/dummy-data';
 import { useBackground } from '../hooks/use-background';
@@ -16,8 +17,8 @@ import '../app.css';
 export default function Home() {
   const [tasks, setTasks] = useState<ITask[]>(dummyTasks);
   const [selectedTask, setSelectedTask] = useState<ITask | null>(tasks.find(t => t.status === 'in_progress') || null);
-  const [showPomodoro, setShowPomodoro] = useState(true);
-  const [showTasks, setShowTasks] = useState(true);
+  const [pomodoroMinimized, setPomodoroMinimized] = useState(false);
+  const [tasksMinimized, setTasksMinimized] = useState(false);
   const [isMinimalMode, setIsMinimalMode] = useState(false);
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const [backgroundVisible, setBackgroundVisible] = useState(false);
@@ -25,6 +26,7 @@ export default function Home() {
   const [showBackgroundSelector, setShowBackgroundSelector] = useState(false);
   const [showMusicPlayer, setShowMusicPlayer] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   
   const { 
     backgrounds, 
@@ -50,6 +52,8 @@ export default function Home() {
     loadRemainingMusics
   } = useMusic();
 
+
+
   useEffect(() => {
     if (!activeBackground && !backgroundsLoading) {
       setTimeout(() => {
@@ -61,6 +65,8 @@ export default function Home() {
       }, 800);
     }
   }, [activeBackground, backgroundsLoading]);
+
+
 
   const handleTaskSelect = useCallback((task: ITask) => {
     setSelectedTask(task);
@@ -226,6 +232,12 @@ export default function Home() {
         />
       </div>
 
+      <AudioVisual 
+        currentMusic={currentMusic}
+        playerState={playerState}
+        showContent={showContent}
+      />
+
       <AnimatePresence>
         {isLoading && (
           <motion.div
@@ -333,10 +345,10 @@ export default function Home() {
               setShowMusicPlayer={setShowMusicPlayer}
               isMinimalMode={isMinimalMode}
               setIsMinimalMode={setIsMinimalMode}
-              showPomodoro={showPomodoro}
-              setShowPomodoro={setShowPomodoro}
-              showTasks={showTasks}
-              setShowTasks={setShowTasks}
+              pomodoroMinimized={pomodoroMinimized}
+              setPomodoroMinimized={setPomodoroMinimized}
+              tasksMinimized={tasksMinimized}
+              setTasksMinimized={setTasksMinimized}
               backgrounds={backgrounds}
               activeBackground={activeBackground}
               uploadingBackground={uploadingBackground}
@@ -356,8 +368,6 @@ export default function Home() {
               loadRemainingMusics={loadRemainingMusics}
             />
 
-
-
             <MiniMusicPlayer 
               showMusicPlayer={showMusicPlayer} 
               setShowMusicPlayer={setShowMusicPlayer} 
@@ -373,29 +383,21 @@ export default function Home() {
                 <div className="max-w-7xl mx-auto px-4 w-full">
                   <div className="grid lg:grid-cols-12 gap-6 items-start">
                     
-                    <AnimatePresence>
-                      {showPomodoro && (
-                        <motion.div
-                          className={`${showTasks ? 'lg:col-span-7' : 'lg:col-span-8'}`}
-                          initial={{ opacity: 0, y: 60, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 60, scale: 0.95 }}
-                          transition={{ 
-                            duration: 0.8, 
-                            delay: 0.2,
-                            ease: [0.25, 0.46, 0.45, 0.94],
-                            type: "spring",
-                            stiffness: 100,
-                            damping: 15
-                          }}
+                    <div className={`${tasksMinimized ? 'lg:col-span-8' : 'lg:col-span-7'} transition-all duration-300`}>
+                      <div className="rounded-3xl p-6 h-full">
+                        <div 
+                          className={`text-center mb-6 transition-all duration-300 ${
+                            pomodoroMinimized ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100 h-auto'
+                          }`}
                         >
-                          <div className=" rounded-3xl p-6 h-full">
-                            <div className="text-center mb-6">
-                              <h1 className="text-4xl font-bold leading-tight mb-2">
-                                <span className="text-white drop-shadow-lg">POMOLAB</span>
-                              </h1>
-                            </div>
-                            <PomodoroTimer onSessionComplete={handleSessionComplete} />
+                          <h1 className="text-4xl font-bold leading-tight mb-2">
+                            <span className="text-white drop-shadow-lg">POMOLAB</span>
+                          </h1>
+                        </div>
+                        <PomodoroTimer 
+                          onSessionComplete={handleSessionComplete} 
+                          isMinimized={pomodoroMinimized}
+                        />
                             {selectedTask && (
                               <motion.div 
                                 initial={{ opacity: 0, y: 20 }}
@@ -413,69 +415,34 @@ export default function Home() {
                                 </div>
                               </motion.div>
                             )}
-                            <motion.div 
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.6, delay: 0.5 }}
-                              className="mt-6 text-center"
-                            >
-                              <Link
-                                to="/learn-together"
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 text-white rounded-xl transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-xl"
-                              >
-                                Join Learning Session
-                              </Link>
-                            </motion.div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    <AnimatePresence>
-                      {showTasks && (
-                        <motion.div
-                          className={`${showPomodoro ? 'lg:col-span-5' : 'lg:col-span-4'}`}
-                          initial={{ opacity: 0, y: 60, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 60, scale: 0.95 }}
-                          transition={{ 
-                            duration: 0.8, 
-                            delay: 0.4,
-                            ease: [0.25, 0.46, 0.45, 0.94],
-                            type: "spring",
-                            stiffness: 100,
-                            damping: 15
-                          }}
+                        <div 
+                          className={`mt-6 text-center transition-all duration-300 ${
+                            pomodoroMinimized ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100 h-auto'
+                          }`}
                         >
-                          <div className="rounded-3xl p-4  h-full max-h-[80vh]">
-                            <TaskList
-                              tasks={tasks}
-                              onTaskSelect={handleTaskSelect}
-                              onTaskComplete={handleTaskComplete}
-                              onTaskAdd={handleTaskAdd}
-                              onTaskDelete={handleTaskDelete}
-                              selectedTaskId={selectedTask?.id}
-                            />
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    {!showPomodoro && !showTasks && (
-                      <div className="lg:col-span-12 text-center">
-                        <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-8 shadow-2xl border border-white/10 max-w-2xl mx-auto">
-                          <h1 className="text-5xl font-bold leading-tight mb-4">
-                            <span className="text-white drop-shadow-lg">POMOLAB</span>
-                          </h1>
-                          <p className="text-white/80 text-lg drop-shadow mb-6">
-                            Focus • Learn • Achieve
-                          </p>
-                          <p className="text-white/60 text-sm">
-                            Use the controls in the top-right to show your timer and tasks
-                          </p>
+                          <Link
+                            to="/learn-together"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 text-white rounded-xl transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-xl"
+                          >
+                            Join Learning Session
+                          </Link>
                         </div>
                       </div>
-                    )}
+                    </div>
+
+                    <div className={`${pomodoroMinimized ? 'lg:col-span-4' : 'lg:col-span-5'} transition-all duration-300`}>
+                      <div className={`rounded-3xl p-4 h-full transition-all duration-300 ${tasksMinimized ? 'max-h-[120px]' : 'max-h-[80vh]'}`}>
+                        <TaskList
+                          tasks={tasks}
+                          onTaskSelect={handleTaskSelect}
+                          onTaskComplete={handleTaskComplete}
+                          onTaskAdd={handleTaskAdd}
+                          onTaskDelete={handleTaskDelete}
+                          selectedTaskId={selectedTask?.id}
+                          isMinimized={tasksMinimized}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </motion.section>
