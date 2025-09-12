@@ -17,11 +17,13 @@ return new class extends Migration
             $table->string('description')->nullable();
             $table->unsignedBigInteger('owner_id');
             $table->unsignedBigInteger('assigned_to_id')->nullable();
+            $table->unsignedBigInteger('group_id')->nullable();
             $table->string('status');
             $table->timestamps();
-            
+
             $table->foreign('owner_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('assigned_to_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('group_id')->references('id')->on('groups')->onDelete('cascade');
         });
     }
 

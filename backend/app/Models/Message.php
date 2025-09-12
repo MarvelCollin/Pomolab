@@ -15,6 +15,7 @@ class Message extends Model
         'to_user_id',
         'message',
         'task_id',
+        'group_id',
     ];
 
     public function fromUser(): BelongsTo
@@ -30,5 +31,10 @@ class Message extends Model
     public function task(): BelongsTo
     {
         return $this->belongsTo(Task::class);
+    }
+
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(Group::class);
     }
 }

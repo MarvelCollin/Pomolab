@@ -27,12 +27,10 @@ class Group extends Model
         ];
     }
 
-
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'creator_id');
     }
-
 
     public function members(): BelongsToMany
     {
@@ -41,19 +39,12 @@ class Group extends Model
             ->withTimestamps();
     }
 
-    /**
-     * Get all tasks associated with this group
-     * Note: This will require adding group_id to tasks table in the future
-     */
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class, 'group_id');
     }
 
-    /**
-     * Get all messages sent to this group
-     * Note: This will require adding group_id to messages table in the future
-     */
+
     public function messages(): HasMany
     {
         return $this->hasMany(Message::class, 'group_id');

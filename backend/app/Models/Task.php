@@ -16,6 +16,7 @@ class Task extends Model
         'description',
         'owner_id',
         'assigned_to_id',
+        'group_id',
         'status',
     ];
 
@@ -32,5 +33,10 @@ class Task extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(Message::class);
+    }
+
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(Group::class);
     }
 }
