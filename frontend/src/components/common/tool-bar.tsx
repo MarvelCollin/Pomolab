@@ -18,11 +18,14 @@ import {
   Eye,
   EyeOff,
   Waves,
-  Square
+  Square,
+  User,
+  LogOut
 } from 'lucide-react';
 import type { IBackground } from '../../interfaces/IBackground';
 import type { IMusic } from '../../interfaces/IMusic';
 import type { IAudioEffect } from '../../interfaces/IAudioEffect';
+import type { IUser } from '../../interfaces/IUser';
 
 interface ToolBarProps {
   showBackgroundSelector: boolean;
@@ -66,6 +69,10 @@ interface ToolBarProps {
   onToggleMasterMute: () => void;
   onUploadAudioEffect: (file: File) => Promise<IAudioEffect | null>;
   onDeleteAudioEffect: (effect: IAudioEffect, event: React.MouseEvent) => void;
+  // Auth props
+  currentUser: IUser | null;
+  onShowLogin: () => void;
+  onLogout: () => void;
 }
 
 export default function ToolBar({ 
@@ -109,7 +116,10 @@ export default function ToolBar({
   onSetMasterVolume,
   onToggleMasterMute,
   onUploadAudioEffect,
-  onDeleteAudioEffect
+  onDeleteAudioEffect,
+  currentUser,
+  onShowLogin,
+  onLogout
 }: ToolBarProps) {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -175,6 +185,66 @@ export default function ToolBar({
               transition={{ duration: 0.3, ease: "easeOut" }}
             >
               <div className="space-y-1">
+                {/* User Authentication Section */}
+                {currentUser ? (
+                  <motion.div
+                    className="bg-white/10 backdrop-blur-2xl rounded-xl p-3 border border-white/10 mb-3"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                        {currentUser.avatar ? (
+                          <img
+                            src={currentUser.avatar}
+                            alt={currentUser.username}
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        ) : (
+                          <User className="w-4 h-4 text-white/90" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium truncate">
+                          {currentUser.username}
+                        </p>
+                        <p className="text-white/60 text-xs truncate">
+                          {currentUser.email}
+                        </p>
+                      </div>
+                    </div>
+                    <motion.button
+                      onClick={() => {
+                        onLogout();
+                        setShowMainMenu(false);
+                      }}
+                      className="w-full flex items-center gap-3 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group"
+                      whileHover={{ x: 4 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <LogOut className="w-4 h-4 text-white/90" />
+                      <span className="text-white text-sm font-medium">Sign Out</span>
+                    </motion.button>
+                  </motion.div>
+                ) : (
+                  <motion.button
+                    onClick={() => {
+                      onShowLogin();
+                      setShowMainMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-white/20 rounded-xl transition-all duration-200 group mb-3 bg-white/10 backdrop-blur-2xl border border-white/10"
+                    whileHover={{ x: 4, backgroundColor: "rgba(255, 255, 255, 0.2)" }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <User className="w-5 h-5 text-white/90" />
+                    <span className="text-white text-sm font-medium">Sign In</span>
+                  </motion.button>
+                )}
+
                 <motion.button
                   onClick={() => {
                     setPomodoroMinimized(!pomodoroMinimized);

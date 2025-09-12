@@ -88,7 +88,7 @@ export class UserApi {
   }
 
   static async login(credentials: LoginRequest): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -103,7 +103,7 @@ export class UserApi {
   }
 
   static async register(userData: RegisterRequest): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -118,7 +118,7 @@ export class UserApi {
   }
 
   static async logout(token: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -131,7 +131,7 @@ export class UserApi {
   }
 
   static async getCurrentUser(token: string): Promise<IUser> {
-    const response = await fetch(`${API_BASE_URL}/auth/user`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/user`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -144,7 +144,7 @@ export class UserApi {
   }
 
   static async googleAuth(googleToken: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/google`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/google`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

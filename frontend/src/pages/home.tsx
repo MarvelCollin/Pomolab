@@ -6,12 +6,15 @@ import MiniPomodoroTimer from '../components/common/mini-pomodoro-timer';
 import TaskList from '../components/pomodoro/task-list';
 import MiniMusicPlayer from '../components/common/mini-music-player';
 import ToolBar from '../components/common/tool-bar';
+import LoginModal from '../components/common/login-modal';
 import AudioVisual from '../components/pomodoro/audio-visual';
 import type { ITask } from '../interfaces/ITask';
+import type { IUser } from '../interfaces/IUser';
 import { dummyTasks } from '../data/dummy-data';
 import { useBackground } from '../hooks/use-background';
 import { useMusic } from '../hooks/use-music';
 import { useAudioEffect } from '../hooks/use-audio-effect';
+import { UserApi } from '../apis/user-api';
 import type { IBackground } from '../interfaces/IBackground';
 import type { IMusic } from '../interfaces/IMusic';
 import type { IAudioEffect } from '../interfaces/IAudioEffect';
@@ -31,6 +34,11 @@ export default function Home() {
   const [showAudioEffects, setShowAudioEffects] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  
+  // Authentication state
+  const [currentUser, setCurrentUser] = useState<IUser | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   
   const [currentSession, setCurrentSession] = useState<'focus' | 'short-break' | 'long-break'>('focus');
   const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -86,7 +94,6 @@ export default function Home() {
 
   const {
     audioEffects,
-    loading: audioEffectsLoading,
     playEffect,
     pauseEffect,
     stopEffect,
@@ -115,6 +122,51 @@ export default function Home() {
       loadRemainingMusics();
     }
   }, [backgroundsLoading, musicLoading, initialLoadComplete, loadRemainingBackgrounds, loadRemainingMusics]);
+
+  // Auto-login on component mount
+  useEffect(() => {
+    const checkExistingAuth = async () => {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        try {
+          const user = await UserApi.getCurrentUser(token);
+          setCurrentUser(user);
+          setAuthToken(token);
+        } catch (error) {
+          console.error('Failed to validate existing token:', error);
+          localStorage.removeItem('authToken');
+        }
+      }
+    };
+    
+    checkExistingAuth();
+  }, []);
+
+  // Authentication handlers
+  const handleLogin = useCallback(async (user: IUser, token: string) => {
+    setCurrentUser(user);
+    setAuthToken(token);
+    localStorage.setItem('authToken', token);
+    setShowLoginModal(false);
+  }, []);
+
+  const handleLogout = useCallback(async () => {
+    try {
+      if (authToken) {
+        await UserApi.logout(authToken);
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setCurrentUser(null);
+      setAuthToken(null);
+      localStorage.removeItem('authToken');
+    }
+  }, [authToken]);
+
+  const handleShowLogin = useCallback(() => {
+    setShowLoginModal(true);
+  }, []);
 
 
 
@@ -502,8 +554,6 @@ export default function Home() {
               onNextMusic={nextMusic}
               onPreviousMusic={previousMusic}
               onToggleMute={toggleMute}
-              loadRemainingBackgrounds={loadRemainingBackgrounds}
-              loadRemainingMusics={loadRemainingMusics}
               audioEffects={audioEffects}
               onPlayEffect={playEffect}
               onPauseEffect={pauseEffect}
@@ -518,6 +568,9 @@ export default function Home() {
               onToggleMasterMute={toggleMasterMute}
               onUploadAudioEffect={uploadAudioEffect}
               onDeleteAudioEffect={handleDeleteAudioEffect}
+              currentUser={currentUser}
+              onShowLogin={handleShowLogin}
+              onLogout={handleLogout}
             />
 
             <MiniMusicPlayer 
@@ -654,6 +707,13 @@ export default function Home() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onLogin={handleLogin}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Eye, EyeOff, User, Mail, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserApi } from '../../apis/user-api';
+import type { IUser } from '../../interfaces/IUser';
 
 declare global {
   interface Window {
@@ -13,7 +14,7 @@ declare global {
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: (user: any, token: string) => void;
+  onLogin: (user: IUser, token: string) => void;
 }
 
 export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
@@ -82,6 +83,12 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
     setError('');
 
     try {
+      if (!window.gapi) {
+        setError('Google authentication is not available. Please try again later.');
+        setLoading(false);
+        return;
+      }
+
       window.gapi.load('auth2', () => {
         const authInstance = window.gapi.auth2.getAuthInstance();
         if (!authInstance) {
