@@ -29,45 +29,15 @@ export const useBackground = () => {
     return Promise.resolve();
   }, []);
 
-  const uploadBackground = useCallback(async (file: File) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const newBackground = await backgroundService.uploadBackground(file);
-      if (newBackground) {
-        setBackgrounds(prev => [newBackground, ...prev]);
-        return newBackground;
-      }
-      return null;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload background');
-      return null;
-    } finally {
-      setLoading(false);
-    }
+  const uploadBackground = useCallback(async (_file: File) => {
+    setError('Upload functionality is not available with local files');
+    return null;
   }, []);
 
-  const deleteBackground = useCallback(async (background: IBackground) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const success = await backgroundService.deleteBackground(background.filePath);
-      if (success) {
-        setBackgrounds(prev => prev.filter(bg => bg.id !== background.id));
-        if (activeBackground?.id === background.id) {
-          const remainingBackgrounds = backgrounds.filter(bg => bg.id !== background.id);
-          setActiveBackground(remainingBackgrounds.length > 0 ? remainingBackgrounds[0] : null);
-        }
-        return true;
-      }
-      return false;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete background');
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [activeBackground, backgrounds]);
+  const deleteBackground = useCallback(async (_background: IBackground) => {
+    setError('Delete functionality is not available with local files');
+    return false;
+  }, []);
 
   const changeBackground = useCallback((background: IBackground) => {
     setBackgrounds(prev => 

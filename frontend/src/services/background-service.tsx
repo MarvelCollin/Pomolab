@@ -1,44 +1,38 @@
-import { supabase } from '../lib/supabase';
 import type { IBackground } from '../interfaces/IBackground';
 
 export class BackgroundService {
-    private bucketName = 'assets';
-    private folder = 'backgrounds';
+    private folder = '/src/assets/backgrounds';
+    
+    private backgroundFiles = [
+        'lofi-background-1.mp4',
+        'lofi-background-2.mp4',
+        'lofi-background-3.mp4',
+        'lofi-background-4.mp4',
+        'lofi-background-5.mp4',
+        'lofi-background-6.mp4',
+        'lofi-background-7.mp4'
+    ];
 
     async getBackgroundsWithDefault(): Promise<{ backgrounds: IBackground[], defaultBackground: IBackground | null }> {
         try {
-            const { data: files, error } = await supabase.storage
-                .from(this.bucketName)
-                .list(this.folder, {
-                    limit: 100,
-                    offset: 0,
-                });
-
-            if (error) throw error;
-            const validFiles = files.filter(file => file.name !== '.emptyFolderPlaceholder');
-            
-            if (validFiles.length === 0) return { backgrounds: [], defaultBackground: null };
-
-            const backgrounds: IBackground[] = validFiles.map(file => {
-                const filePath = `${this.folder}/${file.name}`;
-                const { data } = supabase.storage
-                    .from(this.bucketName)
-                    .getPublicUrl(filePath);
-
-                const fileExtension = file.name.split('.').pop()?.toLowerCase();
+            const backgrounds: IBackground[] = this.backgroundFiles.map((fileName, index) => {
+                const fileExtension = fileName.split('.').pop()?.toLowerCase();
                 const isVideo = ['mp4', 'webm', 'mov', 'avi'].includes(fileExtension || '');
+                const filePath = `${this.folder}/${fileName}`;
 
                 return {
-                    id: file.id || file.name,
-                    name: `Background ${Math.floor(Math.random() * 1000)}`,
-                    url: data.publicUrl,
+                    id: `bg-${index + 1}`,
+                    name: `Lofi Background ${index + 1}`,
+                    url: filePath,
                     filePath,
                     type: isVideo ? 'video' : 'image',
                     isActive: false,
-                    createdAt: file.created_at || new Date().toISOString(),
-                    updatedAt: file.updated_at || new Date().toISOString()
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
                 };
             });
+
+            if (backgrounds.length === 0) return { backgrounds: [], defaultBackground: null };
 
             const randomIndex = Math.floor(Math.random() * backgrounds.length);
             const defaultBackground = { ...backgrounds[randomIndex], isActive: true };
@@ -74,36 +68,22 @@ export class BackgroundService {
 
     async getBackgrounds(): Promise<IBackground[]> {
         try {
-            const { data: files, error } = await supabase.storage
-                .from(this.bucketName)
-                .list(this.folder, {
-                    limit: 100,
-                    offset: 0,
-                });
+            const backgrounds: IBackground[] = this.backgroundFiles.map((fileName, index) => {
+                const fileExtension = fileName.split('.').pop()?.toLowerCase();
+                const isVideo = ['mp4', 'webm', 'mov', 'avi'].includes(fileExtension || '');
+                const filePath = `${this.folder}/${fileName}`;
 
-            if (error) throw error;
-            const backgrounds: IBackground[] = files
-                .filter(file => file.name !== '.emptyFolderPlaceholder')
-                .map(file => {
-                    const filePath = `${this.folder}/${file.name}`;
-                    const { data } = supabase.storage
-                        .from(this.bucketName)
-                        .getPublicUrl(filePath);
-
-                    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-                    const isVideo = ['mp4', 'webm', 'mov', 'avi'].includes(fileExtension || '');
-
-                    return {
-                        id: file.id || file.name,
-                        name: `Background ${Math.floor(Math.random() * 1000)}`,
-                        url: data.publicUrl,
-                        filePath,
-                        type: isVideo ? 'video' : 'image',
-                        isActive: false,
-                        createdAt: file.created_at || new Date().toISOString(),
-                        updatedAt: file.updated_at || new Date().toISOString()
-                    };
-                });
+                return {
+                    id: `bg-${index + 1}`,
+                    name: `Lofi Background ${index + 1}`,
+                    url: filePath,
+                    filePath,
+                    type: isVideo ? 'video' : 'image',
+                    isActive: false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+            });
 
             return backgrounds;
         } catch (error) {
@@ -112,59 +92,18 @@ export class BackgroundService {
         }
     }
 
-    async uploadBackground(file: File): Promise<IBackground | null> {
-        try {
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-            const filePath = `${this.folder}/${fileName}`;
-
-            const { error: uploadError } = await supabase.storage
-                .from(this.bucketName)
-                .upload(filePath, file);
-
-            if (uploadError) throw uploadError;
-
-            const { data } = supabase.storage
-                .from(this.bucketName)
-                .getPublicUrl(filePath);
-
-            const isVideo = ['mp4', 'webm', 'mov', 'avi'].includes(fileExt?.toLowerCase() || '');
-
-            return {
-                id: fileName,
-                name: `Background ${Math.floor(Math.random() * 1000)}`,
-                url: data.publicUrl,
-                filePath,
-                type: isVideo ? 'video' : 'image',
-                isActive: false,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-        } catch (error) {
-            console.error('Error uploading background:', error);
-            return null;
-        }
+    async uploadBackground(_file: File): Promise<IBackground | null> {
+        console.warn('Upload functionality not available with local files');
+        return null;
     }
 
-    async deleteBackground(filePath: string): Promise<boolean> {
-        try {
-            const { error } = await supabase.storage
-                .from(this.bucketName)
-                .remove([filePath]);
-
-            return !error;
-        } catch (error) {
-            console.error('Error deleting background:', error);
-            return false;
-        }
+    async deleteBackground(_filePath: string): Promise<boolean> {
+        console.warn('Delete functionality not available with local files');
+        return false;
     }
 
     getBackgroundUrl(filePath: string): string {
-        const { data } = supabase.storage
-            .from(this.bucketName)
-            .getPublicUrl(filePath);
-
-        return data.publicUrl;
+        return filePath;
     }
 }
 
