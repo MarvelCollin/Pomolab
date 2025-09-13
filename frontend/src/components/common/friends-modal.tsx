@@ -8,7 +8,6 @@ import {
   Check, 
   X as XIcon, 
   Clock,
-  Mail,
   User,
   Trash2,
   Loader2
@@ -16,7 +15,7 @@ import {
 import type { IFriend } from '../../interfaces/IFriend';
 import type { IUser } from '../../interfaces/IUser';
 import { FriendApi } from '../../apis/friend-api';
-import { useDebounce } from '../../hooks/useDebounce';
+import { useDebounce } from '../../hooks/use-debounce';
 
 interface FriendsModalProps {
   isOpen: boolean;
@@ -38,6 +37,13 @@ export default function FriendsModal({ isOpen, onClose, currentUser }: FriendsMo
   const [addFriendQuery, setAddFriendQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Search states
+  const [searchResults, setSearchResults] = useState<IUser[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  
+  // Debounced search query
+  const debouncedSearchQuery = useDebounce(addFriendQuery, 300);
 
   const loadFriendsData = useCallback(async () => {
     if (!currentUser) return;
@@ -46,71 +52,36 @@ export default function FriendsModal({ isOpen, onClose, currentUser }: FriendsMo
     setError(null);
     
     try {
-      const mockUsers: IUser[] = [
-        { 
-          id: 2, 
-          username: 'Sarah Chen', 
-          email: 'sarah@company.com', 
-          avatar: '👩‍💼',
-          created_at: '2025-09-01T00:00:00Z',
-          updated_at: '2025-09-01T00:00:00Z'
-        },
-        { 
-          id: 3, 
-          username: 'Mike Johnson', 
-          email: 'mike@company.com', 
-          avatar: '👨‍💻',
-          created_at: '2025-09-02T00:00:00Z',
-          updated_at: '2025-09-02T00:00:00Z'
-        },
-        { 
-          id: 4, 
-          username: 'Emma Wilson', 
-          email: 'emma@company.com', 
-          avatar: '👩‍🎨',
-          created_at: '2025-09-03T00:00:00Z',
-          updated_at: '2025-09-03T00:00:00Z'
-        }
-      ];
+      // Get all users for reference
+      const allUsers = await FriendApi.getAllUsers();
+      const userMap = new Map(allUsers.map(user => [user.id, user]));
 
-      const mockFriends: ExtendedFriend[] = [
-        {
-          id: 1,
-          user_id: currentUser.id,
-          friend_id: 2,
-          status: 'accepted',
-          created_at: '2025-09-08T12:00:00Z',
-          updated_at: '2025-09-08T12:00:00Z',
-          friend: mockUsers[0]
-        },
-        {
-          id: 2,
-          user_id: currentUser.id,
-          friend_id: 3,
-          status: 'accepted',
-          created_at: '2025-09-09T09:30:00Z',
-          updated_at: '2025-09-09T09:30:00Z',
-          friend: mockUsers[1]
-        }
-      ];
+      // Get friends, friend requests, and sent requests
+      const [friendsData, requestsData, sentData] = await Promise.all([
+        FriendApi.getUserFriends(currentUser.id),
+        FriendApi.getFriendRequests(currentUser.id),
+        FriendApi.getSentRequests(currentUser.id)
+      ]);
 
-      const mockRequests: ExtendedFriend[] = [
-        {
-          id: 3,
-          user_id: 4,
-          friend_id: currentUser.id,
-          status: 'pending',
-          created_at: '2025-09-10T08:00:00Z',
-          updated_at: '2025-09-10T08:00:00Z',
-          user: mockUsers[2]
-        }
-      ];
+      // Convert to ExtendedFriend with populated user data
+      const extendedFriends: ExtendedFriend[] = friendsData.map(friendship => ({
+        ...friendship,
+        friend: userMap.get(friendship.friend_id) || userMap.get(friendship.user_id === currentUser.id ? friendship.friend_id : friendship.user_id)
+      }));
 
-      const mockSentRequests: ExtendedFriend[] = [];
+      const extendedRequests: ExtendedFriend[] = requestsData.map(request => ({
+        ...request,
+        user: userMap.get(request.user_id)
+      }));
+
+      const extendedSentRequests: ExtendedFriend[] = sentData.map(sent => ({
+        ...sent,
+        friend: userMap.get(sent.friend_id)
+      }));
       
-      setFriends(mockFriends);
-      setFriendRequests(mockRequests);
-      setSentRequests(mockSentRequests);
+      setFriends(extendedFriends);
+      setFriendRequests(extendedRequests);
+      setSentRequests(extendedSentRequests);
     } catch (err) {
       setError('Failed to load friends data');
       console.error('Error loading friends:', err);
@@ -119,57 +90,92 @@ export default function FriendsModal({ isOpen, onClose, currentUser }: FriendsMo
     }
   }, [currentUser]);
 
+  // User search with debouncing
   useEffect(() => {
-    if (isOpen && currentUser) {
-      loadFriendsData();
+    const searchUsers = async () => {
+      if (!debouncedSearchQuery.trim() || !currentUser) {
+        setSearchResults([]);
+        return;
+      }
+
+      setSearchLoading(true);
+      try {
+        const results = await FriendApi.searchUsers(debouncedSearchQuery);
+        // Filter out current user and existing friends
+        const friendIds = friends.map(f => f.friend?.id).filter(Boolean);
+        const requestIds = [...friendRequests.map(r => r.user?.id), ...sentRequests.map(s => s.friend?.id)].filter(Boolean);
+        
+        const filteredResults = results.filter(user => 
+          user.id !== currentUser.id && 
+          !friendIds.includes(user.id) && 
+          !requestIds.includes(user.id)
+        );
+        
+        setSearchResults(filteredResults);
+      } catch (err) {
+        console.error('Error searching users:', err);
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    };
+
+    searchUsers();
+  }, [debouncedSearchQuery, currentUser, friends, friendRequests, sentRequests]);
+
+  const handleSendFriendRequest = async (userId: number) => {
+    if (!currentUser) return;
+    
+    try {
+      await FriendApi.createFriendRequest({
+        user_id: currentUser.id,
+        friend_id: userId,
+        status: 'pending'
+      });
+      await loadFriendsData();
+      setAddFriendQuery('');
+      setSearchResults([]);
+    } catch (err) {
+      setError('Failed to send friend request');
+      console.error('Error sending friend request:', err);
     }
-  }, [isOpen, currentUser, loadFriendsData]);
+  };
 
   const handleAcceptRequest = async (friendId: number) => {
     try {
-      const acceptedRequest = friendRequests.find(req => req.id === friendId);
-      if (acceptedRequest && acceptedRequest.user) {
-        const newFriend: ExtendedFriend = {
-          ...acceptedRequest,
-          status: 'accepted',
-          friend: acceptedRequest.user
-        };
-        
-        setFriends(prev => [...prev, newFriend]);
-        setFriendRequests(prev => prev.filter(req => req.id !== friendId));
-      }
+      await FriendApi.updateFriend(friendId, 'accepted');
+      await loadFriendsData();
     } catch (err) {
       setError('Failed to accept friend request');
+      console.error('Error accepting friend request:', err);
     }
   };
 
   const handleRejectRequest = async (friendId: number) => {
     try {
-      setFriendRequests(prev => prev.filter(req => req.id !== friendId));
+      await FriendApi.deleteFriend(friendId);
+      await loadFriendsData();
     } catch (err) {
       setError('Failed to reject friend request');
+      console.error('Error rejecting friend request:', err);
     }
   };
 
   const handleRemoveFriend = async (friendId: number) => {
     try {
-      setFriends(prev => prev.filter(friend => friend.id !== friendId));
+      await FriendApi.deleteFriend(friendId);
+      await loadFriendsData();
     } catch (err) {
       setError('Failed to remove friend');
+      console.error('Error removing friend:', err);
     }
   };
 
-  const handleSendFriendRequest = async () => {
-    if (!currentUser || !addFriendQuery.trim()) return;
-    
-    try {
-      // This would need to be implemented to search users by username/email
-      // For now, just show a placeholder
-      setError('Friend request feature coming soon!');
-    } catch (err) {
-      setError('Failed to send friend request');
+  useEffect(() => {
+    if (isOpen && currentUser) {
+      loadFriendsData();
     }
-  };
+  }, [isOpen, currentUser, loadFriendsData]);
 
   const filteredFriends = friends.filter(friend =>
     friend.friend?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -416,43 +422,68 @@ export default function FriendsModal({ isOpen, onClose, currentUser }: FriendsMo
                 <div className="space-y-3">
                   <div>
                     <label className="block text-white/80 text-sm font-medium mb-2">
-                      Find friends by username or email
+                      Search for users to add as friends
                     </label>
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/40" />
-                        <input
-                          type="text"
-                          placeholder="Enter username or email..."
-                          value={addFriendQuery}
-                          onChange={(e) => setAddFriendQuery(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 outline-none focus:border-white/40 transition-colors"
-                        />
-                      </div>
-                      <button
-                        onClick={handleSendFriendRequest}
-                        className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 text-blue-300 rounded-lg transition-colors flex items-center gap-2"
-                      >
-                        <UserPlus className="w-4 h-4" />
-                        Send Request
-                      </button>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/40" />
+                      <input
+                        type="text"
+                        placeholder="Type username or email to search..."
+                        value={addFriendQuery}
+                        onChange={(e) => setAddFriendQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 outline-none focus:border-white/40 transition-colors"
+                      />
+                      {searchLoading && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <Loader2 className="w-4 h-4 text-white/40 animate-spin" />
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <div className="flex items-start gap-3">
-                      <Mail className="w-5 h-5 text-blue-400 mt-0.5" />
-                      <div>
-                        <h4 className="text-white font-medium text-sm mb-1">Invite by Email</h4>
-                        <p className="text-white/60 text-xs mb-3">
-                          Send an invitation to join Pomolab to someone who doesn't have an account yet.
-                        </p>
-                        <button className="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs rounded-lg transition-colors">
-                          Send Invitation
-                        </button>
-                      </div>
+                  {/* Search Results */}
+                  {searchResults.length > 0 && (
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      <h4 className="text-white/80 text-sm font-medium">Search Results</h4>
+                      {searchResults.map((user) => (
+                        <div key={user.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-semibold">
+                              {user.avatar || getInitials(user.username)}
+                            </div>
+                            <div>
+                              <p className="text-white text-sm font-medium">{user.username}</p>
+                              <p className="text-white/60 text-xs">{user.email}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleSendFriendRequest(user.id)}
+                            className="px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 text-blue-300 rounded-lg transition-colors flex items-center gap-1.5"
+                          >
+                            <UserPlus className="w-3 h-3" />
+                            Add Friend
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  </div>
+                  )}
+
+                  {/* No Results */}
+                  {debouncedSearchQuery && !searchLoading && searchResults.length === 0 && (
+                    <div className="text-center py-6">
+                      <User className="w-8 h-8 text-white/30 mx-auto mb-2" />
+                      <p className="text-white/60 text-sm">No users found matching "{debouncedSearchQuery}"</p>
+                    </div>
+                  )}
+
+                  {/* Empty State */}
+                  {!addFriendQuery && (
+                    <div className="text-center py-8">
+                      <Search className="w-12 h-12 text-white/20 mx-auto mb-3" />
+                      <p className="text-white/60 text-sm">Start typing to search for users</p>
+                      <p className="text-white/40 text-xs mt-1">Search by username or email address</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

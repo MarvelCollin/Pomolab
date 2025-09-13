@@ -26,7 +26,7 @@ import '../app.css';
 
 export default function Home() {
   const [tasks, setTasks] = useState<ITask[]>([]);
-  const [tasksLoading, setTasksLoading] = useState(true);
+  const [tasksLoading, setTasksLoading] = useState(false);
   const [tasksError, setTasksError] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<ITask | null>(tasks.find(t => t.status === 'in_progress') || null);
   const [pomodoroMinimized, setPomodoroMinimized] = useState(false);
@@ -277,6 +277,27 @@ export default function Home() {
     }
   }, [selectedTask]);
 
+  const handleTaskAssign = useCallback(async (taskId: number, userId: number | null) => {
+    try {
+      if (userId) {
+        await TaskApi.assignTask(taskId, userId);
+      } else {
+        await TaskApi.updateTask(taskId, { assigned_to_id: undefined });
+      }
+      setTasks(prev => prev.map(task => 
+        task.id === taskId 
+          ? { ...task, assigned_to_id: userId || undefined, updated_at: new Date().toISOString() }
+          : task
+      ));
+      if (selectedTask?.id === taskId) {
+        setSelectedTask(prev => prev ? { ...prev, assigned_to_id: userId || undefined, updated_at: new Date().toISOString() } : null);
+      }
+    } catch (error) {
+      console.error('Failed to assign task:', error);
+      setTasksError(error instanceof Error ? error.message : 'Failed to assign task');
+    }
+  }, [selectedTask]);
+
   const handleSessionComplete = useCallback((sessionType: 'focus' | 'short-break' | 'long-break') => {
     if (sessionType === 'focus' && selectedTask) {
       setTasks(prev => prev.map(task => 
@@ -473,7 +494,7 @@ export default function Home() {
     );
   };
 
-  const isLoading = backgroundsLoading || musicLoading || !backgroundLoaded || !showContent || !initialLoadComplete || tasksLoading;
+  const isLoading = backgroundsLoading || musicLoading || !backgroundLoaded || !showContent || !initialLoadComplete || (currentUser && tasksLoading);
 
   return (
     <div className="home-page min-h-screen relative overflow-hidden">
@@ -752,8 +773,10 @@ export default function Home() {
                           onTaskAdd={handleTaskAdd}
                           onTaskDelete={handleTaskDelete}
                           onTaskEdit={handleTaskEdit}
+                          onTaskAssign={handleTaskAssign}
                           selectedTaskId={selectedTask?.id}
                           isMinimized={tasksMinimized}
+                          currentUser={currentUser}
                         />
                       </div>
                     </div>

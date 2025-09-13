@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Plus, MoreHorizontal, Play, Check, Clock, User, Edit3, Trash2, Filter } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Plus, MoreHorizontal, Play, Check, Clock, User, Edit3, Trash2, Filter, UserPlus, Users, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { ITask } from '../../interfaces/ITask';
+import type { IUser } from '../../interfaces/IUser';
+import { FriendApi } from '../../apis/friend-api';
+import { useDebounce } from '../../hooks/use-debounce';
 
 interface TaskListProps {
   tasks: ITask[];
@@ -10,14 +13,17 @@ interface TaskListProps {
   onTaskAdd: (task: Omit<ITask, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   onTaskDelete?: (taskId: number) => Promise<void>;
   onTaskEdit?: (taskId: number, updates: Partial<ITask>) => Promise<void>;
+  onTaskAssign?: (taskId: number, userId: number | null) => Promise<void>;
   selectedTaskId?: number;
   isMinimized?: boolean;
+  currentUser?: IUser | null;
 }
 
-export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete, onTaskEdit, selectedTaskId, isMinimized = false }: TaskListProps) {
+export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete, onTaskEdit, onTaskAssign, selectedTaskId, isMinimized = false, currentUser }: TaskListProps) {
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [newTaskAssignee, setNewTaskAssignee] = useState<number | null>(null);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [completingTaskId, setCompletingTaskId] = useState<number | null>(null);
   const [addingTask, setAddingTask] = useState(false);
@@ -27,6 +33,97 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
   const [editDescription, setEditDescription] = useState('');
   const [showFilter, setShowFilter] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('active'); // 'all', 'active', 'pending', 'in_progress', 'completed', 'cancelled'
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assigningTaskId, setAssigningTaskId] = useState<number | null>(null);
+  const [availableUsers, setAvailableUsers] = useState<IUser[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // Load available users (friends) for assignment
+  useEffect(() => {
+    const loadUsers = async () => {
+      if (!currentUser) return;
+      
+      try {
+        setSearchLoading(true);
+        const friends = await FriendApi.getUserFriends(currentUser.id);
+        const users = await FriendApi.getAllUsers();
+        
+        // Filter to get friends who have accepted status and include self
+        const acceptedFriends = friends
+          .filter(friend => friend.status === 'accepted')
+          .map(friend => {
+            // Get the friend user data
+            const friendUser = users.find(user => 
+              user.id === (friend.user_id === currentUser.id ? friend.friend_id : friend.user_id)
+            );
+            return friendUser;
+          })
+          .filter(Boolean) as IUser[];
+        
+        // Include current user in the list
+        setAvailableUsers([currentUser, ...acceptedFriends]);
+      } catch (error) {
+        console.error('Failed to load users:', error);
+      } finally {
+        setSearchLoading(false);
+      }
+    };
+
+    loadUsers();
+  }, [currentUser]);
+
+  // Search users based on query
+  useEffect(() => {
+    const searchUsers = async () => {
+      if (!debouncedSearchQuery.trim() || !currentUser) {
+        return;
+      }
+
+      try {
+        setSearchLoading(true);
+        const searchResults = await FriendApi.searchUsers(debouncedSearchQuery);
+        // Filter out current user from search results and add to available users
+        const filteredResults = searchResults.filter(user => user.id !== currentUser.id);
+        
+        // Merge with existing friends, avoiding duplicates
+        const existingIds = availableUsers.map(user => user.id);
+        const newUsers = filteredResults.filter(user => !existingIds.includes(user.id));
+        
+        setAvailableUsers(prev => [...prev, ...newUsers]);
+      } catch (error) {
+        console.error('Failed to search users:', error);
+      } finally {
+        setSearchLoading(false);
+      }
+    };
+
+    searchUsers();
+  }, [debouncedSearchQuery, currentUser, availableUsers]);
+
+  const handleAssignTask = (taskId: number) => {
+    setAssigningTaskId(taskId);
+    setShowAssignModal(true);
+  };
+
+  const handleAssignToUser = async (userId: number | null) => {
+    if (assigningTaskId && onTaskAssign) {
+      try {
+        await onTaskAssign(assigningTaskId, userId);
+        setShowAssignModal(false);
+        setAssigningTaskId(null);
+      } catch (error) {
+        console.error('Failed to assign task:', error);
+      }
+    }
+  };
+
+  const getAssignedUserName = (task: ITask) => {
+    if (!task.assigned_to_id) return null;
+    const assignedUser = availableUsers.find(user => user.id === task.assigned_to_id);
+    return assignedUser?.username || 'Unknown User';
+  };
 
   const handleAddTask = async () => {
     if (newTaskTitle.trim()) {
@@ -37,12 +134,13 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
           title: newTaskTitle.trim(),
           description: newTaskDescription.trim() || undefined,
           owner_id: 1,
-          assigned_to_id: undefined,
+          assigned_to_id: newTaskAssignee || undefined,
           status: 'pending'
         });
         
         setNewTaskTitle('');
         setNewTaskDescription('');
+        setNewTaskAssignee(null);
         setIsAddingTask(false);
       } catch (error) {
         console.error('Failed to add task:', error);
@@ -245,12 +343,12 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
         )}
       </div>
 
-      {isMinimized && tasks.length > 0 && (
+      {isMinimized && filteredTasks.length > 0 && (
         <div 
           className="bg-white/10 backdrop-blur-2xl rounded-xl p-2 border border-white/10 shadow-lg transition-all duration-500 ease-in-out"
         >
           {(() => {
-            const activeTask = tasks.find(t => t.status === 'in_progress' || selectedTaskId === t.id) || tasks.find(t => t.status === 'pending');
+            const activeTask = filteredTasks.find(t => t.status === 'in_progress' || selectedTaskId === t.id) || filteredTasks.find(t => t.status === 'pending');
             if (!activeTask) return (
               <p className="text-white/60 text-xs text-center py-2">No active tasks</p>
             );
@@ -291,6 +389,18 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
               className="w-full bg-white/10 backdrop-blur-2xl border border-white/10 rounded-lg px-3 py-2 outline-none text-white/80 text-xs mb-2 placeholder-white/40 resize-none"
               rows={2}
             />
+            <select
+              value={newTaskAssignee || ''}
+              onChange={(e) => setNewTaskAssignee(e.target.value ? parseInt(e.target.value) : null)}
+              className="w-full bg-white/10 backdrop-blur-2xl border border-white/10 rounded-lg px-3 py-2 outline-none text-white/80 text-xs mb-2"
+            >
+              <option value="">Assign to (optional)</option>
+              {availableUsers.map(user => (
+                <option key={user.id} value={user.id} className="text-gray-900">
+                  {user.username}
+                </option>
+              ))}
+            </select>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
                 <button
@@ -398,6 +508,16 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          handleAssignTask(task.id);
+                        }}
+                        className="w-full px-4 py-2 text-xs text-white/90 hover:bg-white/20 flex items-center gap-2 transition-colors border-t border-white/10"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        Assign
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
                           handleDeleteTask(task.id);
                         }}
                         className="w-full px-4 py-2 text-xs text-red-400 hover:bg-red-500/30 flex items-center gap-2 rounded-b-xl transition-colors border-t border-white/10"
@@ -461,7 +581,7 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
                 {task.assigned_to_id && (
                   <span className="flex items-center gap-1 text-white/60">
                     <User className="w-3 h-3" />
-                    Assigned
+                    {getAssignedUserName(task) || 'Assigned'}
                   </span>
                 )}
               </div>
@@ -508,6 +628,101 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
           </motion.div>
         )}
       </div>
+
+      {/* Assignment Modal */}
+      <AnimatePresence>
+        {showAssignModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowAssignModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white">Assign Task</h3>
+                <button
+                  onClick={() => setShowAssignModal(false)}
+                  className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-white/60" />
+                </button>
+              </div>
+
+              <div className="mb-4">
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-white/10 backdrop-blur-2xl border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 outline-none focus:border-white/40"
+                />
+              </div>
+
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {/* Unassign option */}
+                <button
+                  onClick={() => handleAssignToUser(null)}
+                  className="w-full flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors text-left"
+                >
+                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <X className="w-4 h-4 text-white/60" />
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">Unassign</p>
+                    <p className="text-white/60 text-xs">Remove assignment</p>
+                  </div>
+                </button>
+
+                {/* Available users */}
+                {availableUsers.map((user) => (
+                  <button
+                    key={user.id}
+                    onClick={() => handleAssignToUser(user.id)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors text-left"
+                  >
+                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                      {user.avatar ? (
+                        <img src={user.avatar} alt={user.username} className="w-8 h-8 rounded-full" />
+                      ) : (
+                        <Users className="w-4 h-4 text-white/60" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-white font-medium">{user.username}</p>
+                      <p className="text-white/60 text-xs">{user.email}</p>
+                      {user.id === currentUser?.id && (
+                        <span className="text-blue-400 text-xs">(You)</span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+
+                {searchLoading && (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="w-6 h-6 border border-white/30 border-t-white rounded-full animate-spin"></div>
+                  </div>
+                )}
+
+                {availableUsers.length === 0 && !searchLoading && (
+                  <div className="text-center py-8 text-white/60">
+                    <Users className="w-12 h-12 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm">No users available</p>
+                    <p className="text-xs opacity-80">Add friends to assign tasks</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
