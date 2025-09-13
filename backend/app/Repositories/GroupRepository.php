@@ -117,11 +117,6 @@ class GroupRepository
         return $group->members()->where('user_id', $userId)->exists();
     }
 
-    public function updateStatus(int $id, string $status): bool
-    {
-        return Group::where('id', $id)->update(['status' => $status]);
-    }
-
     public function searchGroups(string $searchTerm): Collection
     {
         return Group::where('name', 'LIKE', "%{$searchTerm}%")

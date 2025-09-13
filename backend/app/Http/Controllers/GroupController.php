@@ -351,7 +351,7 @@ class GroupController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/groups/public",
+     *     path="/api/groups-public",
      *     summary="Get public groups",
      *     tags={"Groups"},
      *     @OA\Response(
@@ -368,178 +368,62 @@ class GroupController extends Controller
     }
 
     /**
-     * @OA\Post(
-     *     path="/api/groups/{groupId}/members/{userId}",
-     *     summary="Add member to group",
-     *     tags={"Groups"},
-     *     @OA\Parameter(
-     *         name="groupId",
-     *         in="path",
-     *         description="Group ID",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="userId",
-     *         in="path",
-     *         description="User ID",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=false,
-     *         @OA\JsonContent(
-     *             @OA\Property(property="role", type="string", enum={"member", "admin", "moderator"}, example="member")
-     *         )
-     *     ),
-     *     @OA\Response(response=200, description="Member added successfully"),
-     *     @OA\Response(response=404, description="Group not found"),
-     *     @OA\Response(response=422, description="Validation error")
-     * )
-     */
-    public function addMember(Request $request, int $groupId, int $userId): JsonResponse
-    {
-        try {
-            $validated = $request->validate([
-                'role' => 'nullable|string|in:member,admin,moderator',
-            ]);
-
-            $role = $validated['role'] ?? 'member';
-
-            $success = $this->groupRepository->addMember($groupId, $userId, $role);
-
-            if (!$success) {
-                return response()->json(['message' => 'Group not found'], 404);
-            }
-
-            return response()->json(['message' => 'Member added successfully']);
-        } catch (ValidationException $e) {
-            return response()->json(['errors' => $e->errors()], 422);
-        }
-    }
-
-    /**
-     * @OA\Delete(
-     *     path="/api/groups/{groupId}/members/{userId}",
-     *     summary="Remove member from group",
-     *     tags={"Groups"},
-     *     @OA\Parameter(
-     *         name="groupId",
-     *         in="path",
-     *         description="Group ID",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="userId",
-     *         in="path",
-     *         description="User ID",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(response=200, description="Member removed successfully"),
-     *     @OA\Response(response=404, description="Group or member not found")
-     * )
-     */
-    public function removeMember(int $groupId, int $userId): JsonResponse
-    {
-        $success = $this->groupRepository->removeMember($groupId, $userId);
-
-        if (!$success) {
-            return response()->json(['message' => 'Group or member not found'], 404);
-        }
-
-        return response()->json(['message' => 'Member removed successfully']);
-    }
-
-    /**
-     * @OA\Put(
-     *     path="/api/groups/{groupId}/members/{userId}/role",
-     *     summary="Update member role",
-     *     tags={"Groups"},
-     *     @OA\Parameter(
-     *         name="groupId",
-     *         in="path",
-     *         description="Group ID",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="userId",
-     *         in="path",
-     *         description="User ID",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"role"},
-     *             @OA\Property(property="role", type="string", enum={"member", "admin", "moderator"}, example="admin")
-     *         )
-     *     ),
-     *     @OA\Response(response=200, description="Member role updated successfully"),
-     *     @OA\Response(response=404, description="Group or member not found"),
-     *     @OA\Response(response=422, description="Validation error")
-     * )
-     */
-    public function updateMemberRole(Request $request, int $groupId, int $userId): JsonResponse
-    {
-        try {
-            $validated = $request->validate([
-                'role' => 'required|string|in:member,admin,moderator',
-            ]);
-
-            $success = $this->groupRepository->updateMemberRole($groupId, $userId, $validated['role']);
-
-            if (!$success) {
-                return response()->json(['message' => 'Group or member not found'], 404);
-            }
-
-            return response()->json(['message' => 'Member role updated successfully']);
-        } catch (ValidationException $e) {
-            return response()->json(['errors' => $e->errors()], 422);
-        }
-    }
-
-    /**
      * @OA\Get(
-     *     path="/api/groups/search",
-     *     summary="Search groups",
+     *     path="/api/groups-search",
+     *     summary="Search groups by name or description",
      *     tags={"Groups"},
      *     @OA\Parameter(
      *         name="q",
      *         in="query",
-     *         description="Search term",
+     *         description="Search term for group name or description",
      *         required=true,
-     *         @OA\Schema(type="string")
+     *         @OA\Schema(type="string", minLength=1)
      *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
-     *         @OA\JsonContent(type="array", @OA\Items(type="object"))
+     *         @OA\JsonContent(type="array", @OA\Items(
+     *             @OA\Property(property="id", type="integer"),
+     *             @OA\Property(property="name", type="string"),
+     *             @OA\Property(property="description", type="string"),
+     *             @OA\Property(property="creator_id", type="integer"),
+     *             @OA\Property(property="status", type="string"),
+     *             @OA\Property(property="is_private", type="boolean"),
+     *             @OA\Property(property="created_at", type="string", format="date-time"),
+     *             @OA\Property(property="updated_at", type="string", format="date-time"),
+     *             @OA\Property(property="creator", type="object")
+     *         ))
      *     ),
+     *     @OA\Response(response=400, description="Search term is required"),
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
     public function searchGroups(Request $request): JsonResponse
     {
         try {
+            $searchTerm = $request->query('q');
+
+            if (empty($searchTerm)) {
+                return response()->json(['error' => 'Search term is required'], 400);
+            }
+
             $validated = $request->validate([
-                'q' => 'required|string|min:1',
+                'q' => 'required|string|min:1|max:255',
             ]);
 
             $groups = $this->groupRepository->searchGroups($validated['q']);
             return response()->json($groups);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'An error occurred while searching groups'], 500);
         }
     }
 
     /**
-     * @OA\Put(
-     *     path="/api/groups/{id}/status",
-     *     summary="Update group status",
+     * @OA\Post(
+     *     path="/api/groups/{id}/join",
+     *     summary="Join a group",
      *     tags={"Groups"},
      *     @OA\Parameter(
      *         name="id",
@@ -551,30 +435,102 @@ class GroupController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"status"},
-     *             @OA\Property(property="status", type="string", enum={"active", "inactive", "archived"}, example="archived")
+     *             required={"user_id"},
+     *             @OA\Property(property="user_id", type="integer", example=1)
      *         )
      *     ),
-     *     @OA\Response(response=200, description="Group status updated successfully"),
+     *     @OA\Response(response=200, description="Successfully joined group"),
      *     @OA\Response(response=404, description="Group not found"),
+     *     @OA\Response(response=409, description="Already a member of this group"),
+     *     @OA\Response(response=403, description="Cannot join private group"),
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
-    public function updateStatus(Request $request, int $id): JsonResponse
+    public function joinGroup(Request $request, int $id): JsonResponse
     {
         try {
-            $group = $this->groupRepository->findById($id);
-
-            if (!$group) {
-                return response()->json(['message' => 'Group not found'], 404);
-            }
-
             $validated = $request->validate([
-                'status' => 'required|string|in:active,inactive,archived',
+                'user_id' => 'required|integer|exists:users,id',
             ]);
 
-            $this->groupRepository->updateStatus($id, $validated['status']);
-            return response()->json(['message' => 'Group status updated successfully']);
+            $group = $this->groupRepository->findById($id);
+            if (!$group) {
+                return response()->json(['error' => 'Group not found'], 404);
+            }
+
+            if ($group->is_private) {
+                return response()->json(['error' => 'Cannot join private group'], 403);
+            }
+
+            if ($this->groupRepository->isMember($id, $validated['user_id'])) {
+                return response()->json(['error' => 'User is already a member of this group'], 409);
+            }
+
+            $success = $this->groupRepository->addMember($id, $validated['user_id'], 'member');
+
+            if ($success) {
+                return response()->json(['message' => 'Successfully joined group']);
+            } else {
+                return response()->json(['error' => 'Failed to join group'], 500);
+            }
+        } catch (ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/groups/{id}/leave",
+     *     summary="Leave a group",
+     *     tags={"Groups"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Group ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"user_id"},
+     *             @OA\Property(property="user_id", type="integer", example=1)
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Successfully left group"),
+     *     @OA\Response(response=404, description="Group not found"),
+     *     @OA\Response(response=409, description="Not a member of this group"),
+     *     @OA\Response(response=403, description="Creator cannot leave group"),
+     *     @OA\Response(response=422, description="Validation error")
+     * )
+     */
+    public function leaveGroup(Request $request, int $id): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'user_id' => 'required|integer|exists:users,id',
+            ]);
+
+            $group = $this->groupRepository->findById($id);
+            if (!$group) {
+                return response()->json(['error' => 'Group not found'], 404);
+            }
+
+            if ($group->creator_id == $validated['user_id']) {
+                return response()->json(['error' => 'Creator cannot leave their own group'], 403);
+            }
+
+            if (!$this->groupRepository->isMember($id, $validated['user_id'])) {
+                return response()->json(['error' => 'User is not a member of this group'], 409);
+            }
+
+            $success = $this->groupRepository->removeMember($id, $validated['user_id']);
+
+            if ($success) {
+                return response()->json(['message' => 'Successfully left group']);
+            } else {
+                return response()->json(['error' => 'Failed to leave group'], 500);
+            }
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }
