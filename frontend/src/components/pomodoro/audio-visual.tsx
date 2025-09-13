@@ -11,7 +11,7 @@ export default function AudioVisual({ currentMusic, playerState }: AudioVisualPr
   const [audioData, setAudioData] = useState<number[]>(new Array(150).fill(0));
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | null>(null);
 
   const setupAudioAnalyser = async () => {
     try {
@@ -34,10 +34,10 @@ export default function AudioVisual({ currentMusic, playerState }: AudioVisualPr
 
       if (!audioElement.getAttribute('data-connected')) {
         const analyser = audioContext.createAnalyser();
-        analyser.fftSize = 1024;
-        analyser.smoothingTimeConstant = 0.7;
-        analyser.minDecibels = -90;
-        analyser.maxDecibels = -10;
+        analyser.fftSize = 2048;
+        analyser.smoothingTimeConstant = 0.3;
+        analyser.minDecibels = -100;
+        analyser.maxDecibels = -20;
         
         try {
           const source = audioContext.createMediaElementSource(audioElement);
@@ -76,34 +76,52 @@ export default function AudioVisual({ currentMusic, playerState }: AudioVisualPr
         analyserRef.current.getByteFrequencyData(dataArray);
         
         const bars = 150;
-        const step = Math.floor(bufferLength / bars);
         const newAudioData = [];
-
+        
         for (let i = 0; i < bars; i++) {
-          let sum = 0;
-          const startIndex = i * step;
-          const endIndex = Math.min(startIndex + step, bufferLength);
+          const freq = (i / bars) * (bufferLength / 2);
+          const startIndex = Math.floor(freq);
+          const endIndex = Math.min(startIndex + 3, bufferLength);
           
+          let sum = 0;
+          let count = 0;
           for (let j = startIndex; j < endIndex; j++) {
             sum += dataArray[j];
+            count++;
           }
           
-          const average = sum / (endIndex - startIndex);
+          const average = count > 0 ? sum / count : 0;
           let normalizedValue = average / 255;
-          normalizedValue = Math.pow(normalizedValue, 0.7);
-          newAudioData.push(Math.min(normalizedValue, 1));
+          
+          const bassBoost = i < 20 ? 1.8 : 1.0;
+          const midBoost = i >= 20 && i < 80 ? 1.4 : 1.0;
+          const trebleBoost = i >= 80 ? 1.2 : 1.0;
+          
+          normalizedValue = normalizedValue * bassBoost * midBoost * trebleBoost;
+          normalizedValue = Math.pow(normalizedValue, 0.4);
+          normalizedValue = Math.min(normalizedValue * 1.5, 1);
+          
+          newAudioData.push(Math.max(0.05, normalizedValue));
         }
 
         setAudioData(newAudioData);
       } else {
         const bars = 150;
         const newAudioData = [];
+        const time = Date.now() * 0.002;
         
         for (let i = 0; i < bars; i++) {
-          const baseAmplitude = Math.sin(Date.now() * 0.001 + i * 0.1) * 0.3 + 0.5;
-          const randomVariation = Math.random() * 0.4;
-          const amplitude = Math.max(0.1, Math.min(0.9, baseAmplitude + randomVariation));
-          newAudioData.push(amplitude);
+          const wave1 = Math.sin(time + i * 0.15) * 0.3;
+          const wave2 = Math.sin(time * 1.3 + i * 0.08) * 0.2;
+          const wave3 = Math.sin(time * 0.7 + i * 0.25) * 0.15;
+          const randomNoise = (Math.random() - 0.5) * 0.1;
+          
+          const baseFreq = i / bars;
+          const bassEmphasis = baseFreq < 0.2 ? 1.5 : 1.0;
+          const midEmphasis = baseFreq >= 0.2 && baseFreq < 0.6 ? 1.2 : 1.0;
+          
+          const amplitude = (wave1 + wave2 + wave3 + randomNoise + 0.4) * bassEmphasis * midEmphasis;
+          newAudioData.push(Math.max(0.1, Math.min(0.8, amplitude)));
         }
         
         setAudioData(newAudioData);
@@ -172,17 +190,17 @@ export default function AudioVisual({ currentMusic, playerState }: AudioVisualPr
                 key={index}
                 className="bg-gradient-to-t from-white/40 via-white/20 to-transparent flex-1"
                 style={{
-                  minHeight: '8px',
+                  minHeight: '12px',
                   maxWidth: '100%'
                 }}
                 animate={{
                   height: playerState.isPlaying 
-                    ? `${Math.max(8, amplitude * 120 + 8)}px` 
-                    : '8px',
-                  opacity: playerState.isPlaying ? amplitude * 0.8 + 0.4 : 0.4
+                    ? `${Math.max(12, amplitude * 140 + 12)}px` 
+                    : '12px',
+                  opacity: playerState.isPlaying ? Math.max(0.5, amplitude * 0.9 + 0.3) : 0.3
                 }}
                 transition={{
-                  duration: playerState.isPlaying ? 0.1 : 3,
+                  duration: playerState.isPlaying ? 0.05 : 2,
                   ease: playerState.isPlaying ? "easeOut" : "easeInOut",
                   repeat: playerState.isPlaying ? 0 : Infinity,
                   repeatType: "reverse"

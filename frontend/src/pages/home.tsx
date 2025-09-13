@@ -8,6 +8,7 @@ import MiniMusicPlayer from '../components/common/mini-music-player';
 import ToolBar from '../components/common/tool-bar';
 import SearchBar from '../components/common/search-bar';
 import SearchModal from '../components/common/search-modal';
+import UserProfileDisplay from '../components/common/user-profile-display';
 import LoginModal from '../components/common/login-modal';
 import AudioVisual from '../components/pomodoro/audio-visual';
 import type { ITask } from '../interfaces/ITask';
@@ -582,6 +583,13 @@ export default function Home() {
             />
 
             <SearchBar onOpenModal={handleOpenSearchModal} />
+
+            {currentUser && (
+              <UserProfileDisplay 
+                user={currentUser} 
+                onLogout={handleLogout} 
+              />
+            )}
 
             <MiniMusicPlayer 
               showMusicPlayer={showMusicPlayer} 
