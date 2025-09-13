@@ -44,7 +44,6 @@ class Group extends Model
         return $this->hasMany(Task::class, 'group_id');
     }
 
-
     public function messages(): HasMany
     {
         return $this->hasMany(Message::class, 'group_id');
