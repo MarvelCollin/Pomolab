@@ -18,7 +18,6 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
-  const [estimatedPomodoros, setEstimatedPomodoros] = useState(1);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [completingTaskId, setCompletingTaskId] = useState<number | null>(null);
   const [addingTask, setAddingTask] = useState(false);
@@ -26,7 +25,6 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
   const [editingField, setEditingField] = useState<'title' | 'description' | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const [editEstimatedPomodoros, setEditEstimatedPomodoros] = useState(1);
 
   const handleAddTask = async () => {
     if (newTaskTitle.trim()) {
@@ -37,14 +35,11 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
         description: newTaskDescription.trim() || undefined,
         owner_id: 1,
         assigned_to_id: undefined,
-        status: 'pending',
-        estimated_pomodoros: estimatedPomodoros,
-        completed_pomodoros: 0
+        status: 'pending'
       });
       
       setNewTaskTitle('');
       setNewTaskDescription('');
-      setEstimatedPomodoros(1);
       setAddingTask(false);
       setIsAddingTask(false);
     }
@@ -74,7 +69,6 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
     setEditingField(field || null);
     setEditTitle(task.title);
     setEditDescription(task.description || '');
-    setEditEstimatedPomodoros(task.estimated_pomodoros);
     setOpenMenuId(null);
   };
 
@@ -83,15 +77,13 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
     setEditingField(null);
     setEditTitle('');
     setEditDescription('');
-    setEditEstimatedPomodoros(1);
   };
 
   const saveEdit = () => {
     if (editingTaskId && onTaskEdit) {
       const updates: Partial<ITask> = {
         title: editTitle.trim(),
-        description: editDescription.trim() || undefined,
-        estimated_pomodoros: editEstimatedPomodoros
+        description: editDescription.trim() || undefined
       };
       onTaskEdit(editingTaskId, updates);
       cancelEditing();
@@ -180,15 +172,7 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
                 <div className="flex-1 min-w-0">
                   <p className="text-white text-xs font-medium truncate">{activeTask.title}</p>
                   <div className="flex items-center gap-2 text-white/60 text-xs mt-1">
-                    <span>🍅 {activeTask.completed_pomodoros}/{activeTask.estimated_pomodoros}</span>
-                    <div className="flex-1 bg-white/10 rounded-full h-1 ml-2">
-                      <div
-                        className="bg-white/60 h-1 rounded-full transition-all duration-500"
-                        style={{
-                          width: `${Math.min(100, (activeTask.completed_pomodoros / activeTask.estimated_pomodoros) * 100)}%`
-                        }}
-                      />
-                    </div>
+                    <span className="capitalize">{activeTask.status.replace('_', ' ')}</span>
                   </div>
                 </div>
               </div>
@@ -221,17 +205,6 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
               rows={2}
             />
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-white/70">Est:</span>
-                <input
-                  type="number"
-                  value={estimatedPomodoros}
-                  onChange={(e) => setEstimatedPomodoros(Math.max(1, parseInt(e.target.value) || 1))}
-                  min="1"
-                  className="w-12 bg-white/15 backdrop-blur-2xl border border-white/10 rounded-lg px-2 py-1 text-xs text-center outline-none text-white"
-                />
-                <span className="text-xs">🍅</span>
-              </div>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setIsAddingTask(false)}
@@ -284,19 +257,6 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
                     className="w-full bg-white/15 backdrop-blur-2xl border border-white/20 rounded-lg px-2 py-1 text-white text-sm font-medium outline-none focus:border-white/40 task-edit-input"
                     autoFocus
                   />
-                  {editingField === null && (
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs text-white/70">Est:</span>
-                      <input
-                        type="number"
-                        value={editEstimatedPomodoros}
-                        onChange={(e) => setEditEstimatedPomodoros(Math.max(1, parseInt(e.target.value) || 1))}
-                        min="1"
-                        className="w-12 bg-white/15 backdrop-blur-2xl border border-white/10 rounded-lg px-2 py-1 text-xs text-center outline-none text-white task-edit-input"
-                      />
-                      <span className="text-xs">🍅</span>
-                    </div>
-                  )}
                   <div className="flex items-center gap-1 mt-2">
                     <button
                       onClick={cancelEditing}
@@ -408,9 +368,8 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
             
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-3">
-                <span className="flex items-center gap-1 text-white/70">
-                  <span>🍅</span>
-                  {task.completed_pomodoros}/{task.estimated_pomodoros}
+                <span className="flex items-center gap-1 text-white/70 capitalize">
+                  {task.status.replace('_', ' ')}
                 </span>
                 {task.assigned_to_id && (
                   <span className="flex items-center gap-1 text-white/60">
@@ -439,19 +398,6 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
                 )}
               </div>
             </div>
-            
-            {task.estimated_pomodoros > 0 && (
-              <div className="mt-2">
-                <div className="w-full bg-white/10 backdrop-blur-2xl rounded-full h-1 border border-white/10">
-                  <div
-                    className="bg-gradient-to-r from-white/60 to-white/40 h-1 rounded-full transition-all duration-300 shadow-sm"
-                    style={{
-                      width: `${Math.min(100, (task.completed_pomodoros / task.estimated_pomodoros) * 100)}%`
-                    }}
-                  />
-                </div>
-              </div>
-            )}
           </div>
         ))}
         

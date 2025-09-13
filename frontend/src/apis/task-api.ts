@@ -19,7 +19,7 @@ export class TaskApi {
     return response.json();
   }
 
-  static async createTask(taskData: { title: string; description?: string; owner_id: number; assigned_to_id?: number; status: string; estimated_pomodoros?: number; completed_pomodoros?: number }): Promise<ITask> {
+  static async createTask(taskData: { title: string; description?: string; owner_id: number; assigned_to_id?: number; group_id?: number; status: string }): Promise<ITask> {
     const response = await fetch(`${API_BASE_URL}/api/tasks`, {
       method: 'POST',
       headers: {

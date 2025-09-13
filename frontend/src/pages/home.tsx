@@ -177,7 +177,7 @@ export default function Home() {
   const handleTaskComplete = useCallback((taskId: number) => {
     setTasks(prev => prev.map(task => 
       task.id === taskId 
-        ? { ...task, status: 'completed' as const, completed_pomodoros: task.estimated_pomodoros }
+        ? { ...task, status: 'completed' }
         : task
     ));
   }, []);
@@ -216,8 +216,7 @@ export default function Home() {
         task.id === selectedTask.id 
           ? { 
               ...task, 
-              completed_pomodoros: Math.min(task.completed_pomodoros + 1, task.estimated_pomodoros),
-              status: task.completed_pomodoros + 1 >= task.estimated_pomodoros ? 'completed' : 'in_progress'
+              status: 'in_progress'
             }
           : task
       ));
@@ -644,7 +643,6 @@ export default function Home() {
                                   <p className="text-white/70 text-xs mt-1">{selectedTask.description}</p>
                                 )}
                                 <div className={`flex items-center gap-3 text-white/60 text-xs transition-all duration-500 ${pomodoroMinimized ? 'mt-1' : 'mt-2'}`}>
-                                  <span>🍅 {selectedTask.completed_pomodoros}/{selectedTask.estimated_pomodoros}</span>
                                   {!pomodoroMinimized && <span className="capitalize">{selectedTask.status.replace('_', ' ')}</span>}
                                 </div>
                               </motion.div>
