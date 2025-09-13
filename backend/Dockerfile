@@ -26,7 +26,7 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
 
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --optimize-autoloader
 
 RUN npm install && npm run build
 
