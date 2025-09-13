@@ -21,7 +21,7 @@ return [
                 ],
             ],
         ],
-    ],
+    ],  
     'defaults' => [
         'routes' => [
             'docs' => 'docs',
