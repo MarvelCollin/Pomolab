@@ -27,7 +27,7 @@ export const useMusic = () => {
         currentTime: 0
       }));
       if (!isChangingTrack.current && musics.length > 1) {
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
           const newRemainingMusics = musics.filter(m => m.id !== currentTrackId);
           const autoNextTrack = musicService.getRandomMusic(newRemainingMusics.length > 0 ? newRemainingMusics : musics);
           if (autoNextTrack) {
@@ -37,6 +37,9 @@ export const useMusic = () => {
             isChangingTrack.current = true;
             if (audioRef.current) {
               audioRef.current.pause();
+              audioRef.current.removeEventListener('loadedmetadata', () => {});
+              audioRef.current.removeEventListener('timeupdate', () => {});
+              audioRef.current.removeEventListener('ended', () => {});
             }
 
             audioRef.current = musicService.createAudioElement(autoNextTrack.url);
@@ -44,14 +47,16 @@ export const useMusic = () => {
             newAudio.volume = playerState.volume;
             newAudio.muted = playerState.isMuted;
 
-            newAudio.addEventListener('loadedmetadata', () => {
+            const handleLoadedMetadata = () => {
               setPlayerState(prev => ({ ...prev, duration: newAudio.duration || 0 }));
-            });
+            };
 
-            newAudio.addEventListener('timeupdate', () => {
+            const handleTimeUpdate = () => {
               setPlayerState(prev => ({ ...prev, currentTime: newAudio.currentTime || 0 }));
-            });
+            };
 
+            newAudio.addEventListener('loadedmetadata', handleLoadedMetadata);
+            newAudio.addEventListener('timeupdate', handleTimeUpdate);
             newAudio.addEventListener('ended', createAutoNextHandler(autoNextTrack.id));
 
             newAudio.play()
@@ -65,9 +70,11 @@ export const useMusic = () => {
               });
           }
         }, 100);
+        
+        return () => clearTimeout(timeoutId);
       }
     };
-  }, [musics]);
+  }, [musics, playerState.volume, playerState.isMuted]);
 
   const loadMusics = useCallback(async () => {
     setLoading(true);

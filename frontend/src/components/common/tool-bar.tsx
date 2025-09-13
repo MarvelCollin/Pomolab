@@ -57,7 +57,7 @@ interface ToolBarProps {
   onLogout: () => void;
 }
 
-function ToolBar({ 
+const ToolBar = memo(function ToolBar({ 
   showBackgroundSelector, 
   setShowBackgroundSelector,
   showMusicPlayer,
@@ -678,6 +678,6 @@ function ToolBar({
       </div>
     </motion.div>
   );
-}
+});
 
-export default memo(ToolBar);
+export default ToolBar;

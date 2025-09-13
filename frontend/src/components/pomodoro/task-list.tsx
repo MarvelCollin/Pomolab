@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { Plus, MoreHorizontal, Play, Check, Clock, User, Edit3, Trash2, Filter, UserPlus, Users, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ITask } from '../../interfaces/ITask';
@@ -19,7 +19,7 @@ interface TaskListProps {
   currentUser?: IUser | null;
 }
 
-export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete, onTaskEdit, onTaskAssign, selectedTaskId, isMinimized = false, currentUser }: TaskListProps) {
+function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete, onTaskEdit, onTaskAssign, selectedTaskId, isMinimized = false, currentUser }: TaskListProps) {
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
@@ -726,3 +726,5 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
     </motion.div>
   );
 }
+
+export default memo(TaskList);

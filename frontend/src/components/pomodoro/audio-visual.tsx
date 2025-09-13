@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { IMusic, IMusicPlayerState } from '../../interfaces/IMusic';
 
@@ -7,8 +7,8 @@ interface AudioVisualProps {
   playerState: IMusicPlayerState;
 }
 
-export default function AudioVisual({ currentMusic, playerState }: AudioVisualProps) {
-  const [audioData, setAudioData] = useState<number[]>(new Array(150).fill(0));
+function AudioVisual({ currentMusic, playerState }: AudioVisualProps) {
+  const [audioData, setAudioData] = useState<number[]>(new Array(100).fill(0));
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationRef = useRef<number>(0);
@@ -63,10 +63,20 @@ export default function AudioVisual({ currentMusic, playerState }: AudioVisualPr
     }
   };
 
-  const startVisualization = () => {
-    const animate = () => {
+  const startVisualization = useCallback(() => {
+    const FPS = 24;
+    const interval = 1000 / FPS;
+    let lastTime = 0;
+
+    const animate = (currentTime: number) => {
+      if (currentTime - lastTime < interval) {
+        animationRef.current = requestAnimationFrame(animate);
+        return;
+      }
+      lastTime = currentTime;
+
       if (!playerState.isPlaying) {
-        setAudioData(new Array(150).fill(0));
+        setAudioData(new Array(100).fill(0));
         return;
       }
 
@@ -75,7 +85,7 @@ export default function AudioVisual({ currentMusic, playerState }: AudioVisualPr
         const dataArray = new Uint8Array(bufferLength);
         analyserRef.current.getByteFrequencyData(dataArray);
         
-        const bars = 150;
+        const bars = 60;
         const step = Math.floor(bufferLength / bars);
         const newAudioData = [];
 
@@ -90,19 +100,20 @@ export default function AudioVisual({ currentMusic, playerState }: AudioVisualPr
           
           const average = sum / (endIndex - startIndex);
           let normalizedValue = average / 255;
-          normalizedValue = Math.pow(normalizedValue, 0.7);
-          newAudioData.push(Math.min(normalizedValue, 1));
+          normalizedValue = Math.pow(normalizedValue, 0.6);
+          newAudioData.push(Math.min(normalizedValue * 0.8, 1));
         }
 
         setAudioData(newAudioData);
       } else {
-        const bars = 150;
+        const bars = 60;
+        const now = Date.now();
         const newAudioData = [];
         
         for (let i = 0; i < bars; i++) {
-          const baseAmplitude = Math.sin(Date.now() * 0.001 + i * 0.1) * 0.3 + 0.5;
-          const randomVariation = Math.random() * 0.4;
-          const amplitude = Math.max(0.1, Math.min(0.9, baseAmplitude + randomVariation));
+          const baseAmplitude = Math.sin(now * 0.002 + i * 0.2) * 0.2 + 0.4;
+          const randomVariation = Math.random() * 0.3;
+          const amplitude = Math.max(0.1, Math.min(0.7, baseAmplitude + randomVariation));
           newAudioData.push(amplitude);
         }
         
@@ -112,8 +123,8 @@ export default function AudioVisual({ currentMusic, playerState }: AudioVisualPr
       animationRef.current = requestAnimationFrame(animate);
     };
 
-    animate();
-  };
+    animationRef.current = requestAnimationFrame(animate);
+  }, [playerState.isPlaying]);
 
   useEffect(() => {
     if (animationRef.current) {
@@ -166,26 +177,24 @@ export default function AudioVisual({ currentMusic, playerState }: AudioVisualPr
           className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none"
         >
         <div className="w-full h-32 flex items-end justify-center px-0">
-          <div className="flex items-end justify-between w-full h-24 gap-0.5">
+          <div className="flex items-end justify-between w-full h-24 gap-1">
             {audioData.map((amplitude, index) => (
               <motion.div
                 key={index}
-                className="bg-gradient-to-t from-white/40 via-white/20 to-transparent flex-1"
+                className="bg-gradient-to-t from-white/30 via-white/15 to-transparent flex-1"
                 style={{
-                  minHeight: '8px',
+                  minHeight: '6px',
                   maxWidth: '100%'
                 }}
                 animate={{
                   height: playerState.isPlaying 
-                    ? `${Math.max(8, amplitude * 120 + 8)}px` 
-                    : '8px',
-                  opacity: playerState.isPlaying ? amplitude * 0.8 + 0.4 : 0.4
+                    ? `${Math.max(6, amplitude * 80 + 6)}px` 
+                    : '6px',
+                  opacity: playerState.isPlaying ? amplitude * 0.6 + 0.3 : 0.3
                 }}
                 transition={{
-                  duration: playerState.isPlaying ? 0.1 : 3,
-                  ease: playerState.isPlaying ? "easeOut" : "easeInOut",
-                  repeat: playerState.isPlaying ? 0 : Infinity,
-                  repeatType: "reverse"
+                  duration: 0.2,
+                  ease: "easeOut"
                 }}
               />
             ))}
@@ -196,3 +205,5 @@ export default function AudioVisual({ currentMusic, playerState }: AudioVisualPr
     </AnimatePresence>
   );
 }
+
+export default memo(AudioVisual);
