@@ -1,13 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Settings, 
   Music, 
   Image as ImageIcon, 
   X, 
   Play, 
-  SkipForward, 
-  SkipBack, 
   Volume2, 
   VolumeX,
   Minimize2,
@@ -42,40 +39,25 @@ interface ToolBarProps {
   setTasksMinimized: (minimized: boolean) => void;
   backgrounds: IBackground[];
   activeBackground: IBackground | null;
-  uploadingBackground: boolean;
   onBackgroundChange: (background: IBackground) => void;
-  onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onDeleteBackground: (background: IBackground, event: React.MouseEvent) => void;
   musics: IMusic[];
   currentMusic: IMusic | null;
-  playerState: any;
   onPlayMusic: (music: IMusic) => void;
-  onDeleteMusic: (music: IMusic, event: React.MouseEvent) => void;
-  onTogglePlayPause: () => void;
-  onNextMusic: () => void;
-  onPreviousMusic: () => void;
-  onToggleMute: () => void;
   audioEffects: IAudioEffect[];
   onPlayEffect: (effect: IAudioEffect) => void;
-  onPauseEffect: (effectId: string) => void;
   onStopEffect: (effectId: string) => void;
   onSetEffectVolume: (effectId: string, volume: number) => void;
-  onSetEffectMuted: (effectId: string, muted: boolean) => void;
   onToggleEffectMute: (effectId: string) => void;
-  onPauseAllEffects: () => void;
   onStopAllEffects: () => void;
   getMasterVolume: () => number;
   onSetMasterVolume: (volume: number) => void;
   onToggleMasterMute: () => void;
-  onUploadAudioEffect: (file: File) => Promise<IAudioEffect | null>;
-  onDeleteAudioEffect: (effect: IAudioEffect, event: React.MouseEvent) => void;
-  // Auth props
   currentUser: IUser | null;
   onShowLogin: () => void;
   onLogout: () => void;
 }
 
-export default function ToolBar({ 
+function ToolBar({ 
   showBackgroundSelector, 
   setShowBackgroundSelector,
   showMusicPlayer,
@@ -90,33 +72,19 @@ export default function ToolBar({
   setTasksMinimized,
   backgrounds,
   activeBackground,
-  uploadingBackground,
   onBackgroundChange,
-  onFileUpload,
-  onDeleteBackground,
   musics,
   currentMusic,
-  playerState,
   onPlayMusic,
-  onDeleteMusic,
-  onTogglePlayPause,
-  onNextMusic,
-  onPreviousMusic,
-  onToggleMute,
   audioEffects,
   onPlayEffect,
-  onPauseEffect,
   onStopEffect,
   onSetEffectVolume,
-  onSetEffectMuted,
   onToggleEffectMute,
-  onPauseAllEffects,
   onStopAllEffects,
   getMasterVolume,
   onSetMasterVolume,
   onToggleMasterMute,
-  onUploadAudioEffect,
-  onDeleteAudioEffect,
   currentUser,
   onShowLogin,
   onLogout
@@ -126,19 +94,27 @@ export default function ToolBar({
   const [showMainMenu, setShowMainMenu] = useState(false);
 
   useEffect(() => {
+    let ticking = false;
     const controlToolbar = () => {
-      if (typeof window !== 'undefined') {
-        if (window.scrollY > lastScrollY && window.scrollY > 100) {
-          setIsVisible(false);
-        } else {
-          setIsVisible(true);
-        }
-        setLastScrollY(window.scrollY);
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          if (typeof window !== 'undefined') {
+            const scrollY = window.scrollY;
+            if (scrollY > lastScrollY && scrollY > 100) {
+              setIsVisible(false);
+            } else {
+              setIsVisible(true);
+            }
+            setLastScrollY(scrollY);
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
     if (typeof window !== 'undefined') {
-      window.addEventListener('scroll', controlToolbar);
+      window.addEventListener('scroll', controlToolbar, { passive: true });
       return () => window.removeEventListener('scroll', controlToolbar);
     }
   }, [lastScrollY]);
@@ -148,41 +124,34 @@ export default function ToolBar({
       className="fixed top-4 right-4 z-40"
       initial={{ opacity: 0, y: -20 }}
       animate={{ 
-        opacity: isVisible ? 1 : 0.8, 
-        y: isVisible ? 0 : -10,
-        scale: isVisible ? 1 : 0.95
+        opacity: isVisible ? 1 : 0.9, 
+        y: isVisible ? 0 : -5
       }}
-      transition={{ duration: 0.3, ease: "easeInOut" }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
     >
       <div className="flex flex-col items-end gap-3">
-        <motion.div 
-          className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-xl p-2 shadow-2xl"
-          whileHover={{ scale: 1.02, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
-          transition={{ duration: 0.2 }}
-        >
-          <motion.button
+        <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-xl p-2 shadow-2xl hover:bg-white/15 transition-colors duration-200">
+          <button
             onClick={() => setShowMainMenu(!showMainMenu)}
             className="p-1.5 hover:bg-white/20 rounded-lg transition-all duration-200 group relative"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
           >
             <motion.div
               animate={{ rotate: showMainMenu ? 45 : 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
             >
               <Menu className="w-5 h-5 text-white group-hover:text-white/90" />
             </motion.div>
-          </motion.button>
-        </motion.div>
+          </button>
+        </div>
 
         <AnimatePresence>
           {showMainMenu && (
             <motion.div
               className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-xl p-2.5 shadow-2xl min-w-[180px]"
-              initial={{ opacity: 0, scale: 0.9, y: -20 }}
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: -20 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
             >
               <div className="space-y-0.5">
                 {/* User Authentication Section */}
@@ -245,31 +214,25 @@ export default function ToolBar({
                   </motion.button>
                 )}
 
-                <motion.button
+                <button
                   onClick={() => {
                     setPomodoroMinimized(!pomodoroMinimized);
                     setShowMainMenu(false);
                   }}
                   className="w-full flex items-center gap-3 p-3 hover:bg-white/20 rounded-xl transition-all duration-200 group"
-                  whileHover={{ x: 4 }}
-                  whileTap={{ scale: 0.98 }}
                 >
                   <Timer className="w-4 h-4 text-white/90" />
                   <span className="text-white text-sm font-medium">
                     {pomodoroMinimized ? "Expand Timer" : "Minimize Timer"}
                   </span>
-                  <motion.div
-                    className="ml-auto"
-                    animate={{ rotate: pomodoroMinimized ? 0 : 180 }}
-                    transition={{ duration: 0.2 }}
-                  >
+                  <div className="ml-auto">
                     {pomodoroMinimized ? (
                       <Maximize2 className="w-4 h-4 text-white/60" />
                     ) : (
                       <Minimize2 className="w-4 h-4 text-white/60" />
                     )}
-                  </motion.div>
-                </motion.button>
+                  </div>
+                </button>
 
                 <motion.button
                   onClick={() => {
@@ -716,3 +679,5 @@ export default function ToolBar({
     </motion.div>
   );
 }
+
+export default memo(ToolBar);

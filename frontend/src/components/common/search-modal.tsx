@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Timer, CheckSquare, Music, ImageIcon, Waves, User, Users, UserPlus } from 'lucide-react';
 
@@ -17,7 +17,7 @@ interface SearchResult {
   action: () => void;
 }
 
-export default function SearchModal({ isOpen, onClose, onOpenFriendsModal }: SearchModalProps) {
+function SearchModal({ isOpen, onClose, onOpenFriendsModal }: SearchModalProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -193,7 +193,7 @@ export default function SearchModal({ isOpen, onClose, onOpenFriendsModal }: Sea
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: 0.15 }}
         >
           <motion.div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -205,10 +205,10 @@ export default function SearchModal({ isOpen, onClose, onOpenFriendsModal }: Sea
           
           <motion.div
             className="relative w-full max-w-2xl bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden"
-            initial={{ opacity: 0, scale: 0.95, y: -20 }}
+            initial={{ opacity: 0, scale: 0.98, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -20 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+            exit={{ opacity: 0, scale: 0.98, y: -10 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
           >
             <div className="flex items-center gap-3 p-4 border-b border-white/10">
               <Search className="w-5 h-5 text-white/60" />
@@ -235,7 +235,7 @@ export default function SearchModal({ isOpen, onClose, onOpenFriendsModal }: Sea
                   {results.map((result, index) => {
                     const IconComponent = result.icon;
                     return (
-                      <motion.div
+                      <div
                         key={result.id}
                         className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200 ${
                           index === selectedIndex
@@ -246,9 +246,6 @@ export default function SearchModal({ isOpen, onClose, onOpenFriendsModal }: Sea
                           result.action();
                           onClose();
                         }}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
                       >
                         <div className={`p-2 rounded-lg bg-white/10 ${getCategoryColor(result.category)}`}>
                           <IconComponent className="w-4 h-4" />
@@ -260,7 +257,7 @@ export default function SearchModal({ isOpen, onClose, onOpenFriendsModal }: Sea
                         <div className="text-white/40 text-xs uppercase tracking-wider">
                           {result.category}
                         </div>
-                      </motion.div>
+                      </div>
                     );
                   })}
                 </div>
@@ -300,3 +297,5 @@ export default function SearchModal({ isOpen, onClose, onOpenFriendsModal }: Sea
     </AnimatePresence>
   );
 }
+
+export default memo(SearchModal);

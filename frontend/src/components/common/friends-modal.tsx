@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, 
@@ -28,7 +28,7 @@ interface ExtendedFriend extends IFriend {
   friend?: IUser;
 }
 
-export default function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
+function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
   const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'add'>('friends');
   const [friends, setFriends] = useState<ExtendedFriend[]>([]);
   const [friendRequests, setFriendRequests] = useState<ExtendedFriend[]>([]);
@@ -192,9 +192,8 @@ export default function FriendsModal({ isOpen, onClose, currentUser }: FriendsMo
   };
 
   const renderUserCard = (user: IUser, actions?: React.ReactNode) => (
-    <motion.div
+    <div
       className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all duration-200"
-      whileHover={{ scale: 1.02 }}
     >
       <div className="relative">
         {user.avatar ? (
@@ -219,7 +218,7 @@ export default function FriendsModal({ isOpen, onClose, currentUser }: FriendsMo
       </div>
       
       {actions}
-    </motion.div>
+    </div>
   );
 
   if (!isOpen) return null;
@@ -231,7 +230,7 @@ export default function FriendsModal({ isOpen, onClose, currentUser }: FriendsMo
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: 0.15 }}
       >
         <motion.div
           className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -243,10 +242,10 @@ export default function FriendsModal({ isOpen, onClose, currentUser }: FriendsMo
         
         <motion.div
           className="relative w-full max-w-2xl max-h-[80vh] bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden"
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          initial={{ opacity: 0, scale: 0.98, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
+          exit={{ opacity: 0, scale: 0.98, y: 10 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-white/10">
@@ -493,3 +492,5 @@ export default function FriendsModal({ isOpen, onClose, currentUser }: FriendsMo
     </AnimatePresence>
   );
 }
+
+export default memo(FriendsModal);

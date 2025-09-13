@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { IMusic, IMusicPlayerState } from '../../interfaces/IMusic';
 
@@ -11,7 +11,7 @@ export default function AudioVisual({ currentMusic, playerState }: AudioVisualPr
   const [audioData, setAudioData] = useState<number[]>(new Array(150).fill(0));
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number>(0);
 
   const setupAudioAnalyser = async () => {
     try {

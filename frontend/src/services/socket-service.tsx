@@ -55,7 +55,7 @@ class SocketService {
     private messageCallbacks: { [key: string]: ((data: any) => void)[] } = {};
 
     private handleMessage(data: any): void {
-        const { event, channel, data: messageData } = data;
+        const { channel, data: messageData } = data;
         
         if (this.messageCallbacks[channel]) {
             this.messageCallbacks[channel].forEach(callback => {

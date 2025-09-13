@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import PomodoroTimer from '../components/pomodoro/pomodoro-timer';
@@ -20,8 +20,6 @@ import { useMusic } from '../hooks/use-music';
 import { useAudioEffect } from '../hooks/use-audio-effect';
 import { UserApi } from '../apis/user-api';
 import type { IBackground } from '../interfaces/IBackground';
-import type { IMusic } from '../interfaces/IMusic';
-import type { IAudioEffect } from '../interfaces/IAudioEffect';
 import '../app.css';
 
 export default function Home() {
@@ -38,7 +36,6 @@ export default function Home() {
   const [showBackgroundSelector, setShowBackgroundSelector] = useState(false);
   const [showMusicPlayer, setShowMusicPlayer] = useState(false);
   const [showAudioEffects, setShowAudioEffects] = useState(false);
-  const [uploadingBackground, setUploadingBackground] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
@@ -60,25 +57,23 @@ export default function Home() {
   });
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const sessionDurations = {
+  const sessionDurations = useMemo(() => ({
     focus: customDurations.focus * 60,
     'short-break': customDurations['short-break'] * 60,
     'long-break': customDurations['long-break'] * 60
-  };
+  }), [customDurations]);
 
-  const sessionLabels = {
+  const sessionLabels = useMemo(() => ({
     focus: 'Focus Time',
     'short-break': 'Short Break',
     'long-break': 'Long Break'
-  };
+  }), []);
   
   const { 
     backgrounds, 
     activeBackground, 
     loading: backgroundsLoading, 
     changeBackground,
-    uploadBackground,
-    deleteBackground,
     loadRemainingBackgrounds
   } = useBackground();
 
@@ -87,14 +82,11 @@ export default function Home() {
     currentMusic,
     playerState,
     loading: musicLoading,
-    autoPlay,
     playMusic,
-    deleteMusic,
     togglePlayPause,
     nextMusic,
     previousMusic,
     toggleMute,
-    toggleAutoPlay,
     seekTo,
     setVolume
   } = useMusic();
@@ -102,18 +94,13 @@ export default function Home() {
   const {
     audioEffects,
     playEffect,
-    pauseEffect,
     stopEffect,
     setEffectVolume,
-    setEffectMuted,
     toggleEffectMute,
-    pauseAllEffects,
     stopAllEffects,
     getMasterVolume,
     setMasterVolume,
-    toggleMasterMute,
-    uploadAudioEffect,
-    deleteAudioEffect
+    toggleMasterMute
   } = useAudioEffect();
 
 
@@ -400,54 +387,21 @@ export default function Home() {
     setShowContent(false);
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setUploadingBackground(true);
-    const result = await uploadBackground(file);
-    if (result) {
-      handleBackgroundChange(result);
-    }
-    setUploadingBackground(false);
-    event.target.value = '';
-  };
-
-  const handleDeleteBackground = async (background: IBackground, event: React.MouseEvent) => {
-    event.stopPropagation();
-    await deleteBackground(background);
-  };
-
-  const handleDeleteMusic = async (music: IMusic, event: React.MouseEvent) => {
-    event.stopPropagation();
-    await deleteMusic(music);
-  };
-
-  const handleDeleteAudioEffect = async (effect: IAudioEffect, event: React.MouseEvent) => {
-    event.stopPropagation();
-    await deleteAudioEffect(effect);
-  };
-
   const renderBackground = () => {
     if (!activeBackground && !backgroundsLoading) {
       return (
-        <motion.div 
-          className="absolute inset-0"
-          style={{ background: 'var(--gradient-soft)' }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: backgroundVisible ? 1 : 0 }}
-          transition={{ duration: 1.2, ease: "easeInOut" }}
-          onAnimationComplete={() => {
-            if (!backgroundLoaded) setBackgroundLoaded(true);
-          }}
-        >
-          <motion.div 
-            className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(251,243,213,0.1),transparent_50%)]"
-            initial={{ scale: 1.2, opacity: 0 }}
-            animate={{ scale: 1, opacity: backgroundVisible ? 1 : 0 }}
-            transition={{ duration: 2.0, ease: "easeOut" }}
-          />
-        </motion.div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: backgroundVisible ? 1 : 0 }}
+            transition={{ duration: 1.0, ease: "easeInOut" }}
+            className="absolute inset-0"
+            style={{ background: 'var(--gradient-soft)' }}
+            onAnimationComplete={() => {
+              if (!backgroundLoaded) setBackgroundLoaded(true);
+            }}
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(251,243,213,0.1),transparent_50%)]" />
+          </motion.div>
       );
     }
 
@@ -464,12 +418,9 @@ export default function Home() {
           key={activeBackground.id}
           onLoadedData={handleBackgroundLoad}
           onCanPlayThrough={handleBackgroundLoad}
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: backgroundVisible ? 1 : 0, scale: 1 }}
-          transition={{ 
-            opacity: { duration: 1.5, ease: "easeInOut" },
-            scale: { duration: 2.0, ease: "easeOut" }
-          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: backgroundVisible ? 1 : 0 }}
+          transition={{ duration: 1.0, ease: "easeInOut" }}
         >
           <source src={activeBackground.url} type="video/mp4" />
           Your browser does not support the video tag.
@@ -484,12 +435,9 @@ export default function Home() {
           backgroundImage: `url(${activeBackground.url})`
         }}
         onLoad={handleBackgroundLoad}
-        initial={{ opacity: 0, scale: 1.05 }}
-        animate={{ opacity: backgroundVisible ? 1 : 0, scale: 1 }}
-        transition={{ 
-          opacity: { duration: 1.5, ease: "easeInOut" },
-          scale: { duration: 2.0, ease: "easeOut" }
-        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: backgroundVisible ? 1 : 0 }}
+        transition={{ duration: 1.0, ease: "easeInOut" }}
       />
     );
   };
@@ -519,7 +467,7 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 1.2, ease: "easeInOut" }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
             className="fixed inset-0 z-50 flex items-center justify-center"
             style={{ background: 'var(--gradient-soft)' }}
           >
@@ -527,9 +475,9 @@ export default function Home() {
             
             <div className="relative z-10 text-center">
               <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
+                initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 1.0, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
                 className="mb-8"
               >
                 <h1 className="text-6xl font-bold mb-4">
@@ -548,13 +496,13 @@ export default function Home() {
                     key={index}
                     className="w-3 h-3 bg-amber-700/40 rounded-full"
                     animate={{
-                      scale: [1, 1.2, 1],
+                      scale: [1, 1.1, 1],
                       opacity: [0.4, 1, 0.4],
                     }}
                     transition={{
-                      duration: 1.5,
+                      duration: 1.2,
                       repeat: Infinity,
-                      delay: index * 0.2,
+                      delay: index * 0.15,
                       ease: "easeInOut",
                     }}
                   />
@@ -562,9 +510,9 @@ export default function Home() {
               </div>
 
                 <motion.div
-                  initial={{ y: 20, opacity: 0 }}
+                  initial={{ y: 15, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 1.0, delay: 0.8 }}
+                  transition={{ duration: 0.6, delay: 0.5 }}
                   className="relative"
                 >
                   <div className="w-64 h-1 bg-amber-800/20 rounded-full overflow-hidden mx-auto">
@@ -572,39 +520,13 @@ export default function Home() {
                       className="h-full bg-gradient-to-r from-amber-600 to-amber-500 rounded-full"
                       initial={{ width: "0%" }}
                       animate={{ width: "100%" }}
-                      transition={{ duration: 2.5, ease: "easeInOut" }}
+                      transition={{ duration: 2.0, ease: "easeInOut" }}
                     />
                   </div>
                   <p className="text-amber-800/60 text-sm mt-4">
                     Loading your productive environment
                   </p>
-                </motion.div>              <motion.div
-                className="absolute inset-0 pointer-events-none"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 2 }}
-              >
-                {[...Array(20)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-1 h-1 bg-amber-700/30 rounded-full"
-                    style={{
-                      left: `${Math.random() * 100}%`,
-                      top: `${Math.random() * 100}%`,
-                    }}
-                    animate={{
-                      y: [0, -20, 0],
-                      opacity: [0, 1, 0],
-                    }}
-                    transition={{
-                      duration: 3 + Math.random() * 2,
-                      repeat: Infinity,
-                      delay: Math.random() * 2,
-                      ease: "easeInOut",
-                    }}
-                  />
-                ))}
-              </motion.div>
+                </motion.div>
             </div>
           </motion.div>
         )}
@@ -628,33 +550,19 @@ export default function Home() {
               setTasksMinimized={setTasksMinimized}
               backgrounds={backgrounds}
               activeBackground={activeBackground}
-              uploadingBackground={uploadingBackground}
               onBackgroundChange={handleBackgroundChange}
-              onFileUpload={handleFileUpload}
-              onDeleteBackground={handleDeleteBackground}
               musics={musics}
               currentMusic={currentMusic}
-              playerState={playerState}
               onPlayMusic={playMusic}
-              onDeleteMusic={handleDeleteMusic}
-              onTogglePlayPause={togglePlayPause}
-              onNextMusic={nextMusic}
-              onPreviousMusic={previousMusic}
-              onToggleMute={toggleMute}
               audioEffects={audioEffects}
               onPlayEffect={playEffect}
-              onPauseEffect={pauseEffect}
               onStopEffect={stopEffect}
               onSetEffectVolume={setEffectVolume}
-              onSetEffectMuted={setEffectMuted}
               onToggleEffectMute={toggleEffectMute}
-              onPauseAllEffects={pauseAllEffects}
               onStopAllEffects={stopAllEffects}
               getMasterVolume={getMasterVolume}
               onSetMasterVolume={setMasterVolume}
               onToggleMasterMute={toggleMasterMute}
-              onUploadAudioEffect={uploadAudioEffect}
-              onDeleteAudioEffect={handleDeleteAudioEffect}
               currentUser={currentUser}
               onShowLogin={handleShowLogin}
               onLogout={handleLogout}
@@ -670,16 +578,13 @@ export default function Home() {
             )}
 
             <MiniMusicPlayer 
-              showMusicPlayer={showMusicPlayer} 
               setShowMusicPlayer={setShowMusicPlayer}
               currentMusic={currentMusic}
               playerState={playerState}
-              autoPlay={autoPlay}
               onTogglePlayPause={togglePlayPause}
               onSeekTo={seekTo}
               onSetVolume={setVolume}
               onToggleMute={toggleMute}
-              onToggleAutoPlay={toggleAutoPlay}
               onPreviousMusic={previousMusic}
               onNextMusic={nextMusic}
             />
@@ -786,9 +691,9 @@ export default function Home() {
             )}
 
             <motion.section
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.0, delay: 1.0, ease: [0.25, 0.46, 0.45, 0.94] }}
+              transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}
               className="relative z-10 pb-12"
             >
               <div className="max-w-6xl mx-auto px-4">

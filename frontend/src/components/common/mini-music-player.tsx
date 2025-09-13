@@ -1,35 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Settings, Music, X } from 'lucide-react';
 import type { IMusic, IMusicPlayerState } from '../../interfaces/IMusic';
 
 interface MiniMusicPlayerProps {
-  showMusicPlayer: boolean;
   setShowMusicPlayer: (show: boolean) => void;
   currentMusic: IMusic | null;
   playerState: IMusicPlayerState;
-  autoPlay: boolean;
   onTogglePlayPause: () => void;
   onNextMusic: () => void;
   onPreviousMusic: () => void;
   onSetVolume: (volume: number) => void;
   onToggleMute: () => void;
-  onToggleAutoPlay: () => void;
   onSeekTo: (time: number) => void;
 }
 
-export default function MiniMusicPlayer({ 
-  showMusicPlayer, 
+function MiniMusicPlayer({ 
   setShowMusicPlayer,
   currentMusic,
   playerState,
-  autoPlay,
   onTogglePlayPause,
   onNextMusic,
   onPreviousMusic,
   onSetVolume,
   onToggleMute,
-  onToggleAutoPlay,
   onSeekTo
 }: MiniMusicPlayerProps) {
   const [showMusicSettings, setShowMusicSettings] = useState(false);
@@ -78,12 +72,7 @@ export default function MiniMusicPlayer({
   if (!currentMusic) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
-      className="fixed bottom-4 left-4 z-40"
-    >
+    <div className="fixed bottom-4 left-4 z-40">
       <div className="relative group music-settings-container">
         <div className={`bg-black/20 backdrop-blur-3xl border rounded-3xl overflow-hidden shadow-2xl max-w-sm transition-all duration-500 ${
           playerState.isPlaying 
@@ -143,10 +132,10 @@ export default function MiniMusicPlayer({
         <AnimatePresence>
           {showMusicSettings && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              initial={{ opacity: 0, scale: 0.95, y: 5 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 10 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+              exit={{ opacity: 0, scale: 0.95, y: 5 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
               className="absolute bottom-full left-0 mb-3 bg-black/30 backdrop-blur-3xl border border-white/10 rounded-2xl p-4 shadow-2xl w-72"
             >
               <div className="space-y-4">
@@ -228,6 +217,8 @@ export default function MiniMusicPlayer({
           )}
         </AnimatePresence>
       </div>
-    </motion.div>
+    </div>
   );
 }
+
+export default memo(MiniMusicPlayer);

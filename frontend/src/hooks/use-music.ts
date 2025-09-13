@@ -67,7 +67,7 @@ export const useMusic = () => {
         }, 100);
       }
     };
-  }, [musics, playerState.volume, playerState.isMuted]);
+  }, [musics]);
 
   const loadMusics = useCallback(async () => {
     setLoading(true);
@@ -192,7 +192,7 @@ export const useMusic = () => {
     } else {
       isChangingTrack.current = false;
     }
-  }, [musics, currentMusic, playerState.volume, playerState.isMuted, createAutoNextHandler]);
+  }, [musics, currentMusic?.id, createAutoNextHandler]);
 
   const previousMusic = useCallback(() => {
     if (musics.length === 0 || isChangingTrack.current) return;
@@ -250,7 +250,7 @@ export const useMusic = () => {
     } else {
       isChangingTrack.current = false;
     }
-  }, [musics, currentMusic, playerState.volume, playerState.isMuted, createAutoNextHandler]);
+  }, [musics, currentMusic?.id, createAutoNextHandler]);
 
   const playMusic = useCallback((music: IMusic) => {
     try {

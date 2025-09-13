@@ -70,7 +70,7 @@ export class AudioEffectService {
     }
 
     destroyAllAudioElements(): void {
-        this.audioElements.forEach((audio, effectId) => {
+        this.audioElements.forEach((_, effectId) => {
             this.destroyAudioElement(effectId);
         });
         this.audioElements.clear();
