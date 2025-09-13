@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, MoreHorizontal, Play, Check, Clock, User, Edit3, Trash2 } from 'lucide-react';
+import { Plus, MoreHorizontal, Play, Check, Clock, User, Edit3, Trash2, Filter } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { ITask } from '../../interfaces/ITask';
 
@@ -25,6 +25,8 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
   const [editingField, setEditingField] = useState<'title' | 'description' | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [showFilter, setShowFilter] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('active'); // 'all', 'active', 'pending', 'in_progress', 'completed', 'cancelled'
 
   const handleAddTask = async () => {
     if (newTaskTitle.trim()) {
@@ -147,6 +149,27 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
     }
   };
 
+  const getFilteredTasks = () => {
+    switch (statusFilter) {
+      case 'all':
+        return tasks;
+      case 'active':
+        return tasks.filter(task => task.status !== 'completed' && task.status !== 'cancelled');
+      case 'pending':
+        return tasks.filter(task => task.status === 'pending');
+      case 'in_progress':
+        return tasks.filter(task => task.status === 'in_progress');
+      case 'completed':
+        return tasks.filter(task => task.status === 'completed');
+      case 'cancelled':
+        return tasks.filter(task => task.status === 'cancelled');
+      default:
+        return tasks.filter(task => task.status !== 'completed');
+    }
+  };
+
+  const filteredTasks = getFilteredTasks();
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed': return <Check className="w-3 h-3" />;
@@ -162,18 +185,64 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <div className={`flex items-center justify-between bg-white/5 backdrop-blur-2xl rounded-xl border border-white/10 shadow-lg transition-all duration-500 ease-in-out ${isMinimized ? 'p-2 mb-2' : 'p-3 mb-4'}`}>
-        <h2 className={`font-semibold text-white drop-shadow transition-all duration-500 ease-in-out ${isMinimized ? 'text-sm' : 'text-lg'}`}>
-          Tasks {isMinimized && `(${tasks.filter(t => t.status !== 'completed').length})`}
-        </h2>
-        <button
-          onClick={() => setIsAddingTask(true)}
-          className={`bg-white/10 backdrop-blur-2xl hover:bg-white/20 border border-white/10 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-500 ease-in-out ${
-            isMinimized ? 'opacity-0 scale-0 w-0 h-0 overflow-hidden' : 'opacity-100 scale-100 w-8 h-8'
-          }`}
-        >
-          <Plus className="w-4 h-4 text-white" />
-        </button>
+      <div className={`bg-white/5 backdrop-blur-2xl rounded-xl border border-white/10 shadow-lg transition-all duration-500 ease-in-out ${isMinimized ? 'p-2 mb-2' : 'p-3 mb-4'}`}>
+        <div className="flex items-center justify-between">
+          <h2 className={`font-semibold text-white drop-shadow transition-all duration-500 ease-in-out ${isMinimized ? 'text-sm' : 'text-lg'}`}>
+            Tasks {isMinimized ? `(${filteredTasks.length})` : `(${filteredTasks.length})`}
+          </h2>
+          <div className="flex items-center gap-2">
+            {!isMinimized && (
+              <button
+                onClick={() => setShowFilter(!showFilter)}
+                className={`bg-white/10 backdrop-blur-2xl hover:bg-white/20 border border-white/10 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 w-8 h-8 ${
+                  showFilter ? 'bg-white/20' : ''
+                }`}
+              >
+                <Filter className="w-4 h-4 text-white" />
+              </button>
+            )}
+            <button
+              onClick={() => setIsAddingTask(true)}
+              className={`bg-white/10 backdrop-blur-2xl hover:bg-white/20 border border-white/10 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-500 ease-in-out ${
+                isMinimized ? 'opacity-0 scale-0 w-0 h-0 overflow-hidden' : 'opacity-100 scale-100 w-8 h-8'
+              }`}
+            >
+              <Plus className="w-4 h-4 text-white" />
+            </button>
+          </div>
+        </div>
+        
+        {showFilter && !isMinimized && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mt-3 pt-3 border-t border-white/10"
+          >
+            <div className="flex flex-wrap gap-2">
+              {[
+                { key: 'active', label: 'Active', count: tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled').length },
+                { key: 'all', label: 'All', count: tasks.length },
+                { key: 'pending', label: 'Pending', count: tasks.filter(t => t.status === 'pending').length },
+                { key: 'in_progress', label: 'In Progress', count: tasks.filter(t => t.status === 'in_progress').length },
+                { key: 'completed', label: 'Completed', count: tasks.filter(t => t.status === 'completed').length },
+                { key: 'cancelled', label: 'Cancelled', count: tasks.filter(t => t.status === 'cancelled').length }
+              ].map(filter => (
+                <button
+                  key={filter.key}
+                  onClick={() => setStatusFilter(filter.key)}
+                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${
+                    statusFilter === filter.key
+                      ? 'bg-white/20 text-white border border-white/20'
+                      : 'bg-white/10 text-white/70 border border-white/10 hover:bg-white/15 hover:text-white'
+                  }`}
+                >
+                  {filter.label} ({filter.count})
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </div>
 
       {isMinimized && tasks.length > 0 && (
@@ -254,7 +323,7 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
           minHeight: isMinimized ? '0' : '200px'
         }}
       >
-        {tasks.map((task) => (
+        {filteredTasks.map((task) => (
           <div
             key={task.id}
             onClick={() => onTaskSelect(task)}
@@ -419,7 +488,7 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
           </div>
         ))}
         
-        {tasks.length === 0 && !isAddingTask && (
+        {filteredTasks.length === 0 && !isAddingTask && (
           <motion.div 
             className="text-center py-8 text-white/60"
             initial={{ opacity: 0, y: 20 }}
@@ -429,8 +498,13 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
             <div className="bg-white/10 backdrop-blur-2xl rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center border border-white/10">
               <Clock className="w-8 h-8 opacity-60" />
             </div>
-            <p className="text-sm font-medium mb-1">No tasks yet</p>
-            <p className="text-xs opacity-80">Add a task to start your session</p>
+            <p className="text-sm font-medium mb-1">
+              {tasks.length === 0 ? 'No tasks yet' : `No ${statusFilter === 'active' ? 'active' : statusFilter} tasks`}
+            </p>
+            <p className="text-xs opacity-80">
+              {tasks.length === 0 ? 'Add a task to start your session' : 
+               statusFilter !== 'all' ? `Try changing the filter to see other tasks` : 'All tasks are filtered out'}
+            </p>
           </motion.div>
         )}
       </div>

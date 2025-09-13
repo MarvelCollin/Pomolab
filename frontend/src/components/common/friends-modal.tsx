@@ -10,10 +10,13 @@ import {
   Clock,
   Mail,
   User,
-  Trash2
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import type { IFriend } from '../../interfaces/IFriend';
 import type { IUser } from '../../interfaces/IUser';
+import { FriendApi } from '../../apis/friend-api';
+import { useDebounce } from '../../hooks/useDebounce';
 
 interface FriendsModalProps {
   isOpen: boolean;
@@ -124,8 +127,17 @@ export default function FriendsModal({ isOpen, onClose, currentUser }: FriendsMo
 
   const handleAcceptRequest = async (friendId: number) => {
     try {
-      await FriendApi.updateFriend(friendId, 'accepted');
-      await loadFriendsData();
+      const acceptedRequest = friendRequests.find(req => req.id === friendId);
+      if (acceptedRequest && acceptedRequest.user) {
+        const newFriend: ExtendedFriend = {
+          ...acceptedRequest,
+          status: 'accepted',
+          friend: acceptedRequest.user
+        };
+        
+        setFriends(prev => [...prev, newFriend]);
+        setFriendRequests(prev => prev.filter(req => req.id !== friendId));
+      }
     } catch (err) {
       setError('Failed to accept friend request');
     }
@@ -133,8 +145,7 @@ export default function FriendsModal({ isOpen, onClose, currentUser }: FriendsMo
 
   const handleRejectRequest = async (friendId: number) => {
     try {
-      await FriendApi.deleteFriend(friendId);
-      await loadFriendsData();
+      setFriendRequests(prev => prev.filter(req => req.id !== friendId));
     } catch (err) {
       setError('Failed to reject friend request');
     }
@@ -142,8 +153,7 @@ export default function FriendsModal({ isOpen, onClose, currentUser }: FriendsMo
 
   const handleRemoveFriend = async (friendId: number) => {
     try {
-      await FriendApi.deleteFriend(friendId);
-      await loadFriendsData();
+      setFriends(prev => prev.filter(friend => friend.id !== friendId));
     } catch (err) {
       setError('Failed to remove friend');
     }
