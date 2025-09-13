@@ -6,6 +6,8 @@ import MiniPomodoroTimer from '../components/common/mini-pomodoro-timer';
 import TaskList from '../components/pomodoro/task-list';
 import MiniMusicPlayer from '../components/common/mini-music-player';
 import ToolBar from '../components/common/tool-bar';
+import SearchBar from '../components/common/search-bar';
+import SearchModal from '../components/common/search-modal';
 import LoginModal from '../components/common/login-modal';
 import AudioVisual from '../components/pomodoro/audio-visual';
 import type { ITask } from '../interfaces/ITask';
@@ -34,6 +36,7 @@ export default function Home() {
   const [showAudioEffects, setShowAudioEffects] = useState(false);
   const [uploadingBackground, setUploadingBackground] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
   
   // Authentication state
   const [currentUser, setCurrentUser] = useState<IUser | null>(null);
@@ -164,6 +167,14 @@ export default function Home() {
 
   const handleShowLogin = useCallback(() => {
     setShowLoginModal(true);
+  }, []);
+
+  const handleOpenSearchModal = useCallback(() => {
+    setShowSearchModal(true);
+  }, []);
+
+  const handleCloseSearchModal = useCallback(() => {
+    setShowSearchModal(false);
   }, []);
 
 
@@ -570,6 +581,8 @@ export default function Home() {
               onLogout={handleLogout}
             />
 
+            <SearchBar onOpenModal={handleOpenSearchModal} />
+
             <MiniMusicPlayer 
               showMusicPlayer={showMusicPlayer} 
               setShowMusicPlayer={setShowMusicPlayer}
@@ -703,6 +716,12 @@ export default function Home() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Search Modal */}
+      <SearchModal
+        isOpen={showSearchModal}
+        onClose={handleCloseSearchModal}
+      />
 
       {/* Login Modal */}
       <LoginModal

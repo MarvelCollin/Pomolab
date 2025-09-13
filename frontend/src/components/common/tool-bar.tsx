@@ -156,13 +156,13 @@ export default function ToolBar({
     >
       <div className="flex flex-col items-end gap-3">
         <motion.div 
-          className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl p-3 shadow-2xl"
+          className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-xl p-2 shadow-2xl"
           whileHover={{ scale: 1.02, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
           transition={{ duration: 0.2 }}
         >
           <motion.button
             onClick={() => setShowMainMenu(!showMainMenu)}
-            className="p-2 hover:bg-white/20 rounded-xl transition-all duration-200 group relative"
+            className="p-1.5 hover:bg-white/20 rounded-lg transition-all duration-200 group relative"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -170,7 +170,7 @@ export default function ToolBar({
               animate={{ rotate: showMainMenu ? 45 : 0 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
             >
-              <Menu className="w-6 h-6 text-white group-hover:text-white/90" />
+              <Menu className="w-5 h-5 text-white group-hover:text-white/90" />
             </motion.div>
           </motion.button>
         </motion.div>
@@ -178,17 +178,17 @@ export default function ToolBar({
         <AnimatePresence>
           {showMainMenu && (
             <motion.div
-              className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl p-3 shadow-2xl min-w-[200px]"
+              className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-xl p-2.5 shadow-2xl min-w-[180px]"
               initial={{ opacity: 0, scale: 0.9, y: -20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: -20 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
             >
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {/* User Authentication Section */}
                 {currentUser ? (
                   <motion.div
-                    className="bg-white/10 backdrop-blur-2xl rounded-xl p-3 border border-white/10 mb-3"
+                    className="bg-white/10 backdrop-blur-2xl rounded-lg p-2 border border-white/10 mb-2"
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
@@ -233,14 +233,14 @@ export default function ToolBar({
                       onShowLogin();
                       setShowMainMenu(false);
                     }}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-white/20 rounded-xl transition-all duration-200 group mb-3 bg-white/10 backdrop-blur-2xl border border-white/10"
+                    className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group mb-2 bg-white/10 backdrop-blur-2xl border border-white/10"
                     whileHover={{ x: 4, backgroundColor: "rgba(255, 255, 255, 0.2)" }}
                     whileTap={{ scale: 0.98 }}
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
                   >
-                    <User className="w-5 h-5 text-white/90" />
+                    <User className="w-4 h-4 text-white/90" />
                     <span className="text-white text-sm font-medium">Sign In</span>
                   </motion.button>
                 )}
@@ -254,7 +254,7 @@ export default function ToolBar({
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Timer className="w-5 h-5 text-white/90" />
+                  <Timer className="w-4 h-4 text-white/90" />
                   <span className="text-white text-sm font-medium">
                     {pomodoroMinimized ? "Expand Timer" : "Minimize Timer"}
                   </span>
@@ -276,11 +276,11 @@ export default function ToolBar({
                     setTasksMinimized(!tasksMinimized);
                     setShowMainMenu(false);
                   }}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-white/20 rounded-xl transition-all duration-200 group"
+                  className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group"
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <CheckSquare className="w-5 h-5 text-white/90" />
+                  <CheckSquare className="w-4 h-4 text-white/90" />
                   <span className="text-white text-sm font-medium">
                     {tasksMinimized ? "Expand Tasks" : "Minimize Tasks"}
                   </span>
@@ -304,11 +304,11 @@ export default function ToolBar({
                     setShowBackgroundSelector(!showBackgroundSelector);
                     setShowMainMenu(false);
                   }}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-white/20 rounded-xl transition-all duration-200 group"
+                  className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group"
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <ImageIcon className="w-5 h-5 text-white/90" />
+                  <ImageIcon className="w-4 h-4 text-white/90" />
                   <span className="text-white text-sm font-medium">Backgrounds</span>
                 </motion.button>
 
@@ -317,12 +317,12 @@ export default function ToolBar({
                     setShowMusicPlayer(!showMusicPlayer);
                     setShowMainMenu(false);
                   }}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-white/20 rounded-xl transition-all duration-200 group"
+                  className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group"
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <div className="relative">
-                    <Music className="w-5 h-5 text-white/90" />
+                    <Music className="w-4 h-4 text-white/90" />
                     {currentMusic && (
                       <motion.div
                         className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full"
@@ -339,11 +339,11 @@ export default function ToolBar({
                     setShowAudioEffects(!showAudioEffects);
                     setShowMainMenu(false);
                   }}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-white/20 rounded-xl transition-all duration-200 group"
+                  className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group"
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Waves className="w-5 h-5 text-white/90" />
+                  <Waves className="w-4 h-4 text-white/90" />
                   <span className="text-white text-sm font-medium">Audio Effects</span>
                 </motion.button>
 
@@ -354,14 +354,14 @@ export default function ToolBar({
                     setIsMinimalMode(!isMinimalMode);
                     setShowMainMenu(false);
                   }}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-white/20 rounded-xl transition-all duration-200 group"
+                  className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group"
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   {isMinimalMode ? (
-                    <Eye className="w-5 h-5 text-white/90" />
+                    <Eye className="w-4 h-4 text-white/90" />
                   ) : (
-                    <EyeOff className="w-5 h-5 text-white/90" />
+                    <EyeOff className="w-4 h-4 text-white/90" />
                   )}
                   <span className="text-white text-sm font-medium">
                     {isMinimalMode ? "Show Interface" : "Minimal Mode"}
