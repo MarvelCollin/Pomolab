@@ -88,8 +88,7 @@ export default function Home() {
     toggleMute,
     toggleAutoPlay,
     seekTo,
-    setVolume,
-    loadRemainingMusics
+    setVolume
   } = useMusic();
 
   const {
@@ -119,9 +118,8 @@ export default function Home() {
       setInitialLoadComplete(true);
       
       loadRemainingBackgrounds();
-      loadRemainingMusics();
     }
-  }, [backgroundsLoading, musicLoading, initialLoadComplete, loadRemainingBackgrounds, loadRemainingMusics]);
+  }, [backgroundsLoading, musicLoading, initialLoadComplete, loadRemainingBackgrounds]);
 
   // Auto-login on component mount
   useEffect(() => {

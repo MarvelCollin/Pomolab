@@ -23,8 +23,8 @@ export const useMusic = () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await musicService.getMusicsWithDefault();
-      setMusics(result.musics);
+      const result = await musicService.getMusics();
+      setMusics(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load musics');
     } finally {
@@ -91,9 +91,8 @@ export const useMusic = () => {
     
     isChangingTrack.current = true;
     
-    const currentIndex = musics.findIndex(m => m.id === currentMusic.id);
-    const nextIndex = (currentIndex + 1) % musics.length;
-    const nextTrack = musics[nextIndex];
+    const remainingMusics = musics.filter(m => m.id !== currentMusic.id);
+    const nextTrack = musicService.getRandomMusic(remainingMusics.length > 0 ? remainingMusics : musics);
     
     if (nextTrack) {
       if (audioRef.current) {
@@ -157,9 +156,8 @@ export const useMusic = () => {
     
     isChangingTrack.current = true;
     
-    const currentIndex = musics.findIndex(m => m.id === currentMusic.id);
-    const prevIndex = currentIndex === 0 ? musics.length - 1 : currentIndex - 1;
-    const prevTrack = musics[prevIndex];
+    const remainingMusics = musics.filter(m => m.id !== currentMusic.id);
+    const prevTrack = musicService.getRandomMusic(remainingMusics.length > 0 ? remainingMusics : musics);
     
     if (prevTrack) {
       if (audioRef.current) {
@@ -378,82 +376,84 @@ export const useMusic = () => {
 
   useEffect(() => {
     if (musics.length > 0 && !currentMusic && autoPlay) {
-      const firstMusic = musics[0];
+      const randomMusic = musicService.getRandomMusic(musics);
       
-      const initializeFirstMusic = () => {
-        if (audioRef.current) {
-          audioRef.current.pause();
-        }
-
-        audioRef.current = musicService.createAudioElement(firstMusic.url);
-        const audio = audioRef.current;
-
-        audio.volume = playerState.volume;
-        audio.muted = playerState.isMuted;
-
-        audio.addEventListener('loadedmetadata', () => {
-          setPlayerState(prev => ({
-            ...prev,
-            duration: audio.duration || 0
-          }));
-        });
-
-        audio.addEventListener('timeupdate', () => {
-          setPlayerState(prev => ({
-            ...prev,
-            currentTime: audio.currentTime || 0
-          }));
-        });
-
-        audio.addEventListener('ended', () => {
-          setPlayerState(prev => ({
-            ...prev,
-            isPlaying: false,
-            currentTime: 0
-          }));
-          if (!isChangingTrack.current) {
-            nextMusic();
+      if (randomMusic) {
+        const initializeRandomMusic = () => {
+          if (audioRef.current) {
+            audioRef.current.pause();
           }
-        });
 
-        const attemptAutoPlay = async () => {
-          try {
-            await audio.play();
-            setCurrentMusic(firstMusic);
+          audioRef.current = musicService.createAudioElement(randomMusic.url);
+          const audio = audioRef.current;
+
+          audio.volume = playerState.volume;
+          audio.muted = playerState.isMuted;
+
+          audio.addEventListener('loadedmetadata', () => {
             setPlayerState(prev => ({
               ...prev,
-              isPlaying: true
+              duration: audio.duration || 0
             }));
-            setMusics(prev => 
-              prev.map(m => ({ ...m, isActive: m.id === firstMusic.id }))
-            );
-          } catch (error) {
-            setCurrentMusic(firstMusic);
-            setMusics(prev => 
-              prev.map(m => ({ ...m, isActive: m.id === firstMusic.id }))
-            );
-            
-            const handleUserInteraction = async () => {
-              try {
-                await audio.play();
-                setPlayerState(prev => ({
-                  ...prev,
-                  isPlaying: true
-                }));
-                document.removeEventListener('click', handleUserInteraction);
-                document.removeEventListener('keydown', handleUserInteraction);
-              } catch {}
-            };
-            
-            document.addEventListener('click', handleUserInteraction, { once: true });
-            document.addEventListener('keydown', handleUserInteraction, { once: true });
-          }
-        };
+          });
 
-        attemptAutoPlay();
-      };
-      
-      initializeFirstMusic();
+          audio.addEventListener('timeupdate', () => {
+            setPlayerState(prev => ({
+              ...prev,
+              currentTime: audio.currentTime || 0
+            }));
+          });
+
+          audio.addEventListener('ended', () => {
+            setPlayerState(prev => ({
+              ...prev,
+              isPlaying: false,
+              currentTime: 0
+            }));
+            if (!isChangingTrack.current) {
+              nextMusic();
+            }
+          });
+
+          const attemptAutoPlay = async () => {
+            try {
+              await audio.play();
+              setCurrentMusic(randomMusic);
+              setPlayerState(prev => ({
+                ...prev,
+                isPlaying: true
+              }));
+              setMusics(prev => 
+                prev.map(m => ({ ...m, isActive: m.id === randomMusic.id }))
+              );
+            } catch (error) {
+              setCurrentMusic(randomMusic);
+              setMusics(prev => 
+                prev.map(m => ({ ...m, isActive: m.id === randomMusic.id }))
+              );
+              
+              const handleUserInteraction = async () => {
+                try {
+                  await audio.play();
+                  setPlayerState(prev => ({
+                    ...prev,
+                    isPlaying: true
+                  }));
+                  document.removeEventListener('click', handleUserInteraction);
+                  document.removeEventListener('keydown', handleUserInteraction);
+                } catch {}
+              };
+              
+              document.addEventListener('click', handleUserInteraction, { once: true });
+              document.addEventListener('keydown', handleUserInteraction, { once: true });
+            }
+          };
+
+          attemptAutoPlay();
+        };
+        
+        initializeRandomMusic();
+      }
     }
   }, [musics, currentMusic, autoPlay, playerState.volume, playerState.isMuted]);
 
