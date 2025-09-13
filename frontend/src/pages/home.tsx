@@ -9,11 +9,12 @@ import ToolBar from '../components/common/tool-bar';
 import SearchBar from '../components/common/search-bar';
 import SearchModal from '../components/common/search-modal';
 import UserProfileDisplay from '../components/common/user-profile-display';
+import FriendsModal from '../components/common/friends-modal';
 import LoginModal from '../components/common/login-modal';
 import AudioVisual from '../components/pomodoro/audio-visual';
 import type { ITask } from '../interfaces/ITask';
 import type { IUser } from '../interfaces/IUser';
-import { dummyTasks } from '../data/dummy-data';
+import { TaskApi } from '../apis/task-api';
 import { useBackground } from '../hooks/use-background';
 import { useMusic } from '../hooks/use-music';
 import { useAudioEffect } from '../hooks/use-audio-effect';
@@ -24,7 +25,9 @@ import type { IAudioEffect } from '../interfaces/IAudioEffect';
 import '../app.css';
 
 export default function Home() {
-  const [tasks, setTasks] = useState<ITask[]>(dummyTasks);
+  const [tasks, setTasks] = useState<ITask[]>([]);
+  const [tasksLoading, setTasksLoading] = useState(true);
+  const [tasksError, setTasksError] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<ITask | null>(tasks.find(t => t.status === 'in_progress') || null);
   const [pomodoroMinimized, setPomodoroMinimized] = useState(false);
   const [tasksMinimized, setTasksMinimized] = useState(false);
@@ -38,6 +41,7 @@ export default function Home() {
   const [uploadingBackground, setUploadingBackground] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showFriendsModal, setShowFriendsModal] = useState(false);
   
   // Authentication state
   const [currentUser, setCurrentUser] = useState<IUser | null>(null);
@@ -125,6 +129,27 @@ export default function Home() {
     }
   }, [backgroundsLoading, musicLoading, initialLoadComplete, loadRemainingBackgrounds]);
 
+  // Load tasks from backend
+  useEffect(() => {
+    const loadTasks = async () => {
+      if (!currentUser) return;
+      
+      setTasksLoading(true);
+      setTasksError(null);
+      try {
+        const userTasks = await TaskApi.getUserTasks(currentUser.id);
+        setTasks(userTasks);
+      } catch (error) {
+        console.error('Failed to load tasks:', error);
+        setTasksError(error instanceof Error ? error.message : 'Failed to load tasks');
+      } finally {
+        setTasksLoading(false);
+      }
+    };
+    
+    loadTasks();
+  }, [currentUser]);
+
   // Auto-login on component mount
   useEffect(() => {
     const checkExistingAuth = async () => {
@@ -178,45 +203,77 @@ export default function Home() {
     setShowSearchModal(false);
   }, []);
 
+  const handleOpenFriendsModal = useCallback(() => {
+    setShowFriendsModal(true);
+  }, []);
+
+  const handleCloseFriendsModal = useCallback(() => {
+    setShowFriendsModal(false);
+  }, []);
+
 
 
   const handleTaskSelect = useCallback((task: ITask) => {
     setSelectedTask(task);
   }, []);
 
-  const handleTaskComplete = useCallback((taskId: number) => {
-    setTasks(prev => prev.map(task => 
-      task.id === taskId 
-        ? { ...task, status: 'completed' }
-        : task
-    ));
+  const handleTaskComplete = useCallback(async (taskId: number) => {
+    try {
+      await TaskApi.updateTaskStatus(taskId, 'completed');
+      setTasks(prev => prev.map(task => 
+        task.id === taskId 
+          ? { ...task, status: 'completed', updated_at: new Date().toISOString() }
+          : task
+      ));
+    } catch (error) {
+      console.error('Failed to complete task:', error);
+      setTasksError(error instanceof Error ? error.message : 'Failed to complete task');
+    }
   }, []);
 
-  const handleTaskAdd = useCallback((newTask: Omit<ITask, 'id' | 'created_at' | 'updated_at'>) => {
-    const task: ITask = {
-      ...newTask,
-      id: Math.max(...tasks.map(t => t.id)) + 1,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    setTasks(prev => [task, ...prev]);
-  }, [tasks]);
+  const handleTaskAdd = useCallback(async (newTask: Omit<ITask, 'id' | 'created_at' | 'updated_at'>) => {
+    if (!currentUser) return;
+    
+    try {
+      const taskData = {
+        ...newTask,
+        owner_id: currentUser.id
+      };
+      const createdTask = await TaskApi.createTask(taskData);
+      setTasks(prev => [createdTask, ...prev]);
+    } catch (error) {
+      console.error('Failed to create task:', error);
+      setTasksError(error instanceof Error ? error.message : 'Failed to create task');
+    }
+  }, [currentUser]);
 
-  const handleTaskDelete = useCallback((taskId: number) => {
-    setTasks(prev => prev.filter(task => task.id !== taskId));
-    if (selectedTask?.id === taskId) {
-      setSelectedTask(null);
+  const handleTaskDelete = useCallback(async (taskId: number) => {
+    try {
+      await TaskApi.deleteTask(taskId);
+      setTasks(prev => prev.filter(task => task.id !== taskId));
+      if (selectedTask?.id === taskId) {
+        setSelectedTask(null);
+      }
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      setTasksError(error instanceof Error ? error.message : 'Failed to delete task');
     }
   }, [selectedTask]);
 
-  const handleTaskEdit = useCallback((taskId: number, updates: Partial<ITask>) => {
-    setTasks(prev => prev.map(task => 
-      task.id === taskId 
-        ? { ...task, ...updates, updated_at: new Date().toISOString() }
-        : task
-    ));
-    if (selectedTask?.id === taskId) {
-      setSelectedTask(prev => prev ? { ...prev, ...updates, updated_at: new Date().toISOString() } : null);
+  const handleTaskEdit = useCallback(async (taskId: number, updates: Partial<ITask>) => {
+    try {
+      await TaskApi.updateTask(taskId, updates);
+      setTasks(prev => prev.map(task => 
+        task.id === taskId 
+          ? { ...task, ...updates, updated_at: new Date().toISOString() }
+          : task
+      ));
+      if (selectedTask?.id === taskId) {
+        setSelectedTask(prev => prev ? { ...prev, ...updates, updated_at: new Date().toISOString() } : null);
+      }
+    } catch (error) {
+      console.error('Failed to update task:', error);
+      setTasksError(error instanceof Error ? error.message : 'Failed to update task');
     }
   }, [selectedTask]);
 
@@ -416,7 +473,7 @@ export default function Home() {
     );
   };
 
-  const isLoading = backgroundsLoading || musicLoading || !backgroundLoaded || !showContent || !initialLoadComplete;
+  const isLoading = backgroundsLoading || musicLoading || !backgroundLoaded || !showContent || !initialLoadComplete || tasksLoading;
 
   return (
     <div className="home-page min-h-screen relative overflow-hidden">
@@ -683,6 +740,11 @@ export default function Home() {
 
                     <div className={`${(pomodoroMinimized && !tasksMinimized) ? 'lg:col-span-6' : (tasksMinimized && !pomodoroMinimized) ? 'lg:col-span-4' : (pomodoroMinimized && tasksMinimized) ? 'lg:col-span-2' : 'lg:col-span-5'} transition-all duration-500 ease-in-out flex flex-col`}>
                       <div className={`rounded-3xl transition-all duration-500 ease-in-out ${tasksMinimized ? 'p-2 max-h-[120px]' : 'p-4 flex-1 min-h-0'} ${tasksMinimized ? 'overflow-hidden' : 'flex flex-col'}`}>
+                        {tasksError && !tasksMinimized && (
+                          <div className="bg-red-500/10 backdrop-blur-2xl border border-red-500/20 rounded-xl p-3 mb-4">
+                            <p className="text-red-400 text-sm">Error loading tasks: {tasksError}</p>
+                          </div>
+                        )}
                         <TaskList
                           tasks={tasks}
                           onTaskSelect={handleTaskSelect}
@@ -729,6 +791,14 @@ export default function Home() {
       <SearchModal
         isOpen={showSearchModal}
         onClose={handleCloseSearchModal}
+        onOpenFriendsModal={handleOpenFriendsModal}
+      />
+
+      {/* Friends Modal */}
+      <FriendsModal
+        isOpen={showFriendsModal}
+        onClose={handleCloseFriendsModal}
+        currentUser={currentUser}
       />
 
       {/* Login Modal */}

@@ -1,22 +1,23 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Timer, CheckSquare, Music, ImageIcon, Waves, User } from 'lucide-react';
+import { Search, X, Timer, CheckSquare, Music, ImageIcon, Waves, User, Users, UserPlus } from 'lucide-react';
 
 interface SearchModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenFriendsModal?: () => void;
 }
 
 interface SearchResult {
   id: string;
   title: string;
   description: string;
-  category: 'timer' | 'task' | 'music' | 'background' | 'effect' | 'user';
+  category: 'timer' | 'task' | 'music' | 'background' | 'effect' | 'user' | 'friends';
   icon: React.ComponentType<any>;
   action: () => void;
 }
 
-export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
+export default function SearchModal({ isOpen, onClose, onOpenFriendsModal }: SearchModalProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -94,6 +95,42 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
       category: 'user',
       icon: User,
       action: () => console.log('Profile')
+    },
+    {
+      id: 'friends-list',
+      title: 'Friends List',
+      description: 'View and manage your friends',
+      category: 'friends',
+      icon: Users,
+      action: () => {
+        if (onOpenFriendsModal) {
+          onOpenFriendsModal();
+        }
+      }
+    },
+    {
+      id: 'add-friends',
+      title: 'Add Friends',
+      description: 'Find and add new friends',
+      category: 'friends',
+      icon: UserPlus,
+      action: () => {
+        if (onOpenFriendsModal) {
+          onOpenFriendsModal();
+        }
+      }
+    },
+    {
+      id: 'friend-requests',
+      title: 'Friend Requests',
+      description: 'View pending friend requests',
+      category: 'friends',
+      icon: Users,
+      action: () => {
+        if (onOpenFriendsModal) {
+          onOpenFriendsModal();
+        }
+      }
     }
   ];
 
@@ -143,6 +180,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
       case 'background': return 'text-purple-400';
       case 'effect': return 'text-cyan-400';
       case 'user': return 'text-pink-400';
+      case 'friends': return 'text-emerald-400';
       default: return 'text-white/60';
     }
   };

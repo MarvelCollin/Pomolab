@@ -51,11 +51,6 @@ export default function UserProfileDisplay({ user, onLogout }: UserProfileDispla
                 </span>
               </div>
             )}
-            <motion.div
-              className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border border-white/20"
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
           </div>
 
           <div className="flex-1 min-w-0">
@@ -78,19 +73,6 @@ export default function UserProfileDisplay({ user, onLogout }: UserProfileDispla
           </motion.button>
         </div>
 
-        <motion.div
-          className="mt-2 pt-2 border-t border-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-          initial={{ height: 0 }}
-          whileHover={{ height: 'auto' }}
-        >
-          <div className="flex items-center justify-between text-xs text-white/50">
-            <span>Status: Online</span>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              <span>Active</span>
-            </div>
-          </div>
-        </motion.div>
       </motion.div>
     </motion.div>
   );

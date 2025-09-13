@@ -6,10 +6,10 @@ import type { ITask } from '../../interfaces/ITask';
 interface TaskListProps {
   tasks: ITask[];
   onTaskSelect: (task: ITask) => void;
-  onTaskComplete: (taskId: number) => void;
-  onTaskAdd: (task: Omit<ITask, 'id' | 'created_at' | 'updated_at'>) => void;
-  onTaskDelete?: (taskId: number) => void;
-  onTaskEdit?: (taskId: number, updates: Partial<ITask>) => void;
+  onTaskComplete: (taskId: number) => Promise<void>;
+  onTaskAdd: (task: Omit<ITask, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  onTaskDelete?: (taskId: number) => Promise<void>;
+  onTaskEdit?: (taskId: number, updates: Partial<ITask>) => Promise<void>;
   selectedTaskId?: number;
   isMinimized?: boolean;
 }
@@ -30,32 +30,46 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
     if (newTaskTitle.trim()) {
       setAddingTask(true);
       
-      onTaskAdd({
-        title: newTaskTitle.trim(),
-        description: newTaskDescription.trim() || undefined,
-        owner_id: 1,
-        assigned_to_id: undefined,
-        status: 'pending'
-      });
-      
-      setNewTaskTitle('');
-      setNewTaskDescription('');
-      setAddingTask(false);
-      setIsAddingTask(false);
+      try {
+        await onTaskAdd({
+          title: newTaskTitle.trim(),
+          description: newTaskDescription.trim() || undefined,
+          owner_id: 1,
+          assigned_to_id: undefined,
+          status: 'pending'
+        });
+        
+        setNewTaskTitle('');
+        setNewTaskDescription('');
+        setIsAddingTask(false);
+      } catch (error) {
+        console.error('Failed to add task:', error);
+      } finally {
+        setAddingTask(false);
+      }
     }
   };
 
   const handleCompleteTask = async (taskId: number) => {
     setCompletingTaskId(taskId);
-    setTimeout(() => {
-      onTaskComplete(taskId);
-      setCompletingTaskId(null);
-    }, 300);
+    try {
+      await onTaskComplete(taskId);
+    } catch (error) {
+      console.error('Failed to complete task:', error);
+    } finally {
+      setTimeout(() => {
+        setCompletingTaskId(null);
+      }, 300);
+    }
   };
 
-  const handleDeleteTask = (taskId: number) => {
+  const handleDeleteTask = async (taskId: number) => {
     if (onTaskDelete) {
-      onTaskDelete(taskId);
+      try {
+        await onTaskDelete(taskId);
+      } catch (error) {
+        console.error('Failed to delete task:', error);
+      }
     }
     setOpenMenuId(null);
   };
@@ -79,14 +93,18 @@ export default function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAd
     setEditDescription('');
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (editingTaskId && onTaskEdit) {
-      const updates: Partial<ITask> = {
-        title: editTitle.trim(),
-        description: editDescription.trim() || undefined
-      };
-      onTaskEdit(editingTaskId, updates);
-      cancelEditing();
+      try {
+        const updates: Partial<ITask> = {
+          title: editTitle.trim(),
+          description: editDescription.trim() || undefined
+        };
+        await onTaskEdit(editingTaskId, updates);
+        cancelEditing();
+      } catch (error) {
+        console.error('Failed to save task edit:', error);
+      }
     }
   };
 
