@@ -10,7 +10,6 @@ services:
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
-      - ./backend:/var/www/html
       - ./backend/storage:/var/www/html/storage
       - ./backend/bootstrap/cache:/var/www/html/bootstrap/cache
     ports:
