@@ -30,7 +30,6 @@ export default function Home() {
     backgrounds, 
     activeBackground, 
     loading: backgroundsLoading,
-    mediaReady: backgroundMediaReady,
     changeBackground,
     onMediaReady,
     loadRemainingBackgrounds
@@ -41,7 +40,6 @@ export default function Home() {
     currentMusic,
     playerState,
     loading: musicLoading,
-    musicReady,
     playMusic,
     togglePlayPause,
     nextMusic,
@@ -116,19 +114,14 @@ export default function Home() {
     }
   }, [backgroundsLoading, musicLoading, state.ui.initialLoadComplete, loadRemainingBackgrounds, dispatch]);
 
-  useEffect(() => {
-    dispatch({ type: 'UPDATE_UI', payload: { backgroundMediaReady } });
-  }, [backgroundMediaReady, dispatch]);
 
   useEffect(() => {
-    dispatch({ type: 'UPDATE_UI', payload: { musicReady } });
-  }, [musicReady, dispatch]);
-
-  useEffect(() => {
-    if (state.ui.backgroundMediaReady && state.ui.musicReady && state.ui.initialLoadComplete && !state.ui.showContent) {
-      dispatch({ type: 'MEDIA_READY' });
+    if (state.ui.initialLoadComplete && !state.ui.showContent) {
+      setTimeout(() => {
+        dispatch({ type: 'MEDIA_READY' });
+      }, 500);
     }
-  }, [state.ui.backgroundMediaReady, state.ui.musicReady, state.ui.initialLoadComplete, state.ui.showContent, dispatch]);
+  }, [state.ui.initialLoadComplete, state.ui.showContent, dispatch]);
 
   useEffect(() => {
     AuthTrigger.setConfig({
@@ -163,7 +156,7 @@ export default function Home() {
     } });
   }, [changeBackground, dispatch]);
 
-  const isLoading = backgroundsLoading || musicLoading || !state.ui.backgroundMediaReady || !state.ui.musicReady || !state.ui.showContent || !state.ui.initialLoadComplete || Boolean(state.auth.currentUser && state.tasksLoading);
+  const isLoading = backgroundsLoading || musicLoading || !state.ui.showContent || !state.ui.initialLoadComplete || Boolean(state.auth.currentUser && state.tasksLoading);
 
   return (
     <div className="home-page min-h-screen relative overflow-hidden">

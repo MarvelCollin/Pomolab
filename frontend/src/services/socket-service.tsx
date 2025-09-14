@@ -16,6 +16,7 @@ class SocketService {
                 this.isConnected = true;
                 this.reconnectAttempts = 0;
                 console.log('WebSocket connected successfully');
+                this.resubscribeToChannels();
             };
 
             this.ws.onclose = () => {
@@ -64,36 +65,63 @@ class SocketService {
         }
     }
 
-    public subscribeToChannel(channel: string, callback: (data: any) => void): void {
+    private subscribedChannels: Set<string> = new Set();
+
+    public subscribeToChannel(channel: string, callback: (data: any) => void): () => void {
         if (!this.messageCallbacks[channel]) {
             this.messageCallbacks[channel] = [];
         }
         
         this.messageCallbacks[channel].push(callback);
 
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        if (!this.subscribedChannels.has(channel) && this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.subscribedChannels.add(channel);
             this.ws.send(JSON.stringify({
                 type: 'subscribe',
                 channel: channel
             }));
         }
+
+        return () => this.unsubscribeCallback(channel, callback);
     }
 
-    public listenToTestChannel(callback: (data: any) => void): void {
-        this.subscribeToChannel('test-channel', callback);
+    private unsubscribeCallback(channel: string, callback: (data: any) => void): void {
+        if (this.messageCallbacks[channel]) {
+            this.messageCallbacks[channel] = this.messageCallbacks[channel].filter(cb => cb !== callback);
+            
+            if (this.messageCallbacks[channel].length === 0) {
+                delete this.messageCallbacks[channel];
+                this.subscribedChannels.delete(channel);
+            }
+        }
     }
 
-    public listenToMessageChannel(callback: (data: any) => void): void {
-        this.subscribeToChannel('message-channel', callback);
+    private resubscribeToChannels(): void {
+        this.subscribedChannels.forEach(channel => {
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(JSON.stringify({
+                    type: 'subscribe',
+                    channel: channel
+                }));
+            }
+        });
     }
 
-  public listenToTaskUpdates(callback: (data: any) => void): void {
-    this.subscribeToChannel('task-updates', callback);
-  }
+    public listenToTestChannel(callback: (data: any) => void): () => void {
+        return this.subscribeToChannel('test-channel', callback);
+    }
 
-  public listenToFriendNotifications(callback: (data: any) => void): void {
-    this.subscribeToChannel('friend-notifications', callback);
-  }
+    public listenToMessageChannel(callback: (data: any) => void): () => void {
+        return this.subscribeToChannel('message-channel', callback);
+    }
+
+    public listenToTaskUpdates(callback: (data: any) => void): () => void {
+        return this.subscribeToChannel('task-updates', callback);
+    }
+
+    public listenToFriendNotifications(callback: (data: any) => void): () => void {
+        return this.subscribeToChannel('friend-notifications', callback);
+    }
 
     public disconnect(): void {
         if (this.ws) {

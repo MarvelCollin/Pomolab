@@ -23,6 +23,13 @@ class UserController extends Controller
      *     path="/api/users",
      *     summary="Get all users",
      *     tags={"Users"},
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         description="Search users by username or email",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -36,9 +43,16 @@ class UserController extends Controller
      *     )
      * )
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $users = $this->userRepository->getAll();
+        $search = $request->query('search');
+        
+        if ($search) {
+            $users = $this->userRepository->search($search);
+        } else {
+            $users = $this->userRepository->getAll();
+        }
+        
         return response()->json($users);
     }
 

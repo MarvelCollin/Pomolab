@@ -83,8 +83,10 @@ export const useMusic = () => {
     try {
       const result = await musicService.getMusics();
       setMusics(result);
+      setMusicReady(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load musics');
+      setMusicReady(true);
     } finally {
       setLoading(false);
     }
@@ -410,16 +412,16 @@ export const useMusic = () => {
   }, [loadMusics]);
 
   useEffect(() => {
-    if (musics.length === 0) {
-      setMusicReady(true);
-      return;
-    }
-    
     if (musics.length > 0 && !currentMusic && autoPlay) {
       const randomMusic = musicService.getRandomMusic(musics);
       
       if (randomMusic) {
-        const initializeRandomMusic = () => {
+        setCurrentMusic(randomMusic);
+        setMusics(prev => 
+          prev.map(m => ({ ...m, isActive: m.id === randomMusic.id }))
+        );
+        
+        setTimeout(() => {
           if (audioRef.current) {
             audioRef.current.pause();
           }
@@ -445,49 +447,25 @@ export const useMusic = () => {
           });
 
           const handleEnded = createAutoNextHandler(randomMusic.id);
-
           audio.addEventListener('ended', handleEnded);
 
-          const attemptAutoPlay = async () => {
-            try {
-              await audio.play();
-              setCurrentMusic(randomMusic);
-              setPlayerState(prev => ({
-                ...prev,
-                isPlaying: true
-              }));
-              setMusics(prev => 
-                prev.map(m => ({ ...m, isActive: m.id === randomMusic.id }))
-              );
-              setMusicReady(true);
-            } catch (error) {
-              setCurrentMusic(randomMusic);
-              setMusics(prev => 
-                prev.map(m => ({ ...m, isActive: m.id === randomMusic.id }))
-              );
-              setMusicReady(true);
-              
-              const handleUserInteraction = async () => {
-                try {
-                  await audio.play();
-                  setPlayerState(prev => ({
-                    ...prev,
-                    isPlaying: true
-                  }));
-                  document.removeEventListener('click', handleUserInteraction);
-                  document.removeEventListener('keydown', handleUserInteraction);
-                } catch {}
-              };
-              
-              document.addEventListener('click', handleUserInteraction, { once: true });
-              document.addEventListener('keydown', handleUserInteraction, { once: true });
-            }
-          };
-
-          attemptAutoPlay();
-        };
-        
-        initializeRandomMusic();
+          audio.play().catch(() => {
+            const handleUserInteraction = async () => {
+              try {
+                await audio.play();
+                setPlayerState(prev => ({
+                  ...prev,
+                  isPlaying: true
+                }));
+                document.removeEventListener('click', handleUserInteraction);
+                document.removeEventListener('keydown', handleUserInteraction);
+              } catch {}
+            };
+            
+            document.addEventListener('click', handleUserInteraction, { once: true });
+            document.addEventListener('keydown', handleUserInteraction, { once: true });
+          });
+        }, 100);
       }
     }
   }, [musics, currentMusic, autoPlay, playerState.volume, playerState.isMuted, createAutoNextHandler]);

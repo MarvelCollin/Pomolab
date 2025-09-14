@@ -24,14 +24,16 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::apiResource('users', UserController::class);
-Route::get('/users/{id}/friends', [UserController::class, 'getUserWithFriends']);
-Route::get('/users/{id}/tasks', [UserController::class, 'getUserWithTasks']);
+Route::middleware('auth:sanctum')->get('/users/{id}/friends', [UserController::class, 'getUserWithFriends']);
+Route::middleware('auth:sanctum')->get('/users/{id}/tasks', [UserController::class, 'getUserWithTasks']);
 
-Route::apiResource('friends', FriendController::class);
-Route::get('/users/{userId}/friends', [FriendController::class, 'getUserFriends']);
-Route::get('/users/{userId}/friend-requests', [FriendController::class, 'getFriendRequests']);
-Route::get('/users/{userId}/sent-requests', [FriendController::class, 'getSentRequests']);
-Route::put('/friendship/status', [FriendController::class, 'updateFriendshipStatus']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('friends', FriendController::class);
+    Route::get('/users/{userId}/friends', [FriendController::class, 'getUserFriends']);
+    Route::get('/users/{userId}/friend-requests', [FriendController::class, 'getFriendRequests']);
+    Route::get('/users/{userId}/sent-requests', [FriendController::class, 'getSentRequests']);
+    Route::put('/friendship/status', [FriendController::class, 'updateFriendshipStatus']);
+});
 
 Route::apiResource('messages', MessageController::class);
 Route::get('/messages/from/{fromUserId}', [MessageController::class, 'getMessagesByFromUser']);

@@ -12,6 +12,13 @@ class UserRepository
         return User::all();
     }
 
+    public function search(string $query): Collection
+    {
+        return User::where('username', 'LIKE', '%' . $query . '%')
+                  ->orWhere('email', 'LIKE', '%' . $query . '%')
+                  ->get();
+    }
+
     public function findById(int $id): ?User
     {
         return User::find($id);

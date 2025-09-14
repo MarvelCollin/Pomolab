@@ -18,6 +18,7 @@ export const useBackground = () => {
       
       if (result.defaultBackground) {
         setActiveBackground(result.defaultBackground);
+        setMediaReady(true);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load backgrounds');

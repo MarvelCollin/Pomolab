@@ -10,12 +10,14 @@ import {
   Clock,
   User,
   Trash2,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import type { IFriend } from '../../interfaces/IFriend';
 import type { IUser } from '../../interfaces/IUser';
 import { FriendApi } from '../../apis/friend-api';
 import { useDebounce } from '../../hooks/use-debounce';
+import { useToast } from './toast';
 
 interface FriendsModalProps {
   isOpen: boolean;
@@ -23,16 +25,11 @@ interface FriendsModalProps {
   currentUser: IUser | null;
 }
 
-interface ExtendedFriend extends IFriend {
-  user?: IUser;
-  friend?: IUser;
-}
-
 function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
   const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'add'>('friends');
-  const [friends, setFriends] = useState<ExtendedFriend[]>([]);
-  const [friendRequests, setFriendRequests] = useState<ExtendedFriend[]>([]);
-  const [sentRequests, setSentRequests] = useState<ExtendedFriend[]>([]);
+  const [friends, setFriends] = useState<IFriend[]>([]);
+  const [friendRequests, setFriendRequests] = useState<IFriend[]>([]);
+  const [sentRequests, setSentRequests] = useState<IFriend[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [addFriendQuery, setAddFriendQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -42,26 +39,25 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
   const [searchResults, setSearchResults] = useState<IUser[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   
+  // Action loading states
+  const [sendingRequestTo, setSendingRequestTo] = useState<number | null>(null);
+  const [acceptingRequest, setAcceptingRequest] = useState<number | null>(null);
+  const [rejectingRequest, setRejectingRequest] = useState<number | null>(null);
+  const [removingFriend, setRemovingFriend] = useState<number | null>(null);
+  
   // Debounced search query
   const debouncedSearchQuery = useDebounce(addFriendQuery, 300);
 
-  const loadFriendsData = useCallback(async () => {
+  // Toast notifications
+  const { showSuccess, showError, ToastContainer } = useToast();
+
+  const loadFriendsData = useCallback(async (showToast: boolean = false) => {
     if (!currentUser) return;
     
     setLoading(true);
     setError(null);
     
     try {
-      // Get all users for reference with error handling
-      const allUsersResponse = await FriendApi.getAllUsers().catch(err => {
-        console.error('Failed to fetch all users:', err);
-        return [];
-      });
-      
-      const allUsers = Array.isArray(allUsersResponse) ? allUsersResponse : [];
-      const userMap = new Map(allUsers.map(user => [user.id, user]));
-
-      // Get friends, friend requests, and sent requests with individual error handling
       const [friendsResponse, requestsResponse, sentResponse] = await Promise.all([
         FriendApi.getUserFriends(currentUser.id).catch(err => {
           console.error('Failed to fetch user friends:', err);
@@ -77,47 +73,59 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
         })
       ]);
 
-      // Ensure we have arrays to work with
       const friendsData = Array.isArray(friendsResponse) ? friendsResponse : [];
       const requestsData = Array.isArray(requestsResponse) ? requestsResponse : [];
       const sentData = Array.isArray(sentResponse) ? sentResponse : [];
 
-      // Convert to ExtendedFriend with populated user data
-      const extendedFriends: ExtendedFriend[] = friendsData
+      if (friendsData.length === 0 && requestsData.length === 0 && sentData.length === 0) {
+        if (showToast) {
+          showError('Unable to load friends data', 'Please check your connection and try again');
+        }
+        return;
+      }
+
+      const extendedFriends: IFriend[] = friendsData
         .filter(friendship => friendship && typeof friendship === 'object')
         .map(friendship => ({
           ...friendship,
-          friend: userMap.get(friendship.friend_id) || userMap.get(friendship.user_id === currentUser.id ? friendship.friend_id : friendship.user_id)
+          friend: friendship.friend
         }));
 
-      const extendedRequests: ExtendedFriend[] = requestsData
+      const extendedRequests: IFriend[] = requestsData
         .filter(request => request && typeof request === 'object')
         .map(request => ({
           ...request,
-          user: userMap.get(request.user_id)
+          user: request.user
         }));
 
-      const extendedSentRequests: ExtendedFriend[] = sentData
+      const extendedSentRequests: IFriend[] = sentData
         .filter(sent => sent && typeof sent === 'object')
         .map(sent => ({
           ...sent,
-          friend: userMap.get(sent.friend_id)
+          friend: sent.friend
         }));
       
       setFriends(extendedFriends);
       setFriendRequests(extendedRequests);
       setSentRequests(extendedSentRequests);
+
+      if (showToast) {
+        showSuccess('Friends data refreshed', `Loaded ${extendedFriends.length} friends and ${extendedRequests.length} requests`);
+      }
     } catch (err) {
-      setError('Failed to load friends data');
+      const errorMessage = 'Failed to load friends data';
+      setError(errorMessage);
       console.error('Error loading friends:', err);
-      // Set empty arrays as fallback
+      if (showToast) {
+        showError(errorMessage, 'Please try again');
+      }
       setFriends([]);
       setFriendRequests([]);
       setSentRequests([]);
     } finally {
       setLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser, showSuccess, showError]);
 
   // User search with debouncing
   useEffect(() => {
@@ -134,16 +142,11 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
         // Ensure search results is an array
         const results = Array.isArray(searchResponse) ? searchResponse : [];
         
-        // Filter out current user and existing friends
-        const friendIds = friends.map(f => f.friend?.id).filter(Boolean);
-        const requestIds = [...friendRequests.map(r => r.user?.id), ...sentRequests.map(s => s.friend?.id)].filter(Boolean);
-        
+        // Filter out current user and existing connections
         const filteredResults = results.filter(user => 
           user && 
           typeof user === 'object' && 
-          user.id !== currentUser.id && 
-          !friendIds.includes(user.id) && 
-          !requestIds.includes(user.id)
+          user.id !== currentUser.id
         );
         
         setSearchResults(filteredResults);
@@ -156,10 +159,20 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
     };
 
     searchUsers();
-  }, [debouncedSearchQuery, currentUser, friends, friendRequests, sentRequests]);
+  }, [debouncedSearchQuery, currentUser]);
+
+  // Filter search results to exclude existing connections (computed on render)
+  const filteredSearchResults = searchResults.filter(user => {
+    const friendIds = friends.map(f => f.friend?.id).filter(Boolean);
+    const requestIds = [...friendRequests.map(r => r.user?.id), ...sentRequests.map(s => s.friend?.id)].filter(Boolean);
+    
+    return !friendIds.includes(user.id) && !requestIds.includes(user.id);
+  });
 
   const handleSendFriendRequest = async (userId: number) => {
-    if (!currentUser) return;
+    if (!currentUser || sendingRequestTo === userId) return;
+    
+    setSendingRequestTo(userId);
     
     try {
       await FriendApi.createFriendRequest({
@@ -167,42 +180,86 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
         friend_id: userId,
         status: 'pending'
       });
+      
+      const targetUser = searchResults.find(user => user.id === userId);
+      showSuccess('Friend request sent', `Request sent to ${targetUser?.username || 'user'}`);
+      
       await loadFriendsData();
       setAddFriendQuery('');
       setSearchResults([]);
     } catch (err) {
-      setError('Failed to send friend request');
+      const errorMessage = 'Failed to send friend request';
+      setError(errorMessage);
+      showError(errorMessage, 'Please try again');
       console.error('Error sending friend request:', err);
+    } finally {
+      setSendingRequestTo(null);
     }
   };
 
   const handleAcceptRequest = async (friendId: number) => {
+    if (acceptingRequest === friendId) return;
+    
+    setAcceptingRequest(friendId);
+    
     try {
       await FriendApi.updateFriend(friendId, 'accepted');
+      
+      const request = friendRequests.find(r => r.id === friendId);
+      showSuccess('Friend request accepted', `You are now friends with ${request?.user?.username || 'user'}`);
+      
       await loadFriendsData();
     } catch (err) {
-      setError('Failed to accept friend request');
+      const errorMessage = 'Failed to accept friend request';
+      setError(errorMessage);
+      showError(errorMessage, 'Please try again');
       console.error('Error accepting friend request:', err);
+    } finally {
+      setAcceptingRequest(null);
     }
   };
 
   const handleRejectRequest = async (friendId: number) => {
+    if (rejectingRequest === friendId) return;
+    
+    setRejectingRequest(friendId);
+    
     try {
       await FriendApi.deleteFriend(friendId);
+      
+      const request = friendRequests.find(r => r.id === friendId);
+      showSuccess('Friend request rejected', `Rejected request from ${request?.user?.username || 'user'}`);
+      
       await loadFriendsData();
     } catch (err) {
-      setError('Failed to reject friend request');
+      const errorMessage = 'Failed to reject friend request';
+      setError(errorMessage);
+      showError(errorMessage, 'Please try again');
       console.error('Error rejecting friend request:', err);
+    } finally {
+      setRejectingRequest(null);
     }
   };
 
   const handleRemoveFriend = async (friendId: number) => {
+    if (removingFriend === friendId) return;
+    
+    setRemovingFriend(friendId);
+    
     try {
       await FriendApi.deleteFriend(friendId);
+      
+      const friend = friends.find(f => f.id === friendId);
+      showSuccess('Friend removed', `Removed ${friend?.friend?.username || 'user'} from friends`);
+      
       await loadFriendsData();
     } catch (err) {
-      setError('Failed to remove friend');
+      const errorMessage = 'Failed to remove friend';
+      setError(errorMessage);
+      showError(errorMessage, 'Please try again');
       console.error('Error removing friend:', err);
+    } finally {
+      setRemovingFriend(null);
     }
   };
 
@@ -277,12 +334,22 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
               <Users className="w-6 h-6 text-white" />
               <h2 className="text-white font-semibold text-lg">Friends</h2>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-white/60" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => loadFriendsData(true)}
+                disabled={loading}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Refresh friends data"
+              >
+                <RefreshCw className={`w-5 h-5 text-white/60 ${loading ? 'animate-spin' : ''}`} />
+              </button>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-white/60" />
+              </button>
+            </div>
           </div>
 
           {/* Tabs */}
@@ -354,10 +421,15 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
                             friend.friend,
                             <button
                               onClick={() => handleRemoveFriend(friend.id)}
-                              className="p-2 hover:bg-red-500/20 rounded-lg transition-colors"
+                              disabled={removingFriend === friend.id}
+                              className="p-2 hover:bg-red-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Remove friend"
                             >
-                              <Trash2 className="w-4 h-4 text-red-400 hover:text-red-300" />
+                              {removingFriend === friend.id ? (
+                                <Loader2 className="w-4 h-4 text-red-400 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4 text-red-400 hover:text-red-300" />
+                              )}
                             </button>
                           )}
                         </div>
@@ -391,17 +463,27 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleAcceptRequest(request.id)}
-                                className="p-2 hover:bg-green-500/20 rounded-lg transition-colors"
+                                disabled={acceptingRequest === request.id}
+                                className="p-2 hover:bg-green-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Accept request"
                               >
-                                <Check className="w-4 h-4 text-green-400 hover:text-green-300" />
+                                {acceptingRequest === request.id ? (
+                                  <Loader2 className="w-4 h-4 text-green-400 animate-spin" />
+                                ) : (
+                                  <Check className="w-4 h-4 text-green-400 hover:text-green-300" />
+                                )}
                               </button>
                               <button
                                 onClick={() => handleRejectRequest(request.id)}
-                                className="p-2 hover:bg-red-500/20 rounded-lg transition-colors"
+                                disabled={rejectingRequest === request.id}
+                                className="p-2 hover:bg-red-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Reject request"
                               >
-                                <XIcon className="w-4 h-4 text-red-400 hover:text-red-300" />
+                                {rejectingRequest === request.id ? (
+                                  <Loader2 className="w-4 h-4 text-red-400 animate-spin" />
+                                ) : (
+                                  <XIcon className="w-4 h-4 text-red-400 hover:text-red-300" />
+                                )}
                               </button>
                             </div>
                           )}
@@ -465,10 +547,10 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
                   </div>
 
                   {/* Search Results */}
-                  {searchResults.length > 0 && (
+                  {filteredSearchResults.length > 0 && (
                     <div className="space-y-2 max-h-60 overflow-y-auto">
                       <h4 className="text-white/80 text-sm font-medium">Search Results</h4>
-                      {searchResults.map((user) => (
+                      {filteredSearchResults.map((user) => (
                         <div key={user.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center border-2 border-white/20">
@@ -489,10 +571,15 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
                           </div>
                           <button
                             onClick={() => handleSendFriendRequest(user.id)}
-                            className="px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 text-blue-300 rounded-lg transition-colors flex items-center gap-1.5"
+                            disabled={sendingRequestTo === user.id}
+                            className="px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 text-blue-300 rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            <UserPlus className="w-3 h-3" />
-                            Add Friend
+                            {sendingRequestTo === user.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <UserPlus className="w-3 h-3" />
+                            )}
+                            {sendingRequestTo === user.id ? 'Sending...' : 'Add Friend'}
                           </button>
                         </div>
                       ))}
@@ -500,7 +587,7 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
                   )}
 
                   {/* No Results */}
-                  {debouncedSearchQuery && !searchLoading && searchResults.length === 0 && (
+                  {debouncedSearchQuery && !searchLoading && filteredSearchResults.length === 0 && (
                     <div className="text-center py-6">
                       <User className="w-8 h-8 text-white/30 mx-auto mb-2" />
                       <p className="text-white/60 text-sm">No users found matching "{debouncedSearchQuery}"</p>
@@ -520,6 +607,7 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
             )}
           </div>
         </motion.div>
+        <ToastContainer />
       </motion.div>
     </AnimatePresence>
   );

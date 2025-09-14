@@ -144,16 +144,17 @@ class FriendController extends Controller
             ]);
 
             $this->friendRepository->update($id, $validated);
+            $friendArray = $friend->toArray();
             
-            $userData = $this->userRepository->findById($friend['user_id']);
-            $friendData = $this->userRepository->findById($friend['friend_id']);
+            $userData = $this->userRepository->findById($friendArray['user_id']);
+            $friendData = $this->userRepository->findById($friendArray['friend_id']);
             
             $action = $validated['status'] === 'accepted' ? 'request_accepted' : 'request_rejected';
             $this->webSocketService->broadcastFriendNotification(
                 $action,
-                $friend['user_id'],
-                $friend['friend_id'],
-                array_merge($friend, $validated),
+                $friendArray['user_id'],
+                $friendArray['friend_id'],
+                array_merge($friendArray, $validated),
                 $userData ? $userData->toArray() : null,
                 $friendData ? $friendData->toArray() : null
             );
@@ -172,16 +173,17 @@ class FriendController extends Controller
             return response()->json(['message' => 'Friend relationship not found'], 404);
         }
 
-        $userData = $this->userRepository->findById($friend['user_id']);
-        $friendData = $this->userRepository->findById($friend['friend_id']);
+        $friendArray = $friend->toArray();
+        $userData = $this->userRepository->findById($friendArray['user_id']);
+        $friendData = $this->userRepository->findById($friendArray['friend_id']);
         
         $this->friendRepository->delete($id);
         
         $this->webSocketService->broadcastFriendNotification(
             'friend_removed',
-            $friend['user_id'],
-            $friend['friend_id'],
-            $friend,
+            $friendArray['user_id'],
+            $friendArray['friend_id'],
+            $friendArray,
             $userData ? $userData->toArray() : null,
             $friendData ? $friendData->toArray() : null
         );

@@ -21,7 +21,7 @@ const BackgroundRenderer = memo(function BackgroundRenderer({
   onMediaReady
 }: BackgroundRendererProps) {
   const handleBackgroundLoad = useCallback(() => {
-    dispatch({ type: 'UPDATE_UI', payload: { backgroundLoaded: true } });
+    dispatch({ type: 'UPDATE_UI', payload: { backgroundLoaded: true, backgroundVisible: true } });
     onMediaReady?.();
   }, [dispatch, onMediaReady]);
 
@@ -35,7 +35,7 @@ const BackgroundRenderer = memo(function BackgroundRenderer({
         style={{ background: 'var(--gradient-soft)' }}
         onAnimationComplete={() => {
           if (!backgroundLoaded) {
-            dispatch({ type: 'UPDATE_UI', payload: { backgroundLoaded: true } });
+            dispatch({ type: 'UPDATE_UI', payload: { backgroundLoaded: true, backgroundVisible: true } });
             onMediaReady?.();
           }
         }}

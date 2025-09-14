@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export interface ToastItem {
@@ -136,34 +136,36 @@ export default Toast;
 export const useToast = () => {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
-  const addToast = (toast: Omit<ToastItem, 'id'>) => {
+  const addToast = useCallback((toast: Omit<ToastItem, 'id'>) => {
     const id = Math.random().toString(36).substr(2, 9);
     setToasts(prev => [...prev, { ...toast, id }]);
-  };
+  }, []);
 
-  const removeToast = (id: string) => {
+  const removeToast = useCallback((id: string) => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
-  };
+  }, []);
 
-  const clearAllToasts = () => {
+  const clearAllToasts = useCallback(() => {
     setToasts([]);
-  };
+  }, []);
 
-  const showSuccess = (title: string, message?: string, options?: Partial<ToastItem>) => {
+  const showSuccess = useCallback((title: string, message?: string, options?: Partial<ToastItem>) => {
     addToast({ type: 'success', title, message, ...options });
-  };
+  }, [addToast]);
 
-  const showError = (title: string, message?: string, options?: Partial<ToastItem>) => {
+  const showError = useCallback((title: string, message?: string, options?: Partial<ToastItem>) => {
     addToast({ type: 'error', title, message, ...options });
-  };
+  }, [addToast]);
 
-  const showWarning = (title: string, message?: string, options?: Partial<ToastItem>) => {
+  const showWarning = useCallback((title: string, message?: string, options?: Partial<ToastItem>) => {
     addToast({ type: 'warning', title, message, ...options });
-  };
+  }, [addToast]);
 
-  const showInfo = (title: string, message?: string, options?: Partial<ToastItem>) => {
+  const showInfo = useCallback((title: string, message?: string, options?: Partial<ToastItem>) => {
     addToast({ type: 'info', title, message, ...options });
-  };
+  }, [addToast]);
+
+  const ToastContainer = useCallback(() => <Toast toasts={toasts} onRemove={removeToast} />, [toasts, removeToast]);
 
   return {
     toasts,
@@ -174,6 +176,6 @@ export const useToast = () => {
     showError,
     showWarning,
     showInfo,
-    ToastContainer: () => <Toast toasts={toasts} onRemove={removeToast} />
+    ToastContainer
   };
 };
