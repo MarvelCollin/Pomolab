@@ -1,101 +1,15 @@
 import { useState, useEffect, useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Timer, CheckSquare, Music, ImageIcon, Waves, User, Users, UserPlus } from 'lucide-react';
+import { Search, X, Users, UserPlus } from 'lucide-react';
+import type { ISearchModalProps, ISearchResult } from '../../interfaces/ISearchModal';
 
-interface SearchModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onOpenFriendsModal?: () => void;
-}
-
-interface SearchResult {
-  id: string;
-  title: string;
-  description: string;
-  category: 'timer' | 'task' | 'music' | 'background' | 'effect' | 'user' | 'friends';
-  icon: React.ComponentType<any>;
-  action: () => void;
-}
-
-function SearchModal({ isOpen, onClose, onOpenFriendsModal }: SearchModalProps) {
+function SearchModal({ isOpen, onClose, onOpenFriendsModal }: ISearchModalProps) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [results, setResults] = useState<ISearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const allResults: SearchResult[] = [
-    {
-      id: 'start-timer',
-      title: 'Start Pomodoro Timer',
-      description: 'Begin a 25-minute focus session',
-      category: 'timer',
-      icon: Timer,
-      action: () => console.log('Start timer')
-    },
-    {
-      id: 'pause-timer',
-      title: 'Pause Timer',
-      description: 'Pause the current session',
-      category: 'timer',
-      icon: Timer,
-      action: () => console.log('Pause timer')
-    },
-    {
-      id: 'reset-timer',
-      title: 'Reset Timer',
-      description: 'Reset current session to beginning',
-      category: 'timer',
-      icon: Timer,
-      action: () => console.log('Reset timer')
-    },
-    {
-      id: 'add-task',
-      title: 'Add New Task',
-      description: 'Create a new task for your session',
-      category: 'task',
-      icon: CheckSquare,
-      action: () => console.log('Add task')
-    },
-    {
-      id: 'complete-task',
-      title: 'Complete Current Task',
-      description: 'Mark the current task as completed',
-      category: 'task',
-      icon: CheckSquare,
-      action: () => console.log('Complete task')
-    },
-    {
-      id: 'music-library',
-      title: 'Open Music Library',
-      description: 'Browse and play background music',
-      category: 'music',
-      icon: Music,
-      action: () => console.log('Open music')
-    },
-    {
-      id: 'background-selector',
-      title: 'Change Background',
-      description: 'Select a new background image or video',
-      category: 'background',
-      icon: ImageIcon,
-      action: () => console.log('Change background')
-    },
-    {
-      id: 'audio-effects',
-      title: 'Audio Effects',
-      description: 'Control ambient sounds and effects',
-      category: 'effect',
-      icon: Waves,
-      action: () => console.log('Audio effects')
-    },
-    {
-      id: 'profile',
-      title: 'User Profile',
-      description: 'View and edit your profile',
-      category: 'user',
-      icon: User,
-      action: () => console.log('Profile')
-    },
+  const allResults: ISearchResult[] = [
     {
       id: 'friends-list',
       title: 'Friends List',
@@ -173,16 +87,8 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal }: SearchModalProps) 
   };
 
   const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'timer': return 'text-orange-400';
-      case 'task': return 'text-green-400';
-      case 'music': return 'text-blue-400';
-      case 'background': return 'text-purple-400';
-      case 'effect': return 'text-cyan-400';
-      case 'user': return 'text-pink-400';
-      case 'friends': return 'text-emerald-400';
-      default: return 'text-white/60';
-    }
+    if (category === 'friends') return 'text-emerald-400';
+    return 'text-white/60';
   };
 
   return (
@@ -215,7 +121,7 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal }: SearchModalProps) 
               <input
                 ref={inputRef}
                 type="text"
-                placeholder="Search for commands, tasks, or settings..."
+                placeholder="Search for friends..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}

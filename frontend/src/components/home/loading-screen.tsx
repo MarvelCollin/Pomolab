@@ -81,3 +81,4 @@ const LoadingScreen = memo(function LoadingScreen({ isLoading }: LoadingScreenPr
 });
 
 export default LoadingScreen;
+

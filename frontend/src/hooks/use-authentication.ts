@@ -50,3 +50,4 @@ export const useAuthentication = (dispatch: React.Dispatch<AppAction>, authToken
     handleShowLogin
   };
 };
+

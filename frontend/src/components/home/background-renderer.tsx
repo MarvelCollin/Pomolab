@@ -85,3 +85,4 @@ const BackgroundRenderer = memo(function BackgroundRenderer({
 });
 
 export default BackgroundRenderer;
+
