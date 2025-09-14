@@ -123,6 +123,33 @@ class SocketService {
         return this.subscribeToChannel('friend-notifications', callback);
     }
 
+    public broadcastFriendNotification(
+        action: string,
+        userId: number,
+        friendId: number,
+        friendshipData?: any,
+        userData?: any,
+        friendData?: any
+    ): void {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            const notificationData = {
+                action,
+                user_id: userId,
+                friend_id: friendId,
+                friendship_data: friendshipData,
+                user_data: userData,
+                friend_data: friendData,
+                timestamp: new Date().toISOString()
+            };
+
+            this.ws.send(JSON.stringify({
+                type: 'broadcast',
+                channel: 'friend-notifications',
+                data: notificationData
+            }));
+        }
+    }
+
     public disconnect(): void {
         if (this.ws) {
             this.ws.close();

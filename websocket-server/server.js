@@ -27,6 +27,23 @@ wss.on('connection', (ws) => {
       if (data.type === 'subscribe') {
         ws.channel = data.channel;
         console.log(`Client subscribed to channel: ${data.channel}`);
+      } else if (data.type === 'broadcast') {
+        const { channel, data: messageData } = data;
+        
+        const broadcastData = {
+          event: 'FriendNotification',
+          channel,
+          data: messageData
+        };
+
+        clients.forEach(client => {
+          if (client.readyState === client.OPEN && 
+              (client.channel === channel || client.channel === undefined)) {
+            client.send(JSON.stringify(broadcastData));
+          }
+        });
+        
+        console.log(`Broadcasted message from client to ${clients.size} clients on channel ${channel}`);
       }
     } catch (error) {
       console.error('Error parsing message:', error);

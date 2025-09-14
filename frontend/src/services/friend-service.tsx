@@ -1,6 +1,7 @@
 import { FriendApi } from '../apis/friend-api';
 import type { IFriend } from '../interfaces/IFriend';
 import type { IUser } from '../interfaces/IUser';
+import { socketService } from './socket-service';
 
 export class FriendService {
   static async getFriendsWithUserData(userId: number): Promise<IFriend[]> {
@@ -66,6 +67,15 @@ export class FriendService {
         status: 'pending'
       });
 
+      if (friendship) {
+        socketService.broadcastFriendNotification(
+          'request_sent',
+          fromUserId,
+          toUserId,
+          friendship
+        );
+      }
+
       return friendship;
     } catch (error) {
       console.error('Error sending friend request:', error);
@@ -76,6 +86,13 @@ export class FriendService {
   static async acceptFriendRequest(requestId: number): Promise<void> {
     try {
       await FriendApi.updateFriend(requestId, 'accepted');
+      
+      socketService.broadcastFriendNotification(
+        'request_accepted',
+        0,
+        0,
+        { id: requestId, status: 'accepted' }
+      );
     } catch (error) {
       console.error('Error accepting friend request:', error);
       throw error;
@@ -85,6 +102,13 @@ export class FriendService {
   static async rejectFriendRequest(requestId: number): Promise<void> {
     try {
       await FriendApi.deleteFriend(requestId);
+      
+      socketService.broadcastFriendNotification(
+        'request_rejected',
+        0,
+        0,
+        { id: requestId, status: 'rejected' }
+      );
     } catch (error) {
       console.error('Error rejecting friend request:', error);
       throw error;
@@ -94,6 +118,13 @@ export class FriendService {
   static async removeFriend(friendshipId: number): Promise<void> {
     try {
       await FriendApi.deleteFriend(friendshipId);
+      
+      socketService.broadcastFriendNotification(
+        'friend_removed',
+        0,
+        0,
+        { id: friendshipId }
+      );
     } catch (error) {
       console.error('Error removing friend:', error);
       throw error;
@@ -107,6 +138,14 @@ export class FriendService {
   ): Promise<void> {
     try {
       await FriendApi.updateFriendshipStatus(userId, friendId, status);
+      
+      const action = status === 'accepted' ? 'request_accepted' : 'request_rejected';
+      socketService.broadcastFriendNotification(
+        action,
+        userId,
+        friendId,
+        { user_id: userId, friend_id: friendId, status }
+      );
     } catch (error) {
       console.error('Error updating friendship status:', error);
       throw error;
