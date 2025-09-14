@@ -87,16 +87,30 @@ class FriendController extends Controller
                 'status' => 'required|string|in:pending,accepted,rejected',
             ]);
 
-            $existingFriendship = $this->friendRepository->findFriendship(
+            $existingActiveFriendship = $this->friendRepository->findActiveFriendship(
                 $validated['user_id'], 
                 $validated['friend_id']
             );
 
-            if ($existingFriendship) {
+            if ($existingActiveFriendship) {
                 return response()->json(['message' => 'Friendship already exists'], 409);
             }
 
-            $friend = $this->friendRepository->create($validated);
+            $existingRejectedFriendship = $this->friendRepository->findFriendship(
+                $validated['user_id'], 
+                $validated['friend_id']
+            );
+
+            if ($existingRejectedFriendship && $existingRejectedFriendship->status === 'rejected') {
+                $this->friendRepository->update($existingRejectedFriendship->id, [
+                    'user_id' => $validated['user_id'],
+                    'friend_id' => $validated['friend_id'],
+                    'status' => 'pending'
+                ]);
+                $friend = $this->friendRepository->findById($existingRejectedFriendship->id);
+            } else {
+                $friend = $this->friendRepository->create($validated);
+            }
             
             $userData = $this->userRepository->findById($validated['user_id']);
             $friendData = $this->userRepository->findById($validated['friend_id']);

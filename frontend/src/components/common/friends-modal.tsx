@@ -52,32 +52,57 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
     setError(null);
     
     try {
-      // Get all users for reference
-      const allUsers = await FriendApi.getAllUsers();
+      // Get all users for reference with error handling
+      const allUsersResponse = await FriendApi.getAllUsers().catch(err => {
+        console.error('Failed to fetch all users:', err);
+        return [];
+      });
+      
+      const allUsers = Array.isArray(allUsersResponse) ? allUsersResponse : [];
       const userMap = new Map(allUsers.map(user => [user.id, user]));
 
-      // Get friends, friend requests, and sent requests
-      const [friendsData, requestsData, sentData] = await Promise.all([
-        FriendApi.getUserFriends(currentUser.id),
-        FriendApi.getFriendRequests(currentUser.id),
-        FriendApi.getSentRequests(currentUser.id)
+      // Get friends, friend requests, and sent requests with individual error handling
+      const [friendsResponse, requestsResponse, sentResponse] = await Promise.all([
+        FriendApi.getUserFriends(currentUser.id).catch(err => {
+          console.error('Failed to fetch user friends:', err);
+          return [];
+        }),
+        FriendApi.getFriendRequests(currentUser.id).catch(err => {
+          console.error('Failed to fetch friend requests:', err);
+          return [];
+        }),
+        FriendApi.getSentRequests(currentUser.id).catch(err => {
+          console.error('Failed to fetch sent requests:', err);
+          return [];
+        })
       ]);
 
+      // Ensure we have arrays to work with
+      const friendsData = Array.isArray(friendsResponse) ? friendsResponse : [];
+      const requestsData = Array.isArray(requestsResponse) ? requestsResponse : [];
+      const sentData = Array.isArray(sentResponse) ? sentResponse : [];
+
       // Convert to ExtendedFriend with populated user data
-      const extendedFriends: ExtendedFriend[] = friendsData.map(friendship => ({
-        ...friendship,
-        friend: userMap.get(friendship.friend_id) || userMap.get(friendship.user_id === currentUser.id ? friendship.friend_id : friendship.user_id)
-      }));
+      const extendedFriends: ExtendedFriend[] = friendsData
+        .filter(friendship => friendship && typeof friendship === 'object')
+        .map(friendship => ({
+          ...friendship,
+          friend: userMap.get(friendship.friend_id) || userMap.get(friendship.user_id === currentUser.id ? friendship.friend_id : friendship.user_id)
+        }));
 
-      const extendedRequests: ExtendedFriend[] = requestsData.map(request => ({
-        ...request,
-        user: userMap.get(request.user_id)
-      }));
+      const extendedRequests: ExtendedFriend[] = requestsData
+        .filter(request => request && typeof request === 'object')
+        .map(request => ({
+          ...request,
+          user: userMap.get(request.user_id)
+        }));
 
-      const extendedSentRequests: ExtendedFriend[] = sentData.map(sent => ({
-        ...sent,
-        friend: userMap.get(sent.friend_id)
-      }));
+      const extendedSentRequests: ExtendedFriend[] = sentData
+        .filter(sent => sent && typeof sent === 'object')
+        .map(sent => ({
+          ...sent,
+          friend: userMap.get(sent.friend_id)
+        }));
       
       setFriends(extendedFriends);
       setFriendRequests(extendedRequests);
@@ -85,6 +110,10 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
     } catch (err) {
       setError('Failed to load friends data');
       console.error('Error loading friends:', err);
+      // Set empty arrays as fallback
+      setFriends([]);
+      setFriendRequests([]);
+      setSentRequests([]);
     } finally {
       setLoading(false);
     }
@@ -100,12 +129,18 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
 
       setSearchLoading(true);
       try {
-        const results = await FriendApi.searchUsers(debouncedSearchQuery);
+        const searchResponse = await FriendApi.searchUsers(debouncedSearchQuery);
+        
+        // Ensure search results is an array
+        const results = Array.isArray(searchResponse) ? searchResponse : [];
+        
         // Filter out current user and existing friends
         const friendIds = friends.map(f => f.friend?.id).filter(Boolean);
         const requestIds = [...friendRequests.map(r => r.user?.id), ...sentRequests.map(s => s.friend?.id)].filter(Boolean);
         
         const filteredResults = results.filter(user => 
+          user && 
+          typeof user === 'object' && 
           user.id !== currentUser.id && 
           !friendIds.includes(user.id) && 
           !requestIds.includes(user.id)

@@ -13,6 +13,7 @@ export const useMusic = () => {
     isMuted: false,
   });
   const [loading, setLoading] = useState(false);
+  const [musicReady, setMusicReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoPlay, setAutoPlay] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -409,6 +410,11 @@ export const useMusic = () => {
   }, [loadMusics]);
 
   useEffect(() => {
+    if (musics.length === 0) {
+      setMusicReady(true);
+      return;
+    }
+    
     if (musics.length > 0 && !currentMusic && autoPlay) {
       const randomMusic = musicService.getRandomMusic(musics);
       
@@ -453,11 +459,13 @@ export const useMusic = () => {
               setMusics(prev => 
                 prev.map(m => ({ ...m, isActive: m.id === randomMusic.id }))
               );
+              setMusicReady(true);
             } catch (error) {
               setCurrentMusic(randomMusic);
               setMusics(prev => 
                 prev.map(m => ({ ...m, isActive: m.id === randomMusic.id }))
               );
+              setMusicReady(true);
               
               const handleUserInteraction = async () => {
                 try {
@@ -498,6 +506,7 @@ export const useMusic = () => {
     currentMusic,
     playerState,
     loading,
+    musicReady,
     error,
     autoPlay,
     playMusic,

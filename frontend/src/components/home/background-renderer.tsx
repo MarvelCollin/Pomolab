@@ -9,6 +9,7 @@ interface BackgroundRendererProps {
   backgroundVisible: boolean;
   backgroundLoaded: boolean;
   dispatch: React.Dispatch<AppAction>;
+  onMediaReady?: () => void;
 }
 
 const BackgroundRenderer = memo(function BackgroundRenderer({
@@ -16,17 +17,13 @@ const BackgroundRenderer = memo(function BackgroundRenderer({
   backgroundsLoading,
   backgroundVisible,
   backgroundLoaded,
-  dispatch
+  dispatch,
+  onMediaReady
 }: BackgroundRendererProps) {
   const handleBackgroundLoad = useCallback(() => {
     dispatch({ type: 'UPDATE_UI', payload: { backgroundLoaded: true } });
-    setTimeout(() => {
-      dispatch({ type: 'UPDATE_UI', payload: { backgroundVisible: true } });
-    }, 300);
-    setTimeout(() => {
-      dispatch({ type: 'UPDATE_UI', payload: { showContent: true } });
-    }, 800);
-  }, [dispatch]);
+    onMediaReady?.();
+  }, [dispatch, onMediaReady]);
 
   if (!activeBackground && !backgroundsLoading) {
     return (
@@ -39,6 +36,7 @@ const BackgroundRenderer = memo(function BackgroundRenderer({
         onAnimationComplete={() => {
           if (!backgroundLoaded) {
             dispatch({ type: 'UPDATE_UI', payload: { backgroundLoaded: true } });
+            onMediaReady?.();
           }
         }}
       >
@@ -76,10 +74,10 @@ const BackgroundRenderer = memo(function BackgroundRenderer({
       style={{ 
         backgroundImage: `url(${activeBackground.url})`
       }}
-      onLoad={handleBackgroundLoad}
       initial={{ opacity: 0 }}
       animate={{ opacity: backgroundVisible ? 1 : 0 }}
       transition={{ duration: 1.0, ease: "easeInOut" }}
+      onAnimationComplete={handleBackgroundLoad}
     />
   );
 });

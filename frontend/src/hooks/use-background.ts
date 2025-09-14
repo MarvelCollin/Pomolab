@@ -6,6 +6,7 @@ export const useBackground = () => {
   const [backgrounds, setBackgrounds] = useState<IBackground[]>([]);
   const [activeBackground, setActiveBackground] = useState<IBackground | null>(null);
   const [loading, setLoading] = useState(false);
+  const [mediaReady, setMediaReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadBackgrounds = useCallback(async () => {
@@ -44,6 +45,11 @@ export const useBackground = () => {
       prev.map(bg => ({ ...bg, isActive: bg.id === background.id }))
     );
     setActiveBackground({ ...background, isActive: true });
+    setMediaReady(false);
+  }, []);
+
+  const onMediaReady = useCallback(() => {
+    setMediaReady(true);
   }, []);
 
   useEffect(() => {
@@ -54,10 +60,12 @@ export const useBackground = () => {
     backgrounds,
     activeBackground,
     loading,
+    mediaReady,
     error,
     uploadBackground,
     deleteBackground,
     changeBackground,
+    onMediaReady,
     refreshBackgrounds: loadBackgrounds,
     loadRemainingBackgrounds
   };

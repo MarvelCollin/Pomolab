@@ -13,6 +13,8 @@ export interface AppState {
     isMinimalMode: boolean;
     backgroundLoaded: boolean;
     backgroundVisible: boolean;
+    backgroundMediaReady: boolean;
+    musicReady: boolean;
     showContent: boolean;
     showBackgroundSelector: boolean;
     showMusicPlayer: boolean;
@@ -51,7 +53,8 @@ export type AppAction =
   | { type: 'RESET_TIMER'; payload?: never }
   | { type: 'TOGGLE_TIMER'; payload?: never }
   | { type: 'COMPLETE_SESSION'; payload?: never }
-  | { type: 'INIT_COMPLETE'; payload?: never };
+  | { type: 'INIT_COMPLETE'; payload?: never }
+  | { type: 'MEDIA_READY'; payload?: never };
 
 const initialState: AppState = {
   tasks: [],
@@ -64,6 +67,8 @@ const initialState: AppState = {
     isMinimalMode: false,
     backgroundLoaded: false,
     backgroundVisible: false,
+    backgroundMediaReady: false,
+    musicReady: false,
     showContent: false,
     showBackgroundSelector: false,
     showMusicPlayer: false,
@@ -123,10 +128,17 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
         ...state, 
         ui: { 
           ...state.ui, 
+          initialLoadComplete: true 
+        }
+      };
+    case 'MEDIA_READY':
+      return { 
+        ...state, 
+        ui: { 
+          ...state.ui, 
           backgroundVisible: true, 
           backgroundLoaded: true, 
-          showContent: true, 
-          initialLoadComplete: true 
+          showContent: true 
         }
       };
     default:

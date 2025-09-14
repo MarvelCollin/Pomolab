@@ -34,8 +34,10 @@ class FriendRepository
 
     public function getFriendsByUserId(int $userId): Collection
     {
-        return Friend::where('user_id', $userId)
-                    ->orWhere('friend_id', $userId)
+        return Friend::where(function ($query) use ($userId) {
+                        $query->where('user_id', $userId)->orWhere('friend_id', $userId);
+                    })
+                    ->where('status', 'accepted')
                     ->with(['user', 'friend'])
                     ->get();
     }
@@ -75,6 +77,18 @@ class FriendRepository
                     ->orWhere(function ($query) use ($userId, $friendId) {
                         $query->where('user_id', $friendId)->where('friend_id', $userId);
                     })
+                    ->first();
+    }
+
+    public function findActiveFriendship(int $userId, int $friendId): ?Friend
+    {
+        return Friend::where(function ($query) use ($userId, $friendId) {
+                        $query->where('user_id', $userId)->where('friend_id', $friendId);
+                    })
+                    ->orWhere(function ($query) use ($userId, $friendId) {
+                        $query->where('user_id', $friendId)->where('friend_id', $userId);
+                    })
+                    ->whereIn('status', ['pending', 'accepted'])
                     ->first();
     }
 }

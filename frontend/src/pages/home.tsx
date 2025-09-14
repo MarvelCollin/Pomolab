@@ -29,8 +29,10 @@ export default function Home() {
   const { 
     backgrounds, 
     activeBackground, 
-    loading: backgroundsLoading, 
+    loading: backgroundsLoading,
+    mediaReady: backgroundMediaReady,
     changeBackground,
+    onMediaReady,
     loadRemainingBackgrounds
   } = useBackground();
 
@@ -39,6 +41,7 @@ export default function Home() {
     currentMusic,
     playerState,
     loading: musicLoading,
+    musicReady,
     playMusic,
     togglePlayPause,
     nextMusic,
@@ -114,6 +117,20 @@ export default function Home() {
   }, [backgroundsLoading, musicLoading, state.ui.initialLoadComplete, loadRemainingBackgrounds, dispatch]);
 
   useEffect(() => {
+    dispatch({ type: 'UPDATE_UI', payload: { backgroundMediaReady } });
+  }, [backgroundMediaReady, dispatch]);
+
+  useEffect(() => {
+    dispatch({ type: 'UPDATE_UI', payload: { musicReady } });
+  }, [musicReady, dispatch]);
+
+  useEffect(() => {
+    if (state.ui.backgroundMediaReady && state.ui.musicReady && state.ui.initialLoadComplete && !state.ui.showContent) {
+      dispatch({ type: 'MEDIA_READY' });
+    }
+  }, [state.ui.backgroundMediaReady, state.ui.musicReady, state.ui.initialLoadComplete, state.ui.showContent, dispatch]);
+
+  useEffect(() => {
     AuthTrigger.setConfig({
       currentUser: state.auth.currentUser,
       onShowLogin: handleShowLogin
@@ -146,7 +163,7 @@ export default function Home() {
     } });
   }, [changeBackground, dispatch]);
 
-  const isLoading = backgroundsLoading || musicLoading || !state.ui.backgroundLoaded || !state.ui.showContent || !state.ui.initialLoadComplete || Boolean(state.auth.currentUser && state.tasksLoading);
+  const isLoading = backgroundsLoading || musicLoading || !state.ui.backgroundMediaReady || !state.ui.musicReady || !state.ui.showContent || !state.ui.initialLoadComplete || Boolean(state.auth.currentUser && state.tasksLoading);
 
   return (
     <div className="home-page min-h-screen relative overflow-hidden">
@@ -157,6 +174,7 @@ export default function Home() {
           backgroundVisible={state.ui.backgroundVisible}
           backgroundLoaded={state.ui.backgroundLoaded}
           dispatch={dispatch}
+          onMediaReady={onMediaReady}
         />
         <motion.div 
           className="absolute inset-0 bg-gradient-to-br from-black/10 via-transparent to-black/5"
