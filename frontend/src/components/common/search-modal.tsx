@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Users, UserPlus } from 'lucide-react';
 import type { ISearchModalProps, ISearchResult } from '../../interfaces/ISearchModal';
-import { AuthTrigger } from '../../services/auth-trigger';
+import { AuthTrigger } from '../../services/auth-trigger.tsx';
 
 function SearchModal({ isOpen, onClose, onOpenFriendsModal }: ISearchModalProps) {
   const [query, setQuery] = useState('');

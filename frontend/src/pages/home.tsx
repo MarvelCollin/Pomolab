@@ -17,7 +17,7 @@ import { useTimerLogic } from '../hooks/use-timer-logic';
 import { useBackground } from '../hooks/use-background';
 import { useMusic } from '../hooks/use-music';
 import { useAudioEffect } from '../hooks/use-audio-effect';
-import { AuthTrigger } from '../services/auth-trigger';
+import { AuthTrigger } from '../services/auth-trigger.tsx';
 import type { IBackground } from '../interfaces/IBackground';
 import '../app.css';
 

@@ -1,6 +1,6 @@
 import type { IFriend } from '../interfaces/IFriend';
 import type { IUser } from '../interfaces/IUser';
-import { AuthTrigger, authOperations } from '../services/auth-trigger';
+import { AuthTrigger, authOperations } from '../services/auth-trigger.tsx';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
