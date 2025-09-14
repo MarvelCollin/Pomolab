@@ -1,6 +1,7 @@
 import { FriendApi } from '../apis/friend-api';
 import type { IFriend } from '../interfaces/IFriend';
 import type { IUser } from '../interfaces/IUser';
+import { WebSocketBroadcast } from './websocket-broadcast';
 
 export interface ExtendedFriend extends IFriend {
   user?: IUser;
@@ -94,40 +95,80 @@ export class FriendService {
     }
   }
 
-  static async sendFriendRequest(fromUserId: number, toUserId: number): Promise<IFriend> {
+  static async sendFriendRequest(fromUserId: number, toUserId: number, userData?: IUser, friendData?: IUser): Promise<IFriend | null> {
     try {
-      return await FriendApi.createFriendRequest({
+      const friendship = await FriendApi.createFriendRequest({
         user_id: fromUserId,
         friend_id: toUserId,
         status: 'pending'
       });
+
+      if (friendship) {
+        await WebSocketBroadcast.broadcastFriendNotification({
+          action: 'request_sent',
+          user_id: fromUserId,
+          friend_id: toUserId,
+          friendship_data: friendship,
+          user_data: userData,
+          friend_data: friendData
+        });
+      }
+
+      return friendship;
     } catch (error) {
       console.error('Error sending friend request:', error);
       throw error;
     }
   }
 
-  static async acceptFriendRequest(requestId: number): Promise<void> {
+  static async acceptFriendRequest(requestId: number, userId: number, friendId: number, userData?: IUser, friendData?: IUser): Promise<void> {
     try {
       await FriendApi.updateFriend(requestId, 'accepted');
+
+      await WebSocketBroadcast.broadcastFriendNotification({
+        action: 'request_accepted',
+        user_id: userId,
+        friend_id: friendId,
+        friendship_data: { id: requestId, status: 'accepted' },
+        user_data: userData,
+        friend_data: friendData
+      });
     } catch (error) {
       console.error('Error accepting friend request:', error);
       throw error;
     }
   }
 
-  static async rejectFriendRequest(requestId: number): Promise<void> {
+  static async rejectFriendRequest(requestId: number, userId: number, friendId: number, userData?: IUser, friendData?: IUser): Promise<void> {
     try {
       await FriendApi.deleteFriend(requestId);
+
+      await WebSocketBroadcast.broadcastFriendNotification({
+        action: 'request_rejected',
+        user_id: userId,
+        friend_id: friendId,
+        friendship_data: { id: requestId, status: 'rejected' },
+        user_data: userData,
+        friend_data: friendData
+      });
     } catch (error) {
       console.error('Error rejecting friend request:', error);
       throw error;
     }
   }
 
-  static async removeFriend(friendshipId: number): Promise<void> {
+  static async removeFriend(friendshipId: number, userId: number, friendId: number, userData?: IUser, friendData?: IUser): Promise<void> {
     try {
       await FriendApi.deleteFriend(friendshipId);
+
+      await WebSocketBroadcast.broadcastFriendNotification({
+        action: 'friend_removed',
+        user_id: userId,
+        friend_id: friendId,
+        friendship_data: { id: friendshipId },
+        user_data: userData,
+        friend_data: friendData
+      });
     } catch (error) {
       console.error('Error removing friend:', error);
       throw error;
@@ -137,10 +178,22 @@ export class FriendService {
   static async updateFriendshipStatus(
     userId: number, 
     friendId: number, 
-    status: 'accepted' | 'rejected'
+    status: 'accepted' | 'rejected',
+    userData?: IUser,
+    friendData?: IUser
   ): Promise<void> {
     try {
       await FriendApi.updateFriendshipStatus(userId, friendId, status);
+
+      const action = status === 'accepted' ? 'request_accepted' : 'request_rejected';
+      await WebSocketBroadcast.broadcastFriendNotification({
+        action,
+        user_id: userId,
+        friend_id: friendId,
+        friendship_data: { status },
+        user_data: userData,
+        friend_data: friendData
+      });
     } catch (error) {
       console.error('Error updating friendship status:', error);
       throw error;

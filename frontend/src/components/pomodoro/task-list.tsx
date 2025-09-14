@@ -47,16 +47,33 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
       
       try {
         setSearchLoading(true);
-        const friends = await FriendApi.getUserFriends(currentUser.id);
-        const users = await FriendApi.getAllUsers();
+        const [friendsResponse, usersResponse] = await Promise.all([
+          FriendApi.getUserFriends(currentUser.id).catch(err => {
+            console.error('Failed to fetch friends:', err);
+            return [];
+          }),
+          FriendApi.getAllUsers().catch(err => {
+            console.error('Failed to fetch users:', err);
+            return [];
+          })
+        ]);
+        
+        // Ensure we have arrays to work with
+        const friends = Array.isArray(friendsResponse) ? friendsResponse : [];
+        const users = Array.isArray(usersResponse) ? usersResponse : [];
+        
+        if (friends.length === 0 && users.length === 0) {
+          setAvailableUsers([currentUser]);
+          return;
+        }
         
         // Filter to get friends who have accepted status and include self
         const acceptedFriends = friends
-          .filter(friend => friend.status === 'accepted')
+          .filter(friend => friend && friend.status === 'accepted')
           .map(friend => {
             // Get the friend user data
             const friendUser = users.find(user => 
-              user.id === (friend.user_id === currentUser.id ? friend.friend_id : friend.user_id)
+              user && user.id === (friend.user_id === currentUser.id ? friend.friend_id : friend.user_id)
             );
             return friendUser;
           })
@@ -66,6 +83,8 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
         setAvailableUsers([currentUser, ...acceptedFriends]);
       } catch (error) {
         console.error('Failed to load users:', error);
+        // Fallback to just current user
+        setAvailableUsers([currentUser]);
       } finally {
         setSearchLoading(false);
       }
@@ -84,12 +103,16 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
       try {
         setSearchLoading(true);
         const searchResults = await FriendApi.searchUsers(debouncedSearchQuery);
+        
+        // Ensure searchResults is an array
+        const results = Array.isArray(searchResults) ? searchResults : [];
+        
         // Filter out current user from search results and add to available users
-        const filteredResults = searchResults.filter(user => user.id !== currentUser.id);
+        const filteredResults = results.filter(user => user && user.id !== currentUser.id);
         
         // Merge with existing friends, avoiding duplicates
         const existingIds = availableUsers.map(user => user.id);
-        const newUsers = filteredResults.filter(user => !existingIds.includes(user.id));
+        const newUsers = filteredResults.filter(user => user && !existingIds.includes(user.id));
         
         setAvailableUsers(prev => [...prev, ...newUsers]);
       } catch (error) {

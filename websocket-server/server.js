@@ -90,6 +90,42 @@ app.post('/broadcast/task-update', (req, res) => {
   res.json({ status: 'Task update broadcasted', clients: clients.size });
 });
 
+app.post('/broadcast/friend-notification', (req, res) => {
+  const { 
+    action, 
+    user_id, 
+    friend_id, 
+    friendship_data,
+    user_data,
+    friend_data,
+    channel = 'friend-notifications' 
+  } = req.body;
+  
+  const broadcastData = {
+    event: 'FriendNotification',
+    channel,
+    data: {
+      action,
+      user_id,
+      friend_id,
+      friendship_data,
+      user_data,
+      friend_data,
+      timestamp: new Date().toISOString()
+    }
+  };
+
+  clients.forEach(client => {
+    if (client.readyState === client.OPEN && 
+        (client.channel === channel || client.channel === undefined)) {
+      client.send(JSON.stringify(broadcastData));
+    }
+  });
+
+  console.log(`Broadcasted friend notification (${action}) to ${clients.size} clients on channel ${channel}`);
+  res.json({ status: 'Friend notification broadcasted', clients: clients.size, action });
+});
+
 app.get('/status', (req, res) => {
   res.json({ 
     status: 'WebSocket server running',

@@ -87,9 +87,13 @@ class SocketService {
         this.subscribeToChannel('message-channel', callback);
     }
 
-    public listenToTaskUpdates(callback: (data: any) => void): void {
-        this.subscribeToChannel('task-updates', callback);
-    }
+  public listenToTaskUpdates(callback: (data: any) => void): void {
+    this.subscribeToChannel('task-updates', callback);
+  }
+
+  public listenToFriendNotifications(callback: (data: any) => void): void {
+    this.subscribeToChannel('friend-notifications', callback);
+  }
 
     public disconnect(): void {
         if (this.ws) {

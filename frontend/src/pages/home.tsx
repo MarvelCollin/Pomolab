@@ -17,7 +17,9 @@ import { useTimerLogic } from '../hooks/use-timer-logic';
 import { useBackground } from '../hooks/use-background';
 import { useMusic } from '../hooks/use-music';
 import { useAudioEffect } from '../hooks/use-audio-effect';
-import { AuthTrigger } from '../services/auth-trigger.tsx';
+import { useFriendNotifications } from '../hooks/use-friend-notifications';
+import { useToast } from '../components/common/toast';
+import { AuthTrigger } from '../utils/auth-trigger';
 import type { IBackground } from '../interfaces/IBackground';
 import '../app.css';
 
@@ -77,6 +79,32 @@ export default function Home() {
     resetTimer,
     closeMiniTimer
   } = useTimerLogic(dispatch, state.pomodoro, handleSessionComplete);
+
+  const {
+    showSuccess,
+    showError,
+    showWarning,
+    showInfo,
+    ToastContainer
+  } = useToast();
+
+  useFriendNotifications(state.auth.currentUser, {
+    onFriendRequestSent: (data) => {
+      showSuccess('Friend Request Sent', data.message);
+    },
+    onFriendRequestReceived: (data) => {
+      showInfo('Friend Request Received', data.message);
+    },
+    onFriendRequestAccepted: (data) => {
+      showSuccess('Friend Request Accepted', data.message);
+    },
+    onFriendRequestRejected: (data) => {
+      showWarning('Friend Request Rejected', data.message);
+    },
+    onFriendRemoved: (data) => {
+      showError('Friend Removed', data.message);
+    }
+  });
 
   useEffect(() => {
     if (!backgroundsLoading && !musicLoading && !state.ui.initialLoadComplete) {
@@ -251,6 +279,8 @@ export default function Home() {
         handleCloseFriendsModal={handleCloseFriendsModal}
         handleLogin={handleLogin}
       />
+      
+      <ToastContainer />
     </div>
   );
 }

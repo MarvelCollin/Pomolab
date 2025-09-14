@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Repositories\FriendRepository;
+use App\Repositories\UserRepository;
+use App\Services\WebSocketService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
@@ -10,10 +12,17 @@ use Illuminate\Validation\ValidationException;
 class FriendController extends Controller
 {
     private FriendRepository $friendRepository;
+    private UserRepository $userRepository;
+    private WebSocketService $webSocketService;
 
-    public function __construct(FriendRepository $friendRepository)
-    {
+    public function __construct(
+        FriendRepository $friendRepository,
+        UserRepository $userRepository,
+        WebSocketService $webSocketService
+    ) {
         $this->friendRepository = $friendRepository;
+        $this->userRepository = $userRepository;
+        $this->webSocketService = $webSocketService;
     }
 
     /**
@@ -88,6 +97,19 @@ class FriendController extends Controller
             }
 
             $friend = $this->friendRepository->create($validated);
+            
+            $userData = $this->userRepository->findById($validated['user_id']);
+            $friendData = $this->userRepository->findById($validated['friend_id']);
+            
+            $this->webSocketService->broadcastFriendNotification(
+                'request_sent',
+                $validated['user_id'],
+                $validated['friend_id'],
+                $friend ? $friend->toArray() : null,
+                $userData ? $userData->toArray() : null,
+                $friendData ? $friendData->toArray() : null
+            );
+            
             return response()->json($friend, 201);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
@@ -108,6 +130,20 @@ class FriendController extends Controller
             ]);
 
             $this->friendRepository->update($id, $validated);
+            
+            $userData = $this->userRepository->findById($friend['user_id']);
+            $friendData = $this->userRepository->findById($friend['friend_id']);
+            
+            $action = $validated['status'] === 'accepted' ? 'request_accepted' : 'request_rejected';
+            $this->webSocketService->broadcastFriendNotification(
+                $action,
+                $friend['user_id'],
+                $friend['friend_id'],
+                array_merge($friend, $validated),
+                $userData ? $userData->toArray() : null,
+                $friendData ? $friendData->toArray() : null
+            );
+            
             return response()->json(['message' => 'Friendship status updated successfully']);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
@@ -122,7 +158,20 @@ class FriendController extends Controller
             return response()->json(['message' => 'Friend relationship not found'], 404);
         }
 
+        $userData = $this->userRepository->findById($friend['user_id']);
+        $friendData = $this->userRepository->findById($friend['friend_id']);
+        
         $this->friendRepository->delete($id);
+        
+        $this->webSocketService->broadcastFriendNotification(
+            'friend_removed',
+            $friend['user_id'],
+            $friend['friend_id'],
+            $friend,
+            $userData ? $userData->toArray() : null,
+            $friendData ? $friendData->toArray() : null
+        );
+        
         return response()->json(['message' => 'Friendship deleted successfully']);
     }
 
@@ -181,6 +230,19 @@ class FriendController extends Controller
             if (!$updated) {
                 return response()->json(['message' => 'Friendship not found'], 404);
             }
+
+            $userData = $this->userRepository->findById($validated['user_id']);
+            $friendData = $this->userRepository->findById($validated['friend_id']);
+            
+            $action = $validated['status'] === 'accepted' ? 'request_accepted' : 'request_rejected';
+            $this->webSocketService->broadcastFriendNotification(
+                $action,
+                $validated['user_id'],
+                $validated['friend_id'],
+                $validated,
+                $userData ? $userData->toArray() : null,
+                $friendData ? $friendData->toArray() : null
+            );
 
             return response()->json(['message' => 'Friendship status updated successfully']);
         } catch (ValidationException $e) {
