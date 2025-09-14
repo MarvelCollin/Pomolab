@@ -6,6 +6,7 @@ use App\Repositories\MessageRepository;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 
 class MessageController extends Controller
 {
@@ -63,6 +64,9 @@ class MessageController extends Controller
             ]);
 
             $message = $this->messageRepository->create($validated);
+            
+            $this->broadcastMessage($message);
+            
             return response()->json($message, 201);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
@@ -193,9 +197,45 @@ class MessageController extends Controller
                 $validated['task_id'] ?? null
             );
 
+            $this->broadcastMessage($message);
+
             return response()->json($message, 201);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
+        }
+    }
+
+    private function broadcastMessage($message): void
+    {
+        $broadcastData = [
+            'id' => $message->id,
+            'from_user_id' => $message->from_user_id,
+            'to_user_id' => $message->to_user_id,
+            'message' => $message->message,
+            'task_id' => $message->task_id,
+            'created_at' => $message->created_at,
+            'updated_at' => $message->updated_at
+        ];
+
+        try {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, 'http://localhost:8080/broadcast/message-notification');
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+                'channel' => 'user-' . $message->to_user_id,
+                'event' => 'new-message',
+                'data' => $broadcastData
+            ]));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+            ]);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+            
+            $response = curl_exec($ch);
+            curl_close($ch);
+        } catch (\Exception $e) {
+            Log::warning('Failed to broadcast message: ' . $e->getMessage());
         }
     }
 }

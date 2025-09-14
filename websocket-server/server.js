@@ -67,21 +67,24 @@ app.post('/broadcast/message', (req, res) => {
   const broadcastData = {
     event: 'MessageSent',
     channel,
-    data: {
-      message,
-      timestamp: new Date().toISOString()
-    }
+    data: message
   };
 
+  let broadcastCount = 0;
   clients.forEach(client => {
     if (client.readyState === client.OPEN && 
         (client.channel === channel || client.channel === undefined)) {
       client.send(JSON.stringify(broadcastData));
+      broadcastCount++;
     }
   });
 
-  console.log(`Broadcasted message to ${clients.size} clients on channel ${channel}`);
-  res.json({ status: 'Message broadcasted', clients: clients.size });
+  console.log(`Broadcasted message to ${broadcastCount} clients on channel ${channel}`);
+  res.json({ 
+    status: 'Message broadcasted', 
+    clients: broadcastCount,
+    message: message
+  });
 });
 
 app.post('/broadcast/task-update', (req, res) => {
@@ -132,15 +135,59 @@ app.post('/broadcast/friend-notification', (req, res) => {
     }
   };
 
+  let broadcastCount = 0;
   clients.forEach(client => {
     if (client.readyState === client.OPEN && 
         (client.channel === channel || client.channel === undefined)) {
       client.send(JSON.stringify(broadcastData));
+      broadcastCount++;
     }
   });
 
-  console.log(`Broadcasted friend notification (${action}) to ${clients.size} clients on channel ${channel}`);
-  res.json({ status: 'Friend notification broadcasted', clients: clients.size, action });
+  console.log(`Broadcasted friend notification (${action}) to ${broadcastCount} clients on channel ${channel}`);
+  res.json({ status: 'Friend notification broadcasted', clients: broadcastCount, action });
+});
+
+// Dedicated message notification endpoint
+app.post('/broadcast/message-notification', (req, res) => {
+  const { 
+    message_data,
+    from_user_id,
+    to_user_id,
+    channel = 'message-notifications'
+  } = req.body;
+  
+  const broadcastData = {
+    event: 'MessageNotification',
+    channel,
+    data: {
+      type: 'message_received',
+      message: message_data,
+      from_user_id,
+      to_user_id,
+      timestamp: new Date().toISOString()
+    }
+  };
+
+  let broadcastCount = 0;
+  clients.forEach(client => {
+    if (client.readyState === client.OPEN && 
+        (client.channel === channel || 
+         client.channel === `user-${to_user_id}` ||
+         client.channel === `user-${from_user_id}` ||
+         client.channel === undefined)) {
+      client.send(JSON.stringify(broadcastData));
+      broadcastCount++;
+    }
+  });
+
+  console.log(`Broadcasted message notification to ${broadcastCount} clients for users ${from_user_id} -> ${to_user_id}`);
+  res.json({ 
+    status: 'Message notification broadcasted', 
+    clients: broadcastCount,
+    from_user_id,
+    to_user_id
+  });
 });
 
 app.get('/status', (req, res) => {

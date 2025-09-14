@@ -1,10 +1,21 @@
 import type { IMessage } from '../interfaces/IMessage';
+import { AuthTrigger, authOperations } from '../utils/auth-trigger';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('authToken');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': token ? `Bearer ${token}` : '',
+  };
+};
+
 export class MessageApi {
   static async getAllMessages(): Promise<IMessage[]> {
-    const response = await fetch(`${API_BASE_URL}/api/messages`);
+    const response = await fetch(`${API_BASE_URL}/api/messages`, {
+      headers: getAuthHeaders(),
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch messages');
     }
@@ -12,7 +23,9 @@ export class MessageApi {
   }
 
   static async getMessageById(id: number): Promise<IMessage> {
-    const response = await fetch(`${API_BASE_URL}/api/messages/${id}`);
+    const response = await fetch(`${API_BASE_URL}/api/messages/${id}`, {
+      headers: getAuthHeaders(),
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch message');
     }
@@ -20,43 +33,48 @@ export class MessageApi {
   }
 
   static async createMessage(messageData: { from_user_id: number; to_user_id: number; message: string; task_id?: number }): Promise<IMessage> {
-    const response = await fetch(`${API_BASE_URL}/api/messages`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(messageData),
+    return AuthTrigger.wrapApiCall(authOperations.create, async () => {
+      const response = await fetch(`${API_BASE_URL}/api/messages`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(messageData),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to create message');
+      }
+      return response.json();
     });
-    if (!response.ok) {
-      throw new Error('Failed to create message');
-    }
-    return response.json();
   }
 
   static async updateMessage(id: number, message: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/messages/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ message }),
+    await AuthTrigger.wrapApiCall(authOperations.update, async () => {
+      const response = await fetch(`${API_BASE_URL}/api/messages/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ message }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update message');
+      }
     });
-    if (!response.ok) {
-      throw new Error('Failed to update message');
-    }
   }
 
   static async deleteMessage(id: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/messages/${id}`, {
-      method: 'DELETE',
+    await AuthTrigger.wrapApiCall(authOperations.delete, async () => {
+      const response = await fetch(`${API_BASE_URL}/api/messages/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete message');
+      }
     });
-    if (!response.ok) {
-      throw new Error('Failed to delete message');
-    }
   }
 
   static async getMessagesByFromUser(fromUserId: number): Promise<IMessage[]> {
-    const response = await fetch(`${API_BASE_URL}/api/messages/from/${fromUserId}`);
+    const response = await fetch(`${API_BASE_URL}/api/messages/from/${fromUserId}`, {
+      headers: getAuthHeaders(),
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch messages by from user');
     }
@@ -64,7 +82,9 @@ export class MessageApi {
   }
 
   static async getMessagesByToUser(toUserId: number): Promise<IMessage[]> {
-    const response = await fetch(`${API_BASE_URL}/api/messages/to/${toUserId}`);
+    const response = await fetch(`${API_BASE_URL}/api/messages/to/${toUserId}`, {
+      headers: getAuthHeaders(),
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch messages by to user');
     }
@@ -72,7 +92,9 @@ export class MessageApi {
   }
 
   static async getConversation(userId1: number, userId2: number): Promise<IMessage[]> {
-    const response = await fetch(`${API_BASE_URL}/api/conversation/${userId1}/${userId2}`);
+    const response = await fetch(`${API_BASE_URL}/api/conversation/${userId1}/${userId2}`, {
+      headers: getAuthHeaders(),
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch conversation');
     }
@@ -80,7 +102,9 @@ export class MessageApi {
   }
 
   static async getTaskMessages(taskId: number): Promise<IMessage[]> {
-    const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}/messages`);
+    const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}/messages`, {
+      headers: getAuthHeaders(),
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch task messages');
     }
@@ -88,7 +112,9 @@ export class MessageApi {
   }
 
   static async getUserMessages(userId: number): Promise<IMessage[]> {
-    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/messages`);
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/messages`, {
+      headers: getAuthHeaders(),
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch user messages');
     }
@@ -96,16 +122,16 @@ export class MessageApi {
   }
 
   static async sendMessage(messageData: { from_user_id: number; to_user_id: number; message: string; task_id?: number }): Promise<IMessage> {
-    const response = await fetch(`${API_BASE_URL}/api/messages/send`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(messageData),
+    return AuthTrigger.wrapApiCall(authOperations.create, async () => {
+      const response = await fetch(`${API_BASE_URL}/api/messages/send`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(messageData),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+      return response.json();
     });
-    if (!response.ok) {
-      throw new Error('Failed to send message');
-    }
-    return response.json();
   }
 }

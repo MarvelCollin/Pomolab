@@ -17,12 +17,15 @@ import {
   Waves,
   Square,
   User,
-  LogOut
+  LogOut,
+  Users
 } from 'lucide-react';
 import type { IBackground } from '../../interfaces/IBackground';
 import type { IMusic } from '../../interfaces/IMusic';
 import type { IAudioEffect } from '../../interfaces/IAudioEffect';
 import type { IUser } from '../../interfaces/IUser';
+import FriendsModal from './friends-modal';
+import ChatModal from './chat-modal';
 
 interface ToolBarProps {
   showBackgroundSelector: boolean;
@@ -92,6 +95,21 @@ const ToolBar = memo(function ToolBar({
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showMainMenu, setShowMainMenu] = useState(false);
+  const [showFriendsModal, setShowFriendsModal] = useState(false);
+  
+  // Chat state for toolbar friends modal
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatWithUser, setChatWithUser] = useState<IUser | null>(null);
+
+  const handleOpenChat = (user: IUser) => {
+    setChatWithUser(user);
+    setChatOpen(true);
+  };
+
+  const handleCloseChat = () => {
+    setChatOpen(false);
+    setChatWithUser(null);
+  };
 
   useEffect(() => {
     let ticking = false;
@@ -309,6 +327,22 @@ const ToolBar = memo(function ToolBar({
                   <Waves className="w-4 h-4 text-white/90" />
                   <span className="text-white text-sm font-medium">Audio Effects</span>
                 </motion.button>
+
+                {/* Friends Button - Only show when user is logged in */}
+                {currentUser && (
+                  <motion.button
+                    onClick={() => {
+                      setShowFriendsModal(true);
+                      setShowMainMenu(false);
+                    }}
+                    className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group"
+                    whileHover={{ x: 4 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Users className="w-4 h-4 text-white/90" />
+                    <span className="text-white text-sm font-medium">Friends & Chat</span>
+                  </motion.button>
+                )}
 
                 <div className="h-px bg-white/20 my-2" />
 
@@ -676,6 +710,24 @@ const ToolBar = memo(function ToolBar({
           )}
         </AnimatePresence>
       </div>
+
+      {/* Friends Modal */}
+      <FriendsModal
+        isOpen={showFriendsModal}
+        onClose={() => setShowFriendsModal(false)}
+        currentUser={currentUser}
+        onOpenChat={handleOpenChat}
+      />
+
+      {/* Chat Modal - Independent from friends modal */}
+      {chatOpen && chatWithUser && currentUser && (
+        <ChatModal
+          isOpen={chatOpen}
+          onClose={handleCloseChat}
+          currentUser={currentUser}
+          chatUser={chatWithUser}
+        />
+      )}
     </motion.div>
   );
 });

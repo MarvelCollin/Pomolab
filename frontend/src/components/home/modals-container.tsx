@@ -1,7 +1,8 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import SearchModal from '../common/search-modal';
 import FriendsModal from '../common/friends-modal';
 import LoginModal from '../common/login-modal';
+import ChatModal from '../common/chat-modal';
 import type { AppState, AppAction } from '../../hooks/use-app-state';
 import type { IUser } from '../../interfaces/IUser';
 
@@ -22,6 +23,19 @@ const ModalsContainer = memo(function ModalsContainer({
   handleCloseFriendsModal,
   handleLogin
 }: ModalsContainerProps) {
+  // Chat state management - independent from friends modal
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatWithUser, setChatWithUser] = useState<IUser | null>(null);
+
+  const handleOpenChat = (user: IUser) => {
+    setChatWithUser(user);
+    setChatOpen(true);
+  };
+
+  const handleCloseChat = () => {
+    setChatOpen(false);
+    setChatWithUser(null);
+  };
   return (
     <>
       <SearchModal
@@ -34,6 +48,7 @@ const ModalsContainer = memo(function ModalsContainer({
         isOpen={state.ui.showFriendsModal}
         onClose={handleCloseFriendsModal}
         currentUser={state.auth.currentUser}
+        onOpenChat={handleOpenChat}
       />
 
       <LoginModal
@@ -41,6 +56,16 @@ const ModalsContainer = memo(function ModalsContainer({
         onClose={() => dispatch({ type: 'UPDATE_UI', payload: { showLoginModal: false } })}
         onLogin={handleLogin}
       />
+
+      {/* Chat Modal - Independent from friends modal */}
+      {chatOpen && chatWithUser && state.auth.currentUser && (
+        <ChatModal
+          isOpen={chatOpen}
+          onClose={handleCloseChat}
+          currentUser={state.auth.currentUser}
+          chatUser={chatWithUser}
+        />
+      )}
     </>
   );
 });

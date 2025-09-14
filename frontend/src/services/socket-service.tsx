@@ -123,6 +123,14 @@ class SocketService {
         return this.subscribeToChannel('friend-notifications', callback);
     }
 
+    public listenToMessageNotifications(callback: (data: any) => void): () => void {
+        return this.subscribeToChannel('message-notifications', callback);
+    }
+
+    public listenToUserChannel(userId: number, callback: (data: any) => void): () => void {
+        return this.subscribeToChannel(`user-${userId}`, callback);
+    }
+
     public broadcastFriendNotification(
         action: string,
         userId: number,
@@ -145,6 +153,24 @@ class SocketService {
             this.ws.send(JSON.stringify({
                 type: 'broadcast',
                 channel: 'friend-notifications',
+                data: notificationData
+            }));
+        }
+    }
+
+    public broadcastMessageNotification(messageData: any, fromUserId: number, toUserId: number): void {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            const notificationData = {
+                type: 'message_received',
+                message: messageData,
+                from_user_id: fromUserId,
+                to_user_id: toUserId,
+                timestamp: new Date().toISOString()
+            };
+
+            this.ws.send(JSON.stringify({
+                type: 'broadcast',
+                channel: 'message-notifications',
                 data: notificationData
             }));
         }

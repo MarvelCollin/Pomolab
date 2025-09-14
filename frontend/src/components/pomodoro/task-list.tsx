@@ -32,7 +32,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [showFilter, setShowFilter] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>('active'); // 'all', 'active', 'pending', 'in_progress', 'completed', 'cancelled'
+  const [statusFilter, setStatusFilter] = useState<string>('active'); 
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [assigningTaskId, setAssigningTaskId] = useState<number | null>(null);
   const [availableUsers, setAvailableUsers] = useState<IUser[]>([]);
@@ -40,7 +40,6 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
   const [searchLoading, setSearchLoading] = useState(false);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Load available users (friends) for assignment
   useEffect(() => {
     const loadUsers = async () => {
       if (!currentUser) return;
@@ -58,7 +57,6 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
           })
         ]);
         
-        // Ensure we have arrays to work with
         const friends = Array.isArray(friendsResponse) ? friendsResponse : [];
         const users = Array.isArray(usersResponse) ? usersResponse : [];
         
@@ -67,11 +65,9 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
           return;
         }
         
-        // Filter to get friends who have accepted status and include self
         const acceptedFriends = friends
           .filter(friend => friend && friend.status === 'accepted')
           .map(friend => {
-            // Get the friend user data
             const friendUser = users.find(user => 
               user && user.id === (friend.user_id === currentUser.id ? friend.friend_id : friend.user_id)
             );
@@ -79,11 +75,9 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
           })
           .filter(Boolean) as IUser[];
         
-        // Include current user in the list
         setAvailableUsers([currentUser, ...acceptedFriends]);
       } catch (error) {
         console.error('Failed to load users:', error);
-        // Fallback to just current user
         setAvailableUsers([currentUser]);
       } finally {
         setSearchLoading(false);
@@ -93,7 +87,6 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
     loadUsers();
   }, [currentUser]);
 
-  // Search users based on query
   useEffect(() => {
     const searchUsers = async () => {
       if (!debouncedSearchQuery.trim() || !currentUser) {
@@ -104,13 +97,10 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
         setSearchLoading(true);
         const searchResults = await FriendApi.searchUsers(debouncedSearchQuery);
         
-        // Ensure searchResults is an array
         const results = Array.isArray(searchResults) ? searchResults : [];
         
-        // Filter out current user from search results and add to available users
         const filteredResults = results.filter(user => user && user.id !== currentUser.id);
         
-        // Merge with existing friends, avoiding duplicates
         const existingIds = availableUsers.map(user => user.id);
         const newUsers = filteredResults.filter(user => user && !existingIds.includes(user.id));
         

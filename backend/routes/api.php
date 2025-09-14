@@ -34,13 +34,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/friendship/status', [FriendController::class, 'updateFriendshipStatus']);
 });
 
-Route::apiResource('messages', MessageController::class);
-Route::get('/messages/from/{fromUserId}', [MessageController::class, 'getMessagesByFromUser']);
-Route::get('/messages/to/{toUserId}', [MessageController::class, 'getMessagesByToUser']);
-Route::get('/conversation/{userId1}/{userId2}', [MessageController::class, 'getConversation']);
-Route::get('/tasks/{taskId}/messages', [MessageController::class, 'getTaskMessages']);
-Route::get('/users/{userId}/messages', [MessageController::class, 'getUserMessages']);
-Route::post('/messages/send', [MessageController::class, 'sendMessage']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('messages', MessageController::class);
+    Route::get('/messages/from/{fromUserId}', [MessageController::class, 'getMessagesByFromUser']);
+    Route::get('/messages/to/{toUserId}', [MessageController::class, 'getMessagesByToUser']);
+    Route::get('/conversation/{userId1}/{userId2}', [MessageController::class, 'getConversation']);
+    Route::get('/tasks/{taskId}/messages', [MessageController::class, 'getTaskMessages']);
+    Route::get('/users/{userId}/messages', [MessageController::class, 'getUserMessages']);
+    Route::post('/messages/send', [MessageController::class, 'sendMessage']);
+});
 
 Route::apiResource('tasks', TaskController::class);
 Route::get('/tasks/owner/{ownerId}', [TaskController::class, 'getTasksByOwner']);

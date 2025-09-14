@@ -11,7 +11,8 @@ import {
   User,
   Trash2,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  MessageCircle
 } from 'lucide-react';
 import type { IFriend } from '../../interfaces/IFriend';
 import type { IUser } from '../../interfaces/IUser';
@@ -23,9 +24,10 @@ interface FriendsModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: IUser | null;
+  onOpenChat?: (user: IUser) => void;
 }
 
-function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
+function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModalProps) {
   const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'add'>('friends');
   const [friends, setFriends] = useState<IFriend[]>([]);
   const [friendRequests, setFriendRequests] = useState<IFriend[]>([]);
@@ -35,20 +37,16 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Search states
   const [searchResults, setSearchResults] = useState<IUser[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   
-  // Action loading states
   const [sendingRequestTo, setSendingRequestTo] = useState<number | null>(null);
   const [acceptingRequest, setAcceptingRequest] = useState<number | null>(null);
   const [rejectingRequest, setRejectingRequest] = useState<number | null>(null);
   const [removingFriend, setRemovingFriend] = useState<number | null>(null);
   
-  // Debounced search query
   const debouncedSearchQuery = useDebounce(addFriendQuery, 300);
 
-  // Toast notifications
   const { showSuccess, showError, ToastContainer } = useToast();
 
   const loadFriendsData = useCallback(async (showToast: boolean = false) => {
@@ -127,7 +125,6 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
     }
   }, [currentUser, showSuccess, showError]);
 
-  // User search with debouncing
   useEffect(() => {
     const searchUsers = async () => {
       if (!debouncedSearchQuery.trim() || !currentUser) {
@@ -139,10 +136,8 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
       try {
         const searchResponse = await FriendApi.searchUsers(debouncedSearchQuery);
         
-        // Ensure search results is an array
         const results = Array.isArray(searchResponse) ? searchResponse : [];
         
-        // Filter out current user and existing connections
         const filteredResults = results.filter(user => 
           user && 
           typeof user === 'object' && 
@@ -161,7 +156,6 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
     searchUsers();
   }, [debouncedSearchQuery, currentUser]);
 
-  // Filter search results to exclude existing connections (computed on render)
   const filteredSearchResults = searchResults.filter(user => {
     const friendIds = friends.map(f => f.friend?.id).filter(Boolean);
     const requestIds = [...friendRequests.map(r => r.user?.id), ...sentRequests.map(s => s.friend?.id)].filter(Boolean);
@@ -260,6 +254,12 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
       console.error('Error removing friend:', err);
     } finally {
       setRemovingFriend(null);
+    }
+  };
+
+  const handleOpenChat = (user: IUser) => {
+    if (onOpenChat) {
+      onOpenChat(user);
     }
   };
 
@@ -419,18 +419,27 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
                         <div key={friend.id}>
                           {renderUserCard(
                             friend.friend,
-                            <button
-                              onClick={() => handleRemoveFriend(friend.id)}
-                              disabled={removingFriend === friend.id}
-                              className="p-2 hover:bg-red-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                              title="Remove friend"
-                            >
-                              {removingFriend === friend.id ? (
-                                <Loader2 className="w-4 h-4 text-red-400 animate-spin" />
-                              ) : (
-                                <Trash2 className="w-4 h-4 text-red-400 hover:text-red-300" />
-                              )}
-                            </button>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleOpenChat(friend.friend!)}
+                                className="p-2 hover:bg-blue-500/20 rounded-lg transition-colors"
+                                title="Start chat"
+                              >
+                                <MessageCircle className="w-4 h-4 text-blue-400 hover:text-blue-300" />
+                              </button>
+                              <button
+                                onClick={() => handleRemoveFriend(friend.id)}
+                                disabled={removingFriend === friend.id}
+                                className="p-2 hover:bg-red-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Remove friend"
+                              >
+                                {removingFriend === friend.id ? (
+                                  <Loader2 className="w-4 h-4 text-red-400 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4 text-red-400 hover:text-red-300" />
+                                )}
+                              </button>
+                            </div>
                           )}
                         </div>
                       )
