@@ -17,6 +17,7 @@ import { useTimerLogic } from '../hooks/use-timer-logic';
 import { useBackground } from '../hooks/use-background';
 import { useMusic } from '../hooks/use-music';
 import { useAudioEffect } from '../hooks/use-audio-effect';
+import { AuthTrigger } from '../services/auth-trigger';
 import type { IBackground } from '../interfaces/IBackground';
 import '../app.css';
 
@@ -83,6 +84,13 @@ export default function Home() {
       loadRemainingBackgrounds();
     }
   }, [backgroundsLoading, musicLoading, state.ui.initialLoadComplete, loadRemainingBackgrounds, dispatch]);
+
+  useEffect(() => {
+    AuthTrigger.setConfig({
+      currentUser: state.auth.currentUser,
+      onShowLogin: handleShowLogin
+    });
+  }, [state.auth.currentUser, handleShowLogin]);
 
   const handleOpenSearchModal = useCallback(() => {
     dispatch({ type: 'UPDATE_UI', payload: { showSearchModal: true } });

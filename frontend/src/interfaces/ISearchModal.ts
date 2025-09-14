@@ -11,4 +11,5 @@ export interface ISearchResult {
   category: 'friends';
   icon: React.ComponentType<any>;
   action: () => void;
+  requireAuth?: boolean;
 }

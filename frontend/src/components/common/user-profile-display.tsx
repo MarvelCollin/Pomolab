@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { LogOut } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 import type { IUser } from '../../interfaces/IUser';
 
 interface UserProfileDisplayProps {
@@ -8,15 +8,6 @@ interface UserProfileDisplayProps {
 }
 
 export default function UserProfileDisplay({ user, onLogout }: UserProfileDisplayProps) {
-  const getInitials = (username: string) => {
-    return username
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   const getAvatarUrl = () => {
     if (user.avatar) {
       return user.avatar;
@@ -46,9 +37,7 @@ export default function UserProfileDisplay({ user, onLogout }: UserProfileDispla
               />
             ) : (
               <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center border-2 border-white/20">
-                <span className="text-white font-medium text-xs">
-                  {getInitials(user.username)}
-                </span>
+                <User className="w-4 h-4 text-white/70" />
               </div>
             )}
           </div>

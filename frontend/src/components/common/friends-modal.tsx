@@ -182,15 +182,6 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
     friend.friend?.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   const renderUserCard = (user: IUser, actions?: React.ReactNode) => (
     <div
       className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all duration-200"
@@ -204,9 +195,7 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
           />
         ) : (
           <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center border-2 border-white/20">
-            <span className="text-white font-medium text-sm">
-              {getInitials(user.username)}
-            </span>
+            <User className="w-5 h-5 text-white/70" />
           </div>
         )}
         <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white/20" />
@@ -447,8 +436,16 @@ function FriendsModal({ isOpen, onClose, currentUser }: FriendsModalProps) {
                       {searchResults.map((user) => (
                         <div key={user.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-semibold">
-                              {user.avatar || getInitials(user.username)}
+                            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center border-2 border-white/20">
+                              {user.avatar ? (
+                                <img
+                                  src={user.avatar}
+                                  alt={user.username}
+                                  className="w-full h-full rounded-full object-cover"
+                                />
+                              ) : (
+                                <User className="w-4 h-4 text-white/70" />
+                              )}
                             </div>
                             <div>
                               <p className="text-white text-sm font-medium">{user.username}</p>

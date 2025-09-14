@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Users, UserPlus } from 'lucide-react';
 import type { ISearchModalProps, ISearchResult } from '../../interfaces/ISearchModal';
+import { AuthTrigger } from '../../services/auth-trigger';
 
 function SearchModal({ isOpen, onClose, onOpenFriendsModal }: ISearchModalProps) {
   const [query, setQuery] = useState('');
@@ -16,9 +17,12 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal }: ISearchModalProps)
       description: 'View and manage your friends',
       category: 'friends',
       icon: Users,
+      requireAuth: true,
       action: () => {
-        if (onOpenFriendsModal) {
-          onOpenFriendsModal();
+        if (AuthTrigger.checkAuthForMutation()) {
+          if (onOpenFriendsModal) {
+            onOpenFriendsModal();
+          }
         }
       }
     },
@@ -28,9 +32,12 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal }: ISearchModalProps)
       description: 'Find and add new friends',
       category: 'friends',
       icon: UserPlus,
+      requireAuth: true,
       action: () => {
-        if (onOpenFriendsModal) {
-          onOpenFriendsModal();
+        if (AuthTrigger.checkAuthForMutation()) {
+          if (onOpenFriendsModal) {
+            onOpenFriendsModal();
+          }
         }
       }
     },
@@ -40,9 +47,12 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal }: ISearchModalProps)
       description: 'View pending friend requests',
       category: 'friends',
       icon: Users,
+      requireAuth: true,
       action: () => {
-        if (onOpenFriendsModal) {
-          onOpenFriendsModal();
+        if (AuthTrigger.checkAuthForMutation()) {
+          if (onOpenFriendsModal) {
+            onOpenFriendsModal();
+          }
         }
       }
     }
