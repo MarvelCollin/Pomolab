@@ -6,6 +6,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\GroupController;
+use App\Http\Controllers\GroupMemberController;
 
 Route::get('/test', function () {
     return response()->json(['message' => 'Hello World']);
@@ -47,3 +49,18 @@ Route::get('/users/{userId}/all-tasks', [TaskController::class, 'getUserTasks'])
 Route::get('/tasks/{id}/with-messages', [TaskController::class, 'getTaskWithMessages']);
 Route::put('/tasks/{id}/status', [TaskController::class, 'updateTaskStatus']);
 Route::put('/tasks/{id}/assign', [TaskController::class, 'assignTask']);
+
+Route::apiResource('groups', GroupController::class);
+Route::get('/groups/{id}/members', [GroupMemberController::class, 'getGroupMembersByGroupId']);
+Route::get('/groups/{id}/with-members', [GroupController::class, 'getGroupWithMembers']);
+Route::get('/groups/{id}/tasks', [GroupController::class, 'getGroupWithTasks']);
+Route::get('/groups/{id}/messages', [GroupController::class, 'getGroupWithMessages']);
+Route::get('/users/{userId}/groups', [GroupController::class, 'getUserGroups']);
+Route::get('/groups-public', [GroupController::class, 'getPublicGroups']);
+Route::get('/groups-search', [GroupController::class, 'searchGroups']);
+Route::post('/groups/{id}/join', [GroupController::class, 'joinGroup']);
+Route::post('/groups/{id}/leave', [GroupController::class, 'leaveGroup']);
+
+Route::apiResource('group-members', GroupMemberController::class);
+Route::get('/users/{userId}/group-memberships', [GroupMemberController::class, 'getUserGroupMemberships']);
+Route::put('/group-members/{id}/role', [GroupMemberController::class, 'updateMemberRole']);
