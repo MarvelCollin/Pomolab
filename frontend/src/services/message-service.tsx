@@ -97,7 +97,6 @@ class MessageService {
     try {
       const sentMessage = await MessageApi.sendMessage(messageData);
 
-      // Broadcast real-time notification
       await this.broadcastMessage(sentMessage);
 
       return sentMessage;

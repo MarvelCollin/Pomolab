@@ -48,9 +48,12 @@ class UserController extends Controller
         $search = $request->query('search');
         
         if ($search) {
+            if (strlen($search) < 2) {
+                return response()->json(['message' => 'Search query must be at least 2 characters'], 400);
+            }
             $users = $this->userRepository->search($search);
         } else {
-            $users = $this->userRepository->getAll();
+            $users = $this->userRepository->getAll()->take(50);
         }
         
         return response()->json($users);

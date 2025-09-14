@@ -17,6 +17,7 @@ import {
 import type { IFriend } from '../../interfaces/IFriend';
 import type { IUser } from '../../interfaces/IUser';
 import { FriendApi } from '../../apis/friend-api';
+import { FriendService } from '../../services/friend-service';
 import { useDebounce } from '../../hooks/use-debounce';
 import { useToast } from './toast';
 
@@ -82,33 +83,21 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
         return;
       }
 
-      const extendedFriends: IFriend[] = friendsData
-        .filter(friendship => friendship && typeof friendship === 'object')
-        .map(friendship => ({
-          ...friendship,
-          friend: friendship.friend
-        }));
+      const validFriends: IFriend[] = friendsData
+        .filter(friendship => friendship && typeof friendship === 'object' && friendship.friend);
 
-      const extendedRequests: IFriend[] = requestsData
-        .filter(request => request && typeof request === 'object')
-        .map(request => ({
-          ...request,
-          user: request.user
-        }));
+      const validRequests: IFriend[] = requestsData
+        .filter(request => request && typeof request === 'object' && request.user);
 
-      const extendedSentRequests: IFriend[] = sentData
-        .filter(sent => sent && typeof sent === 'object')
-        .map(sent => ({
-          ...sent,
-          friend: sent.friend
-        }));
+      const validSentRequests: IFriend[] = sentData
+        .filter(sent => sent && typeof sent === 'object' && sent.friend);
       
-      setFriends(extendedFriends);
-      setFriendRequests(extendedRequests);
-      setSentRequests(extendedSentRequests);
+      setFriends(validFriends);
+      setFriendRequests(validRequests);
+      setSentRequests(validSentRequests);
 
       if (showToast) {
-        showSuccess('Friends data refreshed', `Loaded ${extendedFriends.length} friends and ${extendedRequests.length} requests`);
+        showSuccess('Friends data refreshed', `Loaded ${validFriends.length} friends and ${validRequests.length} requests`);
       }
     } catch (err) {
       const errorMessage = 'Failed to load friends data';
@@ -169,11 +158,7 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
     setSendingRequestTo(userId);
     
     try {
-      await FriendApi.createFriendRequest({
-        user_id: currentUser.id,
-        friend_id: userId,
-        status: 'pending'
-      });
+      await FriendService.sendFriendRequest(currentUser.id, userId);
       
       const targetUser = searchResults.find(user => user.id === userId);
       showSuccess('Friend request sent', `Request sent to ${targetUser?.username || 'user'}`);
@@ -197,7 +182,7 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
     setAcceptingRequest(friendId);
     
     try {
-      await FriendApi.updateFriend(friendId, 'accepted');
+      await FriendService.acceptFriendRequest(friendId);
       
       const request = friendRequests.find(r => r.id === friendId);
       showSuccess('Friend request accepted', `You are now friends with ${request?.user?.username || 'user'}`);
@@ -219,7 +204,7 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
     setRejectingRequest(friendId);
     
     try {
-      await FriendApi.deleteFriend(friendId);
+      await FriendService.rejectFriendRequest(friendId);
       
       const request = friendRequests.find(r => r.id === friendId);
       showSuccess('Friend request rejected', `Rejected request from ${request?.user?.username || 'user'}`);
@@ -241,7 +226,7 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
     setRemovingFriend(friendId);
     
     try {
-      await FriendApi.deleteFriend(friendId);
+      await FriendService.removeFriend(friendId);
       
       const friend = friends.find(f => f.id === friendId);
       showSuccess('Friend removed', `Removed ${friend?.friend?.username || 'user'} from friends`);
@@ -270,8 +255,10 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
   }, [isOpen, currentUser, loadFriendsData]);
 
   const filteredFriends = friends.filter(friend =>
-    friend.friend?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    friend.friend?.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    friend.friend && 
+    friend.friend.id !== currentUser?.id &&
+    (friend.friend?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    friend.friend?.email?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const renderUserCard = (user: IUser, actions?: React.ReactNode) => (
@@ -328,7 +315,6 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
           exit={{ opacity: 0, scale: 0.98, y: 10 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
         >
-          {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-white/10">
             <div className="flex items-center gap-3">
               <Users className="w-6 h-6 text-white" />
@@ -352,7 +338,6 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
             </div>
           </div>
 
-          {/* Tabs */}
           <div className="flex border-b border-white/10">
             {[
               { id: 'friends', label: 'Friends', count: friends.length },
@@ -386,7 +371,6 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
             ))}
           </div>
 
-          {/* Content */}
           <div className="flex-1 overflow-hidden">
             {error && (
               <div className="p-4 bg-red-500/20 border border-red-500/30 rounded-lg m-4">
@@ -555,7 +539,6 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
                     </div>
                   </div>
 
-                  {/* Search Results */}
                   {filteredSearchResults.length > 0 && (
                     <div className="space-y-2 max-h-60 overflow-y-auto">
                       <h4 className="text-white/80 text-sm font-medium">Search Results</h4>
@@ -595,7 +578,6 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
                     </div>
                   )}
 
-                  {/* No Results */}
                   {debouncedSearchQuery && !searchLoading && filteredSearchResults.length === 0 && (
                     <div className="text-center py-6">
                       <User className="w-8 h-8 text-white/30 mx-auto mb-2" />
@@ -603,7 +585,6 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
                     </div>
                   )}
 
-                  {/* Empty State */}
                   {!addFriendQuery && (
                     <div className="text-center py-8">
                       <Search className="w-12 h-12 text-white/20 mx-auto mb-3" />

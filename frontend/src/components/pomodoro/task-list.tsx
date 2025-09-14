@@ -642,7 +642,6 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
         )}
       </div>
 
-      {/* Assignment Modal */}
       <AnimatePresence>
         {showAssignModal && (
           <motion.div
@@ -680,7 +679,6 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
               </div>
 
               <div className="space-y-2 max-h-60 overflow-y-auto">
-                {/* Unassign option */}
                 <button
                   onClick={() => handleAssignToUser(null)}
                   className="w-full flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors text-left"
@@ -694,7 +692,6 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
                   </div>
                 </button>
 
-                {/* Available users */}
                 {availableUsers.map((user) => (
                   <button
                     key={user.id}

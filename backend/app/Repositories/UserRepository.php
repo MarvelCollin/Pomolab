@@ -15,7 +15,8 @@ class UserRepository
     public function search(string $query): Collection
     {
         return User::where('username', 'LIKE', '%' . $query . '%')
-                  ->orWhere('email', 'LIKE', '%' . $query . '%')
+                  ->select('id', 'username', 'email', 'avatar', 'created_at', 'updated_at')
+                  ->limit(20)
                   ->get();
     }
 

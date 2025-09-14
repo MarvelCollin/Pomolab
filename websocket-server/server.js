@@ -148,7 +148,6 @@ app.post('/broadcast/friend-notification', (req, res) => {
   res.json({ status: 'Friend notification broadcasted', clients: broadcastCount, action });
 });
 
-// Dedicated message notification endpoint
 app.post('/broadcast/message-notification', (req, res) => {
   const { 
     message_data,

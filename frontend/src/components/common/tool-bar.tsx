@@ -97,7 +97,6 @@ const ToolBar = memo(function ToolBar({
   const [showMainMenu, setShowMainMenu] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
   
-  // Chat state for toolbar friends modal
   const [chatOpen, setChatOpen] = useState(false);
   const [chatWithUser, setChatWithUser] = useState<IUser | null>(null);
 
@@ -172,7 +171,6 @@ const ToolBar = memo(function ToolBar({
               transition={{ duration: 0.2, ease: "easeOut" }}
             >
               <div className="space-y-0.5">
-                {/* User Authentication Section */}
                 {currentUser ? (
                   <motion.div
                     className="bg-white/10 backdrop-blur-2xl rounded-lg p-2 border border-white/10 mb-2"
@@ -328,7 +326,6 @@ const ToolBar = memo(function ToolBar({
                   <span className="text-white text-sm font-medium">Audio Effects</span>
                 </motion.button>
 
-                {/* Friends Button - Only show when user is logged in */}
                 {currentUser && (
                   <motion.button
                     onClick={() => {
@@ -711,7 +708,6 @@ const ToolBar = memo(function ToolBar({
         </AnimatePresence>
       </div>
 
-      {/* Friends Modal */}
       <FriendsModal
         isOpen={showFriendsModal}
         onClose={() => setShowFriendsModal(false)}
@@ -719,7 +715,6 @@ const ToolBar = memo(function ToolBar({
         onOpenChat={handleOpenChat}
       />
 
-      {/* Chat Modal - Independent from friends modal */}
       {chatOpen && chatWithUser && currentUser && (
         <ChatModal
           isOpen={chatOpen}

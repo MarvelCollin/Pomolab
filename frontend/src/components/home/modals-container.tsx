@@ -23,7 +23,6 @@ const ModalsContainer = memo(function ModalsContainer({
   handleCloseFriendsModal,
   handleLogin
 }: ModalsContainerProps) {
-  // Chat state management - independent from friends modal
   const [chatOpen, setChatOpen] = useState(false);
   const [chatWithUser, setChatWithUser] = useState<IUser | null>(null);
 
@@ -57,7 +56,6 @@ const ModalsContainer = memo(function ModalsContainer({
         onLogin={handleLogin}
       />
 
-      {/* Chat Modal - Independent from friends modal */}
       {chatOpen && chatWithUser && state.auth.currentUser && (
         <ChatModal
           isOpen={chatOpen}

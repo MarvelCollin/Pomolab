@@ -61,6 +61,10 @@ export class FriendService {
 
   static async sendFriendRequest(fromUserId: number, toUserId: number): Promise<IFriend | null> {
     try {
+      if (fromUserId === toUserId) {
+        throw new Error('You cannot send a friend request to yourself.');
+      }
+
       const friendship = await FriendApi.createFriendRequest({
         user_id: fromUserId,
         friend_id: toUserId,
@@ -85,12 +89,13 @@ export class FriendService {
 
   static async acceptFriendRequest(requestId: number): Promise<void> {
     try {
+      const friendship = await FriendApi.getFriendById(requestId);
       await FriendApi.updateFriend(requestId, 'accepted');
       
       socketService.broadcastFriendNotification(
         'request_accepted',
-        0,
-        0,
+        friendship.user_id,
+        friendship.friend_id,
         { id: requestId, status: 'accepted' }
       );
     } catch (error) {
@@ -101,12 +106,13 @@ export class FriendService {
 
   static async rejectFriendRequest(requestId: number): Promise<void> {
     try {
-      await FriendApi.deleteFriend(requestId);
+      const friendship = await FriendApi.getFriendById(requestId);
+      await FriendApi.updateFriend(requestId, 'rejected');
       
       socketService.broadcastFriendNotification(
         'request_rejected',
-        0,
-        0,
+        friendship.user_id,
+        friendship.friend_id,
         { id: requestId, status: 'rejected' }
       );
     } catch (error) {
@@ -117,12 +123,13 @@ export class FriendService {
 
   static async removeFriend(friendshipId: number): Promise<void> {
     try {
+      const friendship = await FriendApi.getFriendById(friendshipId);
       await FriendApi.deleteFriend(friendshipId);
       
       socketService.broadcastFriendNotification(
         'friend_removed',
-        0,
-        0,
+        friendship.user_id,
+        friendship.friend_id,
         { id: friendshipId }
       );
     } catch (error) {

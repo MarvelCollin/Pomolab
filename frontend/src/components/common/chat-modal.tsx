@@ -116,7 +116,6 @@ export default function ChatModal({
               toUser: currentUser
             };
             setMessages(prev => {
-              // Avoid duplicate messages
               const exists = prev.some(existingMsg => existingMsg.id === msg.id);
               if (!exists) {
                 return [...prev, enhancedMessage];

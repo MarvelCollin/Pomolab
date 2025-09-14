@@ -130,9 +130,6 @@ class FriendController extends Controller
             ]);
 
             $this->friendRepository->update($id, $validated);
-            $friendArray = $friend->toArray();
-            
-
             
             return response()->json(['message' => 'Friendship status updated successfully']);
         } catch (ValidationException $e) {
@@ -195,7 +192,7 @@ class FriendController extends Controller
         try {
             $validated = $request->validate([
                 'user_id' => 'required|integer|exists:users,id',
-                'friend_id' => 'required|integer|exists:users,id',
+                'friend_id' => 'required|integer|exists:users,id|different:user_id',
                 'status' => 'required|string|in:accepted,rejected',
             ]);
 
@@ -208,8 +205,6 @@ class FriendController extends Controller
             if (!$updated) {
                 return response()->json(['message' => 'Friendship not found'], 404);
             }
-
-
 
             return response()->json(['message' => 'Friendship status updated successfully']);
         } catch (ValidationException $e) {

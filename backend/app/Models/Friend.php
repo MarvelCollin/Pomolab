@@ -16,6 +16,23 @@ class Friend extends Model
         'status',
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($friend) {
+            if ($friend->user_id === $friend->friend_id) {
+                throw new \InvalidArgumentException('A user cannot be friends with themselves.');
+            }
+        });
+
+        static::updating(function ($friend) {
+            if ($friend->user_id === $friend->friend_id) {
+                throw new \InvalidArgumentException('A user cannot be friends with themselves.');
+            }
+        });
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');

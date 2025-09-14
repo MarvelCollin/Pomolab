@@ -23,11 +23,14 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::apiResource('users', UserController::class);
+Route::middleware('auth:sanctum')->apiResource('users', UserController::class);
 Route::middleware('auth:sanctum')->get('/users/{id}/tasks', [UserController::class, 'getUserWithTasks']);
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::apiResource('friends', FriendController::class);
+    Route::get('/friends', [FriendController::class, 'index']);
+    Route::post('/friends', [FriendController::class, 'store']);
+    Route::get('/friends/{id}', [FriendController::class, 'show']);
+    Route::delete('/friends/{id}', [FriendController::class, 'destroy']);
     Route::get('/users/{userId}/friends', [FriendController::class, 'getUserFriends']);
     Route::get('/users/{userId}/friend-requests', [FriendController::class, 'getFriendRequests']);
     Route::get('/users/{userId}/sent-requests', [FriendController::class, 'getSentRequests']);
