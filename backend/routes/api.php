@@ -24,7 +24,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::apiResource('users', UserController::class);
-Route::middleware('auth:sanctum')->get('/users/{id}/friends', [UserController::class, 'getUserWithFriends']);
 Route::middleware('auth:sanctum')->get('/users/{id}/tasks', [UserController::class, 'getUserWithTasks']);
 
 Route::middleware('auth:sanctum')->group(function () {

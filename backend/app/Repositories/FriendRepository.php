@@ -34,24 +34,19 @@ class FriendRepository
 
     public function getFriendsByUserId(int $userId): Collection
     {
-        return Friend::where(function ($query) use ($userId) {
+        $friendships = Friend::where(function ($query) use ($userId) {
                         $query->where('user_id', $userId)->orWhere('friend_id', $userId);
                     })
                     ->where('status', 'accepted')
                     ->with(['user', 'friend'])
-                    ->get()
-                    ->map(function ($friendship) use ($userId) {
-                        $friendUser = $friendship->user_id === $userId ? $friendship->friend : $friendship->user;
-                        return [
-                            'id' => $friendship->id,
-                            'user_id' => $friendship->user_id,
-                            'friend_id' => $friendship->friend_id,
-                            'status' => $friendship->status,
-                            'created_at' => $friendship->created_at,
-                            'updated_at' => $friendship->updated_at,
-                            'friend' => $friendUser
-                        ];
-                    });
+                    ->get();
+
+        return $friendships->map(function ($friendship) use ($userId) {
+            $friendUser = $friendship->user_id === $userId ? $friendship->friend : $friendship->user;
+            $friendship->friend = $friendUser;
+            unset($friendship->user);
+            return $friendship;
+        });
     }
 
     public function getFriendRequestsByUserId(int $userId): Collection
@@ -59,18 +54,7 @@ class FriendRepository
         return Friend::where('friend_id', $userId)
                     ->where('status', 'pending')
                     ->with('user')
-                    ->get()
-                    ->map(function ($request) {
-                        return [
-                            'id' => $request->id,
-                            'user_id' => $request->user_id,
-                            'friend_id' => $request->friend_id,
-                            'status' => $request->status,
-                            'created_at' => $request->created_at,
-                            'updated_at' => $request->updated_at,
-                            'user' => $request->user
-                        ];
-                    });
+                    ->get();
     }
 
     public function getSentFriendRequestsByUserId(int $userId): Collection
@@ -78,18 +62,7 @@ class FriendRepository
         return Friend::where('user_id', $userId)
                     ->where('status', 'pending')
                     ->with('friend')
-                    ->get()
-                    ->map(function ($request) {
-                        return [
-                            'id' => $request->id,
-                            'user_id' => $request->user_id,
-                            'friend_id' => $request->friend_id,
-                            'status' => $request->status,
-                            'created_at' => $request->created_at,
-                            'updated_at' => $request->updated_at,
-                            'friend' => $request->friend
-                        ];
-                    });
+                    ->get();
     }
 
     public function updateFriendshipStatus(int $userId, int $friendId, string $status): bool
