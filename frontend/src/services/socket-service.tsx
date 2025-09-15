@@ -135,6 +135,10 @@ class SocketService {
         return this.subscribeToChannel('friend-notifications', callback);
     }
 
+    public listenToVideoCallNotifications(callback: (data: any) => void): () => void {
+        return this.subscribeToChannel('video-calls', callback);
+    }
+
     public listenToUserChannel(userId: number, callback: (data: any) => void): () => void {
         return this.subscribeToChannel(`user-${userId}`, callback);
     }
@@ -162,6 +166,19 @@ class SocketService {
                 type: 'broadcast',
                 channel: 'friend-notifications',
                 data: notificationData
+            }));
+        }
+    }
+
+    public broadcastVideoCallNotification(notificationData: any, targetUserId: number): void {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({
+                type: 'broadcast',
+                channel: 'video-calls',
+                data: {
+                    ...notificationData,
+                    target_user_id: targetUserId
+                }
             }));
         }
     }

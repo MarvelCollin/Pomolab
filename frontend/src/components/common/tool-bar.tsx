@@ -26,9 +26,7 @@ import type { IMusic } from '../../interfaces/IMusic';
 import type { IAudioEffect } from '../../interfaces/IAudioEffect';
 import type { IUser } from '../../interfaces/IUser';
 import FriendsModal from './friends-modal';
-import ChatModal from './chat-modal';
 import VideoModal from './video-modal';
-import { useMessageNotifications } from '../../hooks/use-message-notification';
 
 interface ToolBarProps {
   showBackgroundSelector: boolean;
@@ -100,24 +98,7 @@ const ToolBar = memo(function ToolBar({
   const [showMainMenu, setShowMainMenu] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
   
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatWithUser, setChatWithUser] = useState<IUser | null>(null);
   const [videoOpen, setVideoOpen] = useState(false);
-
-  const handleOpenChat = (user: IUser) => {
-    setChatWithUser(user);
-    setChatOpen(true);
-  };
-
-  const handleCloseChat = () => {
-    setChatOpen(false);
-    setChatWithUser(null);
-  };
-
-  useMessageNotifications({ 
-    onOpenChat: handleOpenChat,
-    currentUser: currentUser 
-  });
 
   useEffect(() => {
     let ticking = false;
@@ -736,7 +717,6 @@ const ToolBar = memo(function ToolBar({
         isOpen={showFriendsModal}
         onClose={() => setShowFriendsModal(false)}
         currentUser={currentUser}
-        onOpenChat={handleOpenChat}
       />
 
       <VideoModal
@@ -744,15 +724,6 @@ const ToolBar = memo(function ToolBar({
         onClose={() => setVideoOpen(false)}
         currentUser={currentUser}
       />
-
-      {chatOpen && chatWithUser && currentUser && (
-        <ChatModal
-          isOpen={chatOpen}
-          onClose={handleCloseChat}
-          currentUser={currentUser}
-          chatUser={chatWithUser}
-        />
-      )}
     </motion.div>
   );
 });

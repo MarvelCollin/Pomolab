@@ -88,6 +88,23 @@ wss.on('connection', (ws) => {
         });
         
         console.log(`Broadcasted message from client to ${clients.size} clients on channel ${channel}`);
+      } else if (data.type === 'video_call_notification') {
+        const { channel = 'video-calls', data: notificationData } = data;
+        
+        const broadcastData = {
+          event: 'VideoCallNotification',
+          channel,
+          data: notificationData
+        };
+
+        clients.forEach(client => {
+          if (client.readyState === client.OPEN && 
+              (client.channel === channel || client.channel === undefined)) {
+            client.send(JSON.stringify(broadcastData));
+          }
+        });
+        
+        console.log(`Broadcasted video call notification to ${clients.size} clients on channel ${channel}`);
       }
     } catch (error) {
       console.error('Error parsing message:', error);
@@ -190,6 +207,46 @@ app.post('/broadcast/friend-notification', (req, res) => {
 
   console.log(`Broadcasted friend notification (${action}) to ${broadcastCount} clients on channel ${channel}`);
   res.json({ status: 'Friend notification broadcasted', clients: broadcastCount, action });
+});
+
+app.post('/broadcast/video-call-notification', (req, res) => {
+  const { 
+    type,
+    callId,
+    meetingId,
+    token,
+    from_user,
+    to_user,
+    target_user_id,
+    channel = 'video-calls' 
+  } = req.body;
+  
+  const broadcastData = {
+    event: 'VideoCallNotification',
+    channel,
+    data: {
+      type,
+      callId,
+      meetingId,
+      token,
+      from_user,
+      to_user,
+      target_user_id,
+      timestamp: new Date().toISOString()
+    }
+  };
+
+  let broadcastCount = 0;
+  clients.forEach(client => {
+    if (client.readyState === client.OPEN && 
+        (client.channel === channel || client.channel === undefined)) {
+      client.send(JSON.stringify(broadcastData));
+      broadcastCount++;
+    }
+  });
+
+  console.log(`Broadcasted video call notification (${type}) to ${broadcastCount} clients on channel ${channel}`);
+  res.json({ status: 'Video call notification broadcasted', clients: broadcastCount, type });
 });
 
 app.get('/status', (req, res) => {
