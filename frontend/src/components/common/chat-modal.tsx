@@ -21,7 +21,7 @@ export default function ChatModal({
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   
-  const { showError, showSuccess, showInfo } = useToast();
+  const { showError, showSuccess } = useToast();
 
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
@@ -105,6 +105,7 @@ export default function ChatModal({
 
   useEffect(() => {
     if (isOpen && currentUser && chatUser) {
+      messageService.setChatOpen(chatUser.id);
       loadConversation();
       
       const handleNewMessage = (notification: any) => {
@@ -120,7 +121,6 @@ export default function ChatModal({
             setMessages(prev => {
               const exists = prev.some(existingMsg => existingMsg.id === msg.id);
               if (!exists) {
-                showInfo('New message', `${chatUser.username}: ${msg.message.substring(0, 50)}${msg.message.length > 50 ? '...' : ''}`);
                 return [...prev, enhancedMessage];
               }
               return prev;
@@ -151,8 +151,11 @@ export default function ChatModal({
       const unsubscribe = messageService.subscribeToUserMessages(currentUser.id, handleNewMessage);
       
       return () => {
+        messageService.setChatClosed(chatUser.id);
         unsubscribe();
       };
+    } else if (!isOpen && chatUser) {
+      messageService.setChatClosed(chatUser.id);
     }
   }, [isOpen, currentUser, chatUser, loadConversation, scrollToBottom]);
 

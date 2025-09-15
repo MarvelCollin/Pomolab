@@ -100,13 +100,6 @@ export default function Navbar() {
             
             <div className="w-px h-6 bg-white/30"></div>
             
-            <Link
-              to="/learn-together"
-              className="px-4 py-2 bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 text-white rounded-xl transition-all duration-200 text-sm font-medium shadow-lg"
-            >
-              Learn Together
-            </Link>
-            
             <button className="px-4 py-2 bg-white/20 backdrop-blur-2xl border border-white/10 hover:bg-white/30 text-white rounded-xl transition-all duration-200 text-sm font-medium shadow-lg flex items-center gap-2">
               <User className="w-4 h-4" />
               Login / Register
@@ -133,7 +126,6 @@ export default function Navbar() {
               <Link to="/services" className="text-white/80 hover:text-white drop-shadow">Services</Link>
               <Link to="/products" className="text-white/80 hover:text-white drop-shadow">Products</Link>
               <Link to="/blog" className="text-white/80 hover:text-white drop-shadow">Blog</Link>
-              <Link to="/learn-together" className="text-white/80 hover:text-white drop-shadow">Learn Together</Link>
               <div className="flex flex-col gap-2 pt-2">
                 <button className="px-4 py-2 bg-white/20 backdrop-blur-2xl border border-white/10 hover:bg-white/30 text-white rounded-xl transition-all duration-200 text-sm font-medium shadow-lg w-full">Login / Register</button>
               </div>

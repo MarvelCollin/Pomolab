@@ -18,7 +18,8 @@ import {
   Square,
   User,
   LogOut,
-  Users
+  Users,
+  Video
 } from 'lucide-react';
 import type { IBackground } from '../../interfaces/IBackground';
 import type { IMusic } from '../../interfaces/IMusic';
@@ -26,6 +27,7 @@ import type { IAudioEffect } from '../../interfaces/IAudioEffect';
 import type { IUser } from '../../interfaces/IUser';
 import FriendsModal from './friends-modal';
 import ChatModal from './chat-modal';
+import VideoModal from './video-modal';
 import { useMessageNotifications } from '../../hooks/use-message-notification';
 
 interface ToolBarProps {
@@ -100,6 +102,7 @@ const ToolBar = memo(function ToolBar({
   
   const [chatOpen, setChatOpen] = useState(false);
   const [chatWithUser, setChatWithUser] = useState<IUser | null>(null);
+  const [videoOpen, setVideoOpen] = useState(false);
 
   const handleOpenChat = (user: IUser) => {
     setChatWithUser(user);
@@ -344,6 +347,21 @@ const ToolBar = memo(function ToolBar({
                   >
                     <Users className="w-4 h-4 text-white/90" />
                     <span className="text-white text-sm font-medium">Friends & Chat</span>
+                  </motion.button>
+                )}
+
+                {currentUser && (
+                  <motion.button
+                    onClick={() => {
+                      setVideoOpen(true);
+                      setShowMainMenu(false);
+                    }}
+                    className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group"
+                    whileHover={{ x: 4 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Video className="w-4 h-4 text-white/90" />
+                    <span className="text-white text-sm font-medium">Video Call</span>
                   </motion.button>
                 )}
 
@@ -719,6 +737,12 @@ const ToolBar = memo(function ToolBar({
         onClose={() => setShowFriendsModal(false)}
         currentUser={currentUser}
         onOpenChat={handleOpenChat}
+      />
+
+      <VideoModal
+        isOpen={videoOpen}
+        onClose={() => setVideoOpen(false)}
+        currentUser={currentUser}
       />
 
       {chatOpen && chatWithUser && currentUser && (

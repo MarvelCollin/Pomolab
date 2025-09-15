@@ -3,6 +3,7 @@ import SearchModal from '../common/search-modal';
 import FriendsModal from '../common/friends-modal';
 import LoginModal from '../common/login-modal';
 import ChatModal from '../common/chat-modal';
+import VideoModal from '../common/video-modal';
 import { useMessageNotifications } from '../../hooks/use-message-notification';
 import type { AppState, AppAction } from '../../hooks/use-app-state';
 import type { IUser } from '../../interfaces/IUser';
@@ -26,6 +27,7 @@ const ModalsContainer = memo(function ModalsContainer({
 }: ModalsContainerProps) {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatWithUser, setChatWithUser] = useState<IUser | null>(null);
+  const [videoOpen, setVideoOpen] = useState(false);
 
   const handleOpenChat = (user: IUser) => {
     setChatWithUser(user);
@@ -35,6 +37,14 @@ const ModalsContainer = memo(function ModalsContainer({
   const handleCloseChat = () => {
     setChatOpen(false);
     setChatWithUser(null);
+  };
+
+  const handleOpenVideoModal = () => {
+    setVideoOpen(true);
+  };
+
+  const handleCloseVideoModal = () => {
+    setVideoOpen(false);
   };
 
   const { ToastContainer } = useMessageNotifications({ 
@@ -47,6 +57,7 @@ const ModalsContainer = memo(function ModalsContainer({
         isOpen={state.ui.showSearchModal}
         onClose={handleCloseSearchModal}
         onOpenFriendsModal={handleOpenFriendsModal}
+        onOpenVideoModal={handleOpenVideoModal}
       />
 
       <FriendsModal
@@ -60,6 +71,12 @@ const ModalsContainer = memo(function ModalsContainer({
         isOpen={state.ui.showLoginModal}
         onClose={() => dispatch({ type: 'UPDATE_UI', payload: { showLoginModal: false } })}
         onLogin={handleLogin}
+      />
+
+      <VideoModal
+        isOpen={videoOpen}
+        onClose={handleCloseVideoModal}
+        currentUser={state.auth.currentUser}
       />
 
       {chatOpen && chatWithUser && state.auth.currentUser && (

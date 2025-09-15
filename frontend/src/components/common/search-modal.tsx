@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Users, UserPlus } from 'lucide-react';
+import { Search, X, Users, UserPlus, Video } from 'lucide-react';
 import type { ISearchModalProps, ISearchResult } from '../../interfaces/ISearchModal';
 import { AuthTrigger } from '../../utils/auth-trigger';
 
-function SearchModal({ isOpen, onClose, onOpenFriendsModal }: ISearchModalProps) {
+function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: ISearchModalProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<ISearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -55,6 +55,21 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal }: ISearchModalProps)
           }
         }
       }
+    },
+    {
+      id: 'video-call',
+      title: 'Video Call',
+      description: 'Start or join a video meeting',
+      category: 'video',
+      icon: Video,
+      requireAuth: true,
+      action: () => {
+        if (AuthTrigger.checkAuthForMutation()) {
+          if (onOpenVideoModal) {
+            onOpenVideoModal();
+          }
+        }
+      }
     }
   ];
 
@@ -98,6 +113,7 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal }: ISearchModalProps)
 
   const getCategoryColor = (category: string) => {
     if (category === 'friends') return 'text-emerald-400';
+    if (category === 'video') return 'text-blue-400';
     return 'text-white/60';
   };
 

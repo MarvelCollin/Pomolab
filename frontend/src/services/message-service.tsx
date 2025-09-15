@@ -1,5 +1,6 @@
 import { socketService } from './socket-service';
 import { MessageApi } from '../apis/message-api';
+import { UserApi } from '../apis/user-api';
 import type { IMessage } from '../interfaces/IMessage';
 import type { IUser } from '../interfaces/IUser';
 
@@ -17,6 +18,8 @@ class MessageService {
   private chatOpenCallback: ((user: IUser) => void) | null = null;
   private currentUser: IUser | null = null;
   private isInitialized: boolean = false;
+  private userCache: { [userId: number]: IUser } = {};
+  private openChatUsers: Set<number> = new Set();
 
   constructor() {
     this.initializeMessageListening();
@@ -58,48 +61,47 @@ class MessageService {
       timestamp: notification.timestamp || new Date().toISOString()
     };
     
-    if (this.messageListeners[notification.message.to_user_id]) {
-      this.messageListeners[notification.message.to_user_id].forEach(callback => {
-        callback(messageNotification);
+    if (this.currentUser && notification.message.to_user_id === this.currentUser.id) {
+      if (this.messageListeners[this.currentUser.id]) {
+        this.messageListeners[this.currentUser.id].forEach(callback => {
+          callback(messageNotification);
+        });
+      }
+      
+      this.triggerToastNotification(messageNotification).catch(error => {
+        console.error('Error triggering toast notification:', error);
       });
     }
-
-    if (this.messageListeners[notification.message.from_user_id]) {
-      this.messageListeners[notification.message.from_user_id].forEach(callback => {
-        callback(messageNotification);
-      });
-    }
-
-    this.triggerToastNotification(messageNotification);
   }
 
-  private triggerToastNotification(notification: IMessageNotification): void {
-    this.toastCallbacks.forEach(callback => {
-      if (notification.type === 'message_received' || notification.type === 'message_updated') {
-        const fromUser = notification.from_user || { 
-          id: notification.message.from_user_id,
-          username: `User ${notification.message.from_user_id}`,
-          email: '',
-          created_at: '',
-          updated_at: ''
+  private async triggerToastNotification(notification: IMessageNotification): Promise<void> {
+    if (notification.type === 'message_received' || notification.type === 'message_updated') {
+      const shouldShowNotification = this.currentUser && 
+        notification.message.to_user_id === this.currentUser.id &&
+        notification.message.from_user_id !== this.currentUser.id &&
+        !this.openChatUsers.has(notification.message.from_user_id);
+      
+      if (shouldShowNotification) {
+        const fromUser = notification.from_user || await this.getUserData(notification.message.from_user_id);
+        const messagePreview = notification.message.message.length > 50 
+          ? `${notification.message.message.substring(0, 50)}...` 
+          : notification.message.message;
+        
+        const options = {
+          onClick: () => this.openChatWithUser(fromUser),
+          userData: fromUser,
+          persistent: true
         };
         
-        const shouldShowNotification = this.currentUser && 
-          notification.message.to_user_id === this.currentUser.id &&
-          notification.message.from_user_id !== this.currentUser.id;
-        
-        if (shouldShowNotification) {
-          const options = {
-            onClick: () => this.openChatWithUser(fromUser),
-            userData: fromUser,
-            persistent: true
-          };
-          callback('info', 'New Message', `Message from ${fromUser.username}`, options);
-        }
-      } else if (notification.type === 'message_failed') {
-        callback('error', 'Message Failed', 'Failed to send message');
+        this.toastCallbacks.forEach(callback => {
+          callback('info', `New message from ${fromUser.username}`, messagePreview, options);
+        });
       }
-    });
+    } else if (notification.type === 'message_failed') {
+      this.toastCallbacks.forEach(callback => {
+        callback('error', 'Message Failed', 'Failed to send message');
+      });
+    }
   }
 
   public setChatOpenCallback(callback: (user: IUser) => void): void {
@@ -110,6 +112,41 @@ class MessageService {
     if (this.chatOpenCallback) {
       this.chatOpenCallback(user);
     }
+  }
+
+  private async getUserData(userId: number): Promise<IUser> {
+    if (this.userCache[userId]) {
+      return this.userCache[userId];
+    }
+    
+    if (this.currentUser && this.currentUser.id === userId) {
+      this.userCache[userId] = this.currentUser;
+      return this.currentUser;
+    }
+    
+    try {
+      const user = await UserApi.getUserById(userId);
+      this.userCache[userId] = user;
+      return user;
+    } catch (error) {
+      const fallbackUser = {
+        id: userId,
+        username: `User ${userId}`,
+        email: '',
+        created_at: '',
+        updated_at: ''
+      };
+      this.userCache[userId] = fallbackUser;
+      return fallbackUser;
+    }
+  }
+
+  public setChatOpen(userId: number): void {
+    this.openChatUsers.add(userId);
+  }
+
+  public setChatClosed(userId: number): void {
+    this.openChatUsers.delete(userId);
   }
 
   public subscribeToToastNotifications(callback: (type: string, title: string, message?: string, options?: any) => void): () => void {
@@ -179,14 +216,6 @@ class MessageService {
               tempId: tempId
             }
           });
-
-          socketService.broadcastMessageNotification(
-            actualMessage,
-            messageData.from_user_id,
-            messageData.to_user_id,
-            this.currentUser,
-            undefined
-          );
         } catch (error) {
           socketService.sendDirectMessage({
             type: 'message_failed',

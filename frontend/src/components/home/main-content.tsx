@@ -1,6 +1,5 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import PomodoroTimer from '../pomodoro/pomodoro-timer';
 import TaskList from '../pomodoro/task-list';
 import type { AppState, AppAction } from '../../hooks/use-app-state';
@@ -119,12 +118,9 @@ const MainContent = memo(function MainContent({
                   state.ui.pomodoroMinimized ? 'opacity-0 h-0 overflow-hidden mt-0' : 'opacity-100 h-auto mt-6'
                 }`}
               >
-                <Link
-                  to="/learn-together"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-2xl border border-white/20 hover:bg-white/20 text-white rounded-xl transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-xl"
-                >
-                  Join Learning Session
-                </Link>
+                <p className="text-white/60 text-sm">
+                  Use the video call feature in the top-right menu to collaborate with friends
+                </p>
               </div>
             </div>
           </div>

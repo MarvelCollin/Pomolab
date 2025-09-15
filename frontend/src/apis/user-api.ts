@@ -28,7 +28,17 @@ export class UserApi {
   }
 
   static async getUserById(id: number): Promise<IUser> {
-    const response = await fetch(`${API_BASE_URL}/api/users/${id}`);
+    const token = localStorage.getItem('authToken');
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
+      headers
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch user');
     }
