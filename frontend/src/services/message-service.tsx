@@ -13,13 +13,28 @@ export interface IMessageNotification {
 
 class MessageService {
   private messageListeners: { [userId: number]: ((notification: IMessageNotification) => void)[] } = {};
-  private toastCallbacks: ((type: string, title: string, message?: string) => void)[] = [];
+  private toastCallbacks: ((type: string, title: string, message?: string, options?: any) => void)[] = [];
+  private chatOpenCallback: ((user: IUser) => void) | null = null;
+  private currentUser: IUser | null = null;
+  private isInitialized: boolean = false;
 
   constructor() {
     this.initializeMessageListening();
   }
 
+  public setCurrentUser(user: IUser | null): void {
+    this.currentUser = user;
+    
+    if (!this.isInitialized) {
+      this.initializeMessageListening();
+    }
+  }
+
   private initializeMessageListening(): void {
+    if (this.isInitialized) {
+      return;
+    }
+    
     socketService.listenToMessageChannel((data: any) => {
       if (data.event === 'MessageSent' && data.data) {
         this.handleMessageNotification(data.data);
@@ -27,14 +42,19 @@ class MessageService {
         this.handleMessageNotification(data.data);
       } else if (data.event === 'MessageUpdate' && data.data) {
         this.handleMessageNotification(data.data);
+      } else if (data.type && data.message) {
+        this.handleMessageNotification(data);
       }
     });
+    this.isInitialized = true;
   }
 
   private handleMessageNotification(notification: any): void {
     const messageNotification: IMessageNotification = {
       type: notification.type,
       message: notification.message,
+      from_user: notification.from_user,
+      to_user: notification.to_user,
       timestamp: notification.timestamp || new Date().toISOString()
     };
     
@@ -55,15 +75,44 @@ class MessageService {
 
   private triggerToastNotification(notification: IMessageNotification): void {
     this.toastCallbacks.forEach(callback => {
-      if (notification.type === 'message_received') {
-        callback('info', 'New Message', `Message from user ${notification.message.from_user_id}`);
+      if (notification.type === 'message_received' || notification.type === 'message_updated') {
+        const fromUser = notification.from_user || { 
+          id: notification.message.from_user_id,
+          username: `User ${notification.message.from_user_id}`,
+          email: '',
+          created_at: '',
+          updated_at: ''
+        };
+        
+        const shouldShowNotification = this.currentUser && 
+          notification.message.to_user_id === this.currentUser.id &&
+          notification.message.from_user_id !== this.currentUser.id;
+        
+        if (shouldShowNotification) {
+          const options = {
+            onClick: () => this.openChatWithUser(fromUser),
+            userData: fromUser,
+            persistent: true
+          };
+          callback('info', 'New Message', `Message from ${fromUser.username}`, options);
+        }
       } else if (notification.type === 'message_failed') {
         callback('error', 'Message Failed', 'Failed to send message');
       }
     });
   }
 
-  public subscribeToToastNotifications(callback: (type: string, title: string, message?: string) => void): () => void {
+  public setChatOpenCallback(callback: (user: IUser) => void): void {
+    this.chatOpenCallback = callback;
+  }
+
+  private openChatWithUser(user: IUser): void {
+    if (this.chatOpenCallback) {
+      this.chatOpenCallback(user);
+    }
+  }
+
+  public subscribeToToastNotifications(callback: (type: string, title: string, message?: string, options?: any) => void): () => void {
     this.toastCallbacks.push(callback);
     
     return () => {
@@ -130,6 +179,14 @@ class MessageService {
               tempId: tempId
             }
           });
+
+          socketService.broadcastMessageNotification(
+            actualMessage,
+            messageData.from_user_id,
+            messageData.to_user_id,
+            this.currentUser,
+            undefined
+          );
         } catch (error) {
           socketService.sendDirectMessage({
             type: 'message_failed',

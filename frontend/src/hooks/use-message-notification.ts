@@ -1,19 +1,37 @@
 import { useEffect } from 'react';
 import { messageService } from '../services/message-service';
 import { useToast } from '../components/common/toast';
+import type { IUser } from '../interfaces/IUser';
 
-export const useMessageNotifications = () => {
-  const { showInfo, showError } = useToast();
+interface UseMessageNotificationsProps {
+  onOpenChat?: (user: IUser) => void;
+  currentUser?: IUser | null;
+}
+
+export const useMessageNotifications = ({ onOpenChat, currentUser }: UseMessageNotificationsProps = {}) => {
+  const { showInfo, showError, ToastContainer } = useToast();
 
   useEffect(() => {
-    const unsubscribe = messageService.subscribeToToastNotifications((type, title, message) => {
+    if (currentUser) {
+      messageService.setCurrentUser(currentUser);
+    }
+    
+    if (onOpenChat) {
+      messageService.setChatOpenCallback(onOpenChat);
+    }
+
+    const unsubscribe = messageService.subscribeToToastNotifications((type, title, message, options) => {
       if (type === 'info') {
-        showInfo(title, message);
+        showInfo(title, message, options);
       } else if (type === 'error') {
-        showError(title, message);
+        showError(title, message, options);
       }
     });
 
-    return unsubscribe;
-  }, [showInfo, showError]);
+    return () => {
+      unsubscribe();
+    };
+  }, [currentUser?.id, onOpenChat]);
+
+  return { ToastContainer };
 };

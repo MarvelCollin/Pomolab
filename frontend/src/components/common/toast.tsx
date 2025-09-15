@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+  import React, { useEffect, useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export interface ToastItem {
@@ -8,6 +8,8 @@ export interface ToastItem {
   message?: string;
   duration?: number;
   persistent?: boolean;
+  onClick?: () => void;
+  userData?: any;
 }
 
 interface ToastProps {
@@ -72,9 +74,10 @@ const SingleToast: React.FC<SingleToastProps> = ({ toast, onRemove }) => {
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 300, scale: 0.8 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className={`relative max-w-sm w-full rounded-lg p-4 ${getToastStyles()}`}
+      className={`relative max-w-sm w-full rounded-lg p-4 ${getToastStyles()} ${toast.onClick ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={() => toast.onClick && toast.onClick()}
     >
       <div className="flex items-start space-x-3">
         <div className="flex-shrink-0">
@@ -93,7 +96,10 @@ const SingleToast: React.FC<SingleToastProps> = ({ toast, onRemove }) => {
         </div>
 
         <button
-          onClick={() => onRemove(toast.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(toast.id);
+          }}
           className="flex-shrink-0 ml-2 opacity-60 hover:opacity-100 transition-opacity duration-200"
         >
           <i className="fas fa-times text-sm" />

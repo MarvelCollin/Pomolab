@@ -26,6 +26,7 @@ import type { IAudioEffect } from '../../interfaces/IAudioEffect';
 import type { IUser } from '../../interfaces/IUser';
 import FriendsModal from './friends-modal';
 import ChatModal from './chat-modal';
+import { useMessageNotifications } from '../../hooks/use-message-notification';
 
 interface ToolBarProps {
   showBackgroundSelector: boolean;
@@ -109,6 +110,11 @@ const ToolBar = memo(function ToolBar({
     setChatOpen(false);
     setChatWithUser(null);
   };
+
+  useMessageNotifications({ 
+    onOpenChat: handleOpenChat,
+    currentUser: currentUser 
+  });
 
   useEffect(() => {
     let ticking = false;

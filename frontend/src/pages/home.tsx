@@ -291,7 +291,9 @@ export default function Home() {
         handleLogin={handleLogin}
       />
       
-      <ToastContainer />
+      <div className="fixed top-4 left-4 z-40">
+        <ToastContainer />
+      </div>
     </div>
   );
 }

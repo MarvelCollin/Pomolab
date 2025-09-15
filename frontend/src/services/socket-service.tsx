@@ -123,6 +123,7 @@ class SocketService {
     }
 
     public listenToMessageChannel(callback: (data: any) => void): () => void {
+        console.log('SocketService: Setting up message-channel listener');
         return this.subscribeToChannel('message-channel', callback);
     }
 
@@ -132,10 +133,6 @@ class SocketService {
 
     public listenToFriendNotifications(callback: (data: any) => void): () => void {
         return this.subscribeToChannel('friend-notifications', callback);
-    }
-
-    public listenToMessageNotifications(callback: (data: any) => void): () => void {
-        return this.subscribeToChannel('message-notifications', callback);
     }
 
     public listenToUserChannel(userId: number, callback: (data: any) => void): () => void {
@@ -187,21 +184,26 @@ class SocketService {
         }
     }
 
-    public broadcastMessageNotification(messageData: any, fromUserId: number, toUserId: number): void {
+    public broadcastMessageNotification(messageData: any, fromUserId: number, toUserId: number, fromUser?: any, toUser?: any): void {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             const notificationData = {
                 type: 'message_received',
                 message: messageData,
                 from_user_id: fromUserId,
                 to_user_id: toUserId,
+                from_user: fromUser,
+                to_user: toUser,
                 timestamp: new Date().toISOString()
             };
 
+            console.log('SocketService: Broadcasting message notification:', notificationData);
             this.ws.send(JSON.stringify({
                 type: 'broadcast',
-                channel: 'message-notifications',
+                channel: 'message-channel',
                 data: notificationData
             }));
+        } else {
+            console.log('SocketService: WebSocket not ready, cannot broadcast notification');
         }
     }
 
