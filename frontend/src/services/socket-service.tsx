@@ -10,7 +10,8 @@ class SocketService {
 
     private initializeWebSocket(): void {
         try {
-            this.ws = new WebSocket('ws://localhost:8080');
+            const socketUrl = import.meta.env.VITE_SOCKET_URL || 'ws://localhost:8080';
+            this.ws = new WebSocket(socketUrl);
 
             this.ws.onopen = () => {
                 this.isConnected = true;
@@ -56,12 +57,22 @@ class SocketService {
     private messageCallbacks: { [key: string]: ((data: any) => void)[] } = {};
 
     private handleMessage(data: any): void {
-        const { channel, data: messageData } = data;
-        
-        if (this.messageCallbacks[channel]) {
-            this.messageCallbacks[channel].forEach(callback => {
-                callback(messageData);
-            });
+        if (data.event && data.channel && data.data) {
+            const { event, channel, data: messageData } = data;
+            
+            if (this.messageCallbacks[channel]) {
+                this.messageCallbacks[channel].forEach(callback => {
+                    callback({ event, data: messageData });
+                });
+            }
+        } else if (data.channel && data.data) {
+            const { channel, data: messageData } = data;
+            
+            if (this.messageCallbacks[channel]) {
+                this.messageCallbacks[channel].forEach(callback => {
+                    callback(messageData);
+                });
+            }
         }
     }
 
@@ -154,6 +165,24 @@ class SocketService {
                 type: 'broadcast',
                 channel: 'friend-notifications',
                 data: notificationData
+            }));
+        }
+    }
+
+    public sendMessage(messageData: any): void {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({
+                type: 'send_message',
+                data: messageData
+            }));
+        }
+    }
+
+    public sendDirectMessage(data: any): void {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({
+                type: 'direct_message',
+                data: data
             }));
         }
     }

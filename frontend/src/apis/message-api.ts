@@ -123,7 +123,7 @@ export class MessageApi {
 
   static async sendMessage(messageData: { from_user_id: number; to_user_id: number; message: string; task_id?: number }): Promise<IMessage> {
     return AuthTrigger.wrapApiCall(authOperations.create, async () => {
-      const response = await fetch(`${API_BASE_URL}/api/messages/send`, {
+      const response = await fetch(`${API_BASE_URL}/api/messages`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(messageData),

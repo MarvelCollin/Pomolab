@@ -13,4 +13,5 @@ export interface IChatMessage extends IMessage {
   fromUser?: IUser;
   toUser?: IUser;
   isOwn?: boolean;
+  isTemporary?: boolean;
 }

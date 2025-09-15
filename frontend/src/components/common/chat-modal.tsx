@@ -21,7 +21,7 @@ export default function ChatModal({
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   
-  const { showError } = useToast();
+  const { showError, showSuccess, showInfo } = useToast();
 
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
@@ -64,10 +64,10 @@ export default function ChatModal({
         message: newMessage.trim()
       };
       
-      const sentMessage = await messageService.sendMessage(messageData);
+      const tempMessage = await messageService.sendMessage(messageData);
       
       const enhancedMessage: IChatMessage = {
-        ...sentMessage,
+        ...tempMessage,
         isOwn: true,
         fromUser: currentUser,
         toUser: chatUser
@@ -76,8 +76,10 @@ export default function ChatModal({
       setMessages(prev => [...prev, enhancedMessage]);
       setNewMessage('');
       
+      showSuccess('Message sent', 'Your message was sent successfully');
+      
       if (onSendMessage) {
-        onSendMessage(newMessage.trim());
+        onSendMessage(messageData.message);
       }
       
       setTimeout(scrollToBottom, 100);
@@ -118,12 +120,31 @@ export default function ChatModal({
             setMessages(prev => {
               const exists = prev.some(existingMsg => existingMsg.id === msg.id);
               if (!exists) {
+                showInfo('New message', `${chatUser.username}: ${msg.message.substring(0, 50)}${msg.message.length > 50 ? '...' : ''}`);
                 return [...prev, enhancedMessage];
               }
               return prev;
             });
             setTimeout(scrollToBottom, 100);
           }
+        } else if (notification.type === 'message_updated' && notification.message) {
+          const msg = notification.message;
+          setMessages(prev => prev.map(existingMsg => {
+            if (existingMsg.id === msg.tempId) {
+              return {
+                ...existingMsg,
+                id: msg.id,
+                created_at: msg.created_at,
+                updated_at: msg.updated_at,
+                isTemporary: false
+              };
+            }
+            return existingMsg;
+          }));
+        } else if (notification.type === 'message_failed' && notification.message) {
+          const tempId = notification.message.id;
+          setMessages(prev => prev.filter(msg => msg.id !== tempId));
+          showError('Message failed to send', 'Please try again');
         }
       };
       
@@ -222,18 +243,23 @@ export default function ChatModal({
                       transition={{ duration: 0.2 }}
                     >
                       <div
-                        className={`max-w-[75%] rounded-2xl px-3 py-2 ${
+                        className={`max-w-[75%] rounded-2xl px-3 py-2 relative ${
                           message.isOwn
-                            ? 'bg-blue-500/80 text-white'
+                            ? `${message.isTemporary ? 'bg-blue-500/50' : 'bg-blue-500/80'} text-white`
                             : 'bg-white/20 text-white'
                         }`}
                       >
                         <p className="text-sm break-words">{message.message}</p>
-                        <p className={`text-xs mt-1 ${
-                          message.isOwn ? 'text-blue-100' : 'text-white/60'
-                        }`}>
-                          {formatTime(message.created_at)}
-                        </p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className={`text-xs ${
+                            message.isOwn ? 'text-blue-100' : 'text-white/60'
+                          }`}>
+                            {formatTime(message.created_at)}
+                          </p>
+                          {message.isTemporary && (
+                            <div className="w-2 h-2 bg-white/50 rounded-full animate-pulse ml-2" />
+                          )}
+                        </div>
                       </div>
                     </motion.div>
                   ))

@@ -4,7 +4,7 @@ import type { IMessage } from '../interfaces/IMessage';
 import type { IUser } from '../interfaces/IUser';
 
 export interface IMessageNotification {
-  type: 'message_sent' | 'message_received';
+  type: 'message_sent' | 'message_received' | 'message_updated' | 'message_failed';
   message: IMessage;
   from_user?: IUser;
   to_user?: IUser;
@@ -13,6 +13,7 @@ export interface IMessageNotification {
 
 class MessageService {
   private messageListeners: { [userId: number]: ((notification: IMessageNotification) => void)[] } = {};
+  private toastCallbacks: ((type: string, title: string, message?: string) => void)[] = [];
 
   constructor() {
     this.initializeMessageListening();
@@ -22,40 +23,52 @@ class MessageService {
     socketService.listenToMessageChannel((data: any) => {
       if (data.event === 'MessageSent' && data.data) {
         this.handleMessageNotification(data.data);
-      }
-    });
-
-    socketService.listenToMessageNotifications((data: any) => {
-      if (data.event === 'MessageNotification' && data.data) {
+      } else if (data.event === 'MessageNotification' && data.data) {
         this.handleMessageNotification(data.data);
-      }
-    });
-
-    socketService.listenToFriendNotifications((data: any) => {
-      if (data.action === 'message_sent' && data.friendship_data) {
-        this.handleMessageNotification({
-          type: 'message_received',
-          message: data.friendship_data,
-          timestamp: data.timestamp
-        });
+      } else if (data.event === 'MessageUpdate' && data.data) {
+        this.handleMessageNotification(data.data);
       }
     });
   }
 
-  private handleMessageNotification(notification: IMessageNotification): void {
-    const { message } = notification;
+  private handleMessageNotification(notification: any): void {
+    const messageNotification: IMessageNotification = {
+      type: notification.type,
+      message: notification.message,
+      timestamp: notification.timestamp || new Date().toISOString()
+    };
     
-    if (this.messageListeners[message.to_user_id]) {
-      this.messageListeners[message.to_user_id].forEach(callback => {
-        callback(notification);
+    if (this.messageListeners[notification.message.to_user_id]) {
+      this.messageListeners[notification.message.to_user_id].forEach(callback => {
+        callback(messageNotification);
       });
     }
 
-    if (this.messageListeners[message.from_user_id]) {
-      this.messageListeners[message.from_user_id].forEach(callback => {
-        callback(notification);
+    if (this.messageListeners[notification.message.from_user_id]) {
+      this.messageListeners[notification.message.from_user_id].forEach(callback => {
+        callback(messageNotification);
       });
     }
+
+    this.triggerToastNotification(messageNotification);
+  }
+
+  private triggerToastNotification(notification: IMessageNotification): void {
+    this.toastCallbacks.forEach(callback => {
+      if (notification.type === 'message_received') {
+        callback('info', 'New Message', `Message from user ${notification.message.from_user_id}`);
+      } else if (notification.type === 'message_failed') {
+        callback('error', 'Message Failed', 'Failed to send message');
+      }
+    });
+  }
+
+  public subscribeToToastNotifications(callback: (type: string, title: string, message?: string) => void): () => void {
+    this.toastCallbacks.push(callback);
+    
+    return () => {
+      this.toastCallbacks = this.toastCallbacks.filter(cb => cb !== callback);
+    };
   }
 
   public subscribeToUserMessages(userId: number, callback: (notification: IMessageNotification) => void): () => void {
@@ -65,16 +78,6 @@ class MessageService {
     
     this.messageListeners[userId].push(callback);
 
-    const unsubscribeUserChannel = socketService.listenToUserChannel(userId, (data: any) => {
-      if (data.event === 'new-message' && data.data) {
-        this.handleMessageNotification({
-          type: 'message_received',
-          message: data.data,
-          timestamp: data.data.created_at || new Date().toISOString()
-        });
-      }
-    });
-
     return () => {
       if (this.messageListeners[userId]) {
         this.messageListeners[userId] = this.messageListeners[userId].filter(cb => cb !== callback);
@@ -83,8 +86,6 @@ class MessageService {
           delete this.messageListeners[userId];
         }
       }
-      
-      unsubscribeUserChannel();
     };
   }
 
@@ -95,46 +96,54 @@ class MessageService {
     task_id?: number;
   }): Promise<IMessage> {
     try {
-      const sentMessage = await MessageApi.sendMessage(messageData);
+      const tempId = Date.now().toString();
+      const tempMessage: IMessage = {
+        id: tempId,
+        from_user_id: messageData.from_user_id,
+        to_user_id: messageData.to_user_id,
+        message: messageData.message,
+        task_id: messageData.task_id || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        isTemporary: true,
+        tempId: tempId
+      };
 
-      await this.broadcastMessage(sentMessage);
+      socketService.sendMessage({
+        ...messageData,
+        tempId: tempId
+      });
 
-      return sentMessage;
+      setTimeout(async () => {
+        try {
+          const actualMessage = await MessageApi.sendMessage({
+            from_user_id: messageData.from_user_id,
+            to_user_id: messageData.to_user_id,
+            message: messageData.message,
+            task_id: messageData.task_id
+          });
+          
+          socketService.sendDirectMessage({
+            type: 'message_updated',
+            message: {
+              ...actualMessage,
+              tempId: tempId
+            }
+          });
+        } catch (error) {
+          socketService.sendDirectMessage({
+            type: 'message_failed',
+            message: {
+              id: tempId
+            }
+          });
+        }
+      }, 0);
+
+      return tempMessage;
     } catch (error) {
       console.error('Failed to send message:', error);
       throw error;
-    }
-  }
-
-  private async broadcastMessage(message: IMessage): Promise<void> {
-    try {
-      const response = await fetch('http://localhost:8080/broadcast/message-notification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message_data: message,
-          from_user_id: message.from_user_id,
-          to_user_id: message.to_user_id,
-          channel: 'message-notifications'
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP broadcast failed: ${response.status}`);
-      }
-      
-      console.log('Message broadcast successfully via HTTP');
-    } catch (error) {
-      console.warn('HTTP broadcast failed, using WebSocket fallback:', error);
-      
-      try {
-        socketService.broadcastMessageNotification(message, message.from_user_id, message.to_user_id);
-        console.log('Message broadcast successfully via WebSocket fallback');
-      } catch (wsError) {
-        console.error('Both HTTP and WebSocket broadcast failed:', wsError);
-      }
     }
   }
 
