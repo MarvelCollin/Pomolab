@@ -78,12 +78,11 @@ services:
       POSTGRES_DB: pomolab
       POSTGRES_USER: root
       POSTGRES_PASSWORD: password
-      POSTGRES_ROOT_PASSWORD: password 
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - pomolab-network
-
+      
   nginx:
     image: nginx:alpine
     container_name: nginx-server
