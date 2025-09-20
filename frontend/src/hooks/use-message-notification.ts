@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { messageService } from '../services/message-service';
+import { notificationService } from '../services/notification-service';
 import { useToast } from '../components/common/toast';
 import type { IUser } from '../interfaces/IUser';
 
@@ -13,14 +13,14 @@ export const useMessageNotifications = ({ onOpenChat, currentUser }: UseMessageN
 
   useEffect(() => {
     if (currentUser) {
-      messageService.setCurrentUser(currentUser);
+      notificationService.setCurrentUser(currentUser);
     }
     
     if (onOpenChat) {
-      messageService.setChatOpenCallback(onOpenChat);
+      notificationService.setChatOpenCallback(onOpenChat);
     }
 
-    const unsubscribe = messageService.subscribeToToastNotifications((type, title, message, options) => {
+    const unsubscribe = notificationService.subscribeToToastNotifications((type, title, message, options) => {
       if (type === 'info') {
         showInfo(title, message, options);
       } else if (type === 'error') {

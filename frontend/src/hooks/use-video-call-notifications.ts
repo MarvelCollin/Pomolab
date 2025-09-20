@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { videoCallNotificationService } from '../services/video-call-notification-service';
+import { notificationService } from '../services/notification-service';
 import { useToast } from '../components/common/toast';
 import type { IUser } from '../interfaces/IUser';
 
@@ -12,25 +12,42 @@ export const useVideoCallNotifications = ({
   onJoinVideoCall, 
   currentUser 
 }: UseVideoCallNotificationsProps = {}) => {
-  const { ToastContainer } = useToast();
+  const { ToastContainer, showSuccess, showError, showWarning, showInfo } = useToast();
 
   useEffect(() => {
     if (currentUser) {
-      videoCallNotificationService.setCurrentUser(currentUser);
-    }
-    
-    if (onJoinVideoCall) {
-      videoCallNotificationService.setVideoCallAcceptCallback(onJoinVideoCall);
+      notificationService.setCurrentUser(currentUser);
     }
 
-    const unsubscribe = videoCallNotificationService.subscribeToToastNotifications((type, title, message, options) => {
-      console.log('Video call notification:', { type, title, message, options });
+    const unsubscribe = notificationService.subscribeToToastNotifications((type, title, message, options) => {
+      switch (type) {
+        case 'success':
+          showSuccess(title, message, options);
+          break;
+        case 'error':
+          showError(title, message, options);
+          break;
+        case 'warning':
+          showWarning(title, message, options);
+          break;
+        case 'info':
+          showInfo(title, message, options);
+          break;
+        default:
+          showInfo(title, message, options);
+      }
     });
 
     return () => {
       unsubscribe();
     };
-  }, [currentUser?.id, onJoinVideoCall]);
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    if (onJoinVideoCall) {
+      notificationService.setVideoModalOpenCallback(onJoinVideoCall);
+    }
+  }, [onJoinVideoCall]);
 
   return { ToastContainer };
 };

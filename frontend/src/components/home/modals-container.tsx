@@ -29,6 +29,7 @@ const ModalsContainer = memo(function ModalsContainer({
   const [chatOpen, setChatOpen] = useState(false);
   const [chatWithUser, setChatWithUser] = useState<IUser | null>(null);
   const [videoOpen, setVideoOpen] = useState(false);
+  const [joinMeetingData, setJoinMeetingData] = useState<{meetingId: string; token: string} | null>(null);
 
   const handleOpenChat = (user: IUser) => {
     setChatWithUser(user);
@@ -46,9 +47,11 @@ const ModalsContainer = memo(function ModalsContainer({
 
   const handleCloseVideoModal = () => {
     setVideoOpen(false);
+    setJoinMeetingData(null);
   };
 
-  const handleJoinVideoCall = (_meetingId: string, _token: string) => {
+  const handleJoinVideoCall = (meetingId: string, token: string) => {
+    setJoinMeetingData({ meetingId, token });
     setVideoOpen(true);
   };
 
@@ -87,6 +90,7 @@ const ModalsContainer = memo(function ModalsContainer({
         isOpen={videoOpen}
         onClose={handleCloseVideoModal}
         currentUser={state.auth.currentUser}
+        joinMeetingData={joinMeetingData}
       />
 
       {chatOpen && chatWithUser && state.auth.currentUser && (

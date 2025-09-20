@@ -3,6 +3,7 @@ class SocketService {
     private isConnected: boolean = false;
     private reconnectAttempts: number = 0;
     private maxReconnectAttempts: number = 5;
+    private currentUserId: number | null = null;
 
     constructor() {
         this.initializeWebSocket();
@@ -16,18 +17,20 @@ class SocketService {
             this.ws.onopen = () => {
                 this.isConnected = true;
                 this.reconnectAttempts = 0;
-                console.log('WebSocket connected successfully');
                 this.resubscribeToChannels();
+                
+                if (this.currentUserId) {
+                    this.sendUserConnect(this.currentUserId);
+                }
             };
 
             this.ws.onclose = () => {
                 this.isConnected = false;
-                console.log('WebSocket disconnected');
                 this.handleReconnect();
             };
 
-            this.ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
+            this.ws.onerror = () => {
+                
             };
 
             this.ws.onmessage = (event) => {
@@ -35,19 +38,18 @@ class SocketService {
                     const data = JSON.parse(event.data);
                     this.handleMessage(data);
                 } catch (error) {
-                    console.error('Error parsing WebSocket message:', error);
+                    
                 }
             };
 
         } catch (error) {
-            console.error('Failed to initialize WebSocket:', error);
+            
         }
     }
 
     private handleReconnect(): void {
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
-            console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
             setTimeout(() => {
                 this.initializeWebSocket();
             }, 2000 * this.reconnectAttempts);
@@ -123,7 +125,6 @@ class SocketService {
     }
 
     public listenToMessageChannel(callback: (data: any) => void): () => void {
-        console.log('SocketService: Setting up message-channel listener');
         return this.subscribeToChannel('message-channel', callback);
     }
 
@@ -172,14 +173,16 @@ class SocketService {
 
     public broadcastVideoCallNotification(notificationData: any, targetUserId: number): void {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify({
+            const payload = {
                 type: 'broadcast',
                 channel: 'video-calls',
                 data: {
                     ...notificationData,
                     target_user_id: targetUserId
                 }
-            }));
+            };
+            
+            this.ws.send(JSON.stringify(payload));
         }
     }
 
@@ -213,14 +216,11 @@ class SocketService {
                 timestamp: new Date().toISOString()
             };
 
-            console.log('SocketService: Broadcasting message notification:', notificationData);
             this.ws.send(JSON.stringify({
                 type: 'broadcast',
                 channel: 'message-channel',
                 data: notificationData
             }));
-        } else {
-            console.log('SocketService: WebSocket not ready, cannot broadcast notification');
         }
     }
 
@@ -233,6 +233,22 @@ class SocketService {
 
     public getConnectionStatus(): boolean {
         return this.isConnected;
+    }
+
+    public setCurrentUser(userId: number | null): void {
+        this.currentUserId = userId;
+        if (userId && this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.sendUserConnect(userId);
+        }
+    }
+
+    private sendUserConnect(userId: number): void {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({
+                type: 'user_connect',
+                userId: userId
+            }));
+        }
     }
 }
 

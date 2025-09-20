@@ -5,7 +5,7 @@ import { MeetingProvider, useMeeting, useParticipant } from '@videosdk.live/reac
 import type { IVideoModal } from '../../interfaces/IVideoModal';
 import type { IFriend } from '../../interfaces/IFriend';
 import { createMeeting } from '../../services/video-call-service';
-import { videoCallNotificationService } from '../../services/video-call-notification-service';
+import { notificationService } from '../../services/notification-service';
 import { FriendApi } from '../../apis/friend-api';
 import { useToast } from './toast';
 import LoadingSpinner from './loading-spinner';
@@ -160,8 +160,9 @@ function VideoParticipantView({ participantId }: { participantId: string }) {
   );
 }
 
-function VideoMeetingContent({ onClose }: { onClose: () => void }) {
+function VideoMeetingContent({ onClose, autoJoin = false }: { onClose: () => void; autoJoin?: boolean }) {
   const [joined, setJoined] = useState(false);
+  const [hasAttemptedJoin, setHasAttemptedJoin] = useState(false);
   const { 
     join, 
     leave, 
@@ -172,7 +173,7 @@ function VideoMeetingContent({ onClose }: { onClose: () => void }) {
     localWebcamOn 
   } = useMeeting({
     onMeetingJoined: () => {
-      console.log('Meeting joined successfully');
+      setJoined(true);
     },
     onMeetingLeft: () => {
       onClose();
@@ -180,9 +181,15 @@ function VideoMeetingContent({ onClose }: { onClose: () => void }) {
   });
   const participantIds = Array.from(participants.keys());
 
+  useEffect(() => {
+    if (autoJoin && !joined && !hasAttemptedJoin) {
+      setHasAttemptedJoin(true);
+      join();
+    }
+  }, [autoJoin, joined, hasAttemptedJoin, join]);
+
   const handleJoin = () => {
     join();
-    setJoined(true);
   };
 
   const handleLeave = () => {
@@ -279,7 +286,8 @@ function VideoMeetingContent({ onClose }: { onClose: () => void }) {
 export default function VideoModal({
   isOpen,
   onClose,
-  currentUser
+  currentUser,
+  joinMeetingData
 }: IVideoModal) {
   const constraintsRef = useRef(null);
   const [meetingId, setMeetingId] = useState<string>("");
@@ -288,6 +296,7 @@ export default function VideoModal({
   const [friends, setFriends] = useState<IFriend[]>([]);
   const [selectedFriends, setSelectedFriends] = useState<Set<number>>(new Set());
   const [showFriendSelector, setShowFriendSelector] = useState(true);
+  const [isCreatedMeeting, setIsCreatedMeeting] = useState(false);
   const { showError, showSuccess, showInfo } = useToast();
 
   const loadFriends = useCallback(async () => {
@@ -297,7 +306,6 @@ export default function VideoModal({
       const friendsData = await FriendApi.getUserFriends(currentUser.id);
       setFriends(Array.isArray(friendsData) ? friendsData : []);
     } catch (error) {
-      console.error('Failed to load friends:', error);
       showError('Failed to load friends', 'Unable to load your friends list');
     }
   }, [currentUser, showError]);
@@ -333,12 +341,13 @@ export default function VideoModal({
       setToken(token);
       setMeetingId(roomId);
       setShowFriendSelector(false);
+      setIsCreatedMeeting(true);
       
       const selectedFriendUsers = friends
         .filter(f => f.friend && selectedFriends.has(f.friend.id))
         .map(f => f.friend!);
 
-      await videoCallNotificationService.sendVideoCallInvite(
+      await notificationService.sendVideoCallInvite(
         newCallId,
         roomId,
         token,
@@ -348,7 +357,6 @@ export default function VideoModal({
 
       showSuccess('Call Started', `Calling ${selectedFriendUsers.length} friend${selectedFriendUsers.length > 1 ? 's' : ''}`);
     } catch (error) {
-      console.error('Failed to create meeting:', error);
       showError('Failed to create meeting', 'Please try again');
     } finally {
       setLoading(false);
@@ -359,6 +367,7 @@ export default function VideoModal({
     setMeetingId(meetingId);
     setToken(token);
     setShowFriendSelector(false);
+    setIsCreatedMeeting(false);
     showInfo('Joining Call', 'Connecting to video call...');
   }, [showInfo]);
 
@@ -367,16 +376,22 @@ export default function VideoModal({
     setToken("");
     setShowFriendSelector(true);
     setSelectedFriends(new Set());
+    setIsCreatedMeeting(false);
     onClose();
   };
 
   useEffect(() => {
     if (isOpen && currentUser) {
       loadFriends();
-      videoCallNotificationService.setCurrentUser(currentUser);
-      videoCallNotificationService.setVideoCallAcceptCallback(joinExistingMeeting);
+      notificationService.setCurrentUser(currentUser);
     }
-  }, [isOpen, currentUser, loadFriends, joinExistingMeeting]);
+  }, [isOpen, currentUser, loadFriends]);
+
+  useEffect(() => {
+    if (joinMeetingData && isOpen) {
+      joinExistingMeeting(joinMeetingData.meetingId, joinMeetingData.token);
+    }
+  }, [joinMeetingData, isOpen, joinExistingMeeting]);
 
   if (!isOpen) return null;
 
@@ -471,7 +486,7 @@ export default function VideoModal({
                 }}
                 token={token}
               >
-                <VideoMeetingContent onClose={handleClose} />
+                <VideoMeetingContent onClose={handleClose} autoJoin={isCreatedMeeting || !!joinMeetingData} />
               </MeetingProvider>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">

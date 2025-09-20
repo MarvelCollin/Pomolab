@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Send, X, GripVertical, User, MessageCircle, Loader2 } from 'lucide-react';
 import type { IChatModal, IChatMessage } from '../../interfaces/IChatModal';
-import { messageService } from '../../services/message-service';
+import { notificationService } from '../../services/notification-service';
 import { useToast } from './toast';
 
 export default function ChatModal({
@@ -34,7 +34,7 @@ export default function ChatModal({
     
     setLoading(true);
     try {
-      const conversationMessages = await messageService.getConversation(currentUser.id, chatUser.id);
+      const conversationMessages = await notificationService.getConversation(currentUser.id, chatUser.id);
       
       const enhancedMessages: IChatMessage[] = conversationMessages.map((msg: any) => ({
         ...msg,
@@ -64,7 +64,7 @@ export default function ChatModal({
         message: newMessage.trim()
       };
       
-      const tempMessage = await messageService.sendMessage(messageData);
+      const tempMessage = await notificationService.sendMessage(messageData);
       
       const enhancedMessage: IChatMessage = {
         ...tempMessage,
@@ -105,7 +105,7 @@ export default function ChatModal({
 
   useEffect(() => {
     if (isOpen && currentUser && chatUser) {
-      messageService.setChatOpen(chatUser.id);
+      notificationService.setChatOpen(chatUser.id);
       loadConversation();
       
       const handleNewMessage = (notification: any) => {
@@ -148,14 +148,14 @@ export default function ChatModal({
         }
       };
       
-      const unsubscribe = messageService.subscribeToUserMessages(currentUser.id, handleNewMessage);
+      const unsubscribe = notificationService.subscribeToUserMessages(currentUser.id, handleNewMessage);
       
       return () => {
-        messageService.setChatClosed(chatUser.id);
+        notificationService.setChatClosed(chatUser.id);
         unsubscribe();
       };
     } else if (!isOpen && chatUser) {
-      messageService.setChatClosed(chatUser.id);
+      notificationService.setChatClosed(chatUser.id);
     }
   }, [isOpen, currentUser, chatUser, loadConversation, scrollToBottom]);
 

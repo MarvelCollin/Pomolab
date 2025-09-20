@@ -13,6 +13,7 @@ const server = app.listen(8080, () => {
 const wss = new WebSocketServer({ server });
 
 const clients = new Set();
+const userClients = new Map();
 
 wss.on('connection', (ws) => {
   console.log('New WebSocket connection');
@@ -27,6 +28,13 @@ wss.on('connection', (ws) => {
       if (data.type === 'subscribe') {
         ws.channel = data.channel;
         console.log(`Client subscribed to channel: ${data.channel}`);
+      } else if (data.type === 'user_connect') {
+        ws.userId = data.userId;
+        if (!userClients.has(data.userId)) {
+          userClients.set(data.userId, new Set());
+        }
+        userClients.get(data.userId).add(ws);
+        console.log(`User ${data.userId} connected, total clients for user: ${userClients.get(data.userId).size}`);
       } else if (data.type === 'send_message') {
         const { data: messageData } = data;
         
@@ -48,13 +56,17 @@ wss.on('connection', (ws) => {
           }
         };
 
-        clients.forEach(client => {
-          if (client.readyState === client.OPEN) {
-            client.send(JSON.stringify(broadcastData));
-          }
+        let broadcastCount = 0;
+        userClients.forEach((clientSet, userId) => {
+          clientSet.forEach(client => {
+            if (client.readyState === client.OPEN) {
+              client.send(JSON.stringify(broadcastData));
+              broadcastCount++;
+            }
+          });
         });
         
-        console.log(`Direct message sent from ${messageData.from_user_id} to ${messageData.to_user_id}`);
+        console.log(`Broadcasted message from ${messageData.from_user_id} to ${messageData.to_user_id} to ${broadcastCount} clients across ${userClients.size} users`);
       } else if (data.type === 'direct_message') {
         const { data: messageData } = data;
         
@@ -64,47 +76,53 @@ wss.on('connection', (ws) => {
           data: messageData
         };
 
-        clients.forEach(client => {
-          if (client.readyState === client.OPEN) {
-            client.send(JSON.stringify(broadcastData));
-          }
+        let broadcastCount = 0;
+        userClients.forEach((clientSet, userId) => {
+          clientSet.forEach(client => {
+            if (client.readyState === client.OPEN) {
+              client.send(JSON.stringify(broadcastData));
+              broadcastCount++;
+            }
+          });
         });
         
-        console.log(`Direct message update:`, messageData.type);
+        console.log(`Broadcasted message update (${messageData.type}) to ${broadcastCount} clients across ${userClients.size} users`);
       } else if (data.type === 'broadcast') {
         const { channel, data: messageData } = data;
         
-        const broadcastData = {
-          event: 'FriendNotification',
-          channel,
-          data: messageData
-        };
-
-        clients.forEach(client => {
-          if (client.readyState === client.OPEN && 
-              (client.channel === channel || client.channel === undefined)) {
-            client.send(JSON.stringify(broadcastData));
-          }
-        });
-        
-        console.log(`Broadcasted message from client to ${clients.size} clients on channel ${channel}`);
-      } else if (data.type === 'video_call_notification') {
-        const { channel = 'video-calls', data: notificationData } = data;
-        
-        const broadcastData = {
-          event: 'VideoCallNotification',
-          channel,
-          data: notificationData
-        };
-
-        clients.forEach(client => {
-          if (client.readyState === client.OPEN && 
-              (client.channel === channel || client.channel === undefined)) {
-            client.send(JSON.stringify(broadcastData));
-          }
-        });
-        
-        console.log(`Broadcasted video call notification to ${clients.size} clients on channel ${channel}`);
+        let broadcastData;
+        if (channel === 'video-calls') {
+          broadcastData = {
+            event: 'VideoCallNotification',
+            channel,
+            data: messageData
+          };
+          
+          let broadcastCount = 0;
+          userClients.forEach((clientSet, userId) => {
+            clientSet.forEach(client => {
+              if (client.readyState === client.OPEN) {
+                client.send(JSON.stringify(broadcastData));
+                broadcastCount++;
+              }
+            });
+          });
+          console.log(`Broadcasted video call notification to ${broadcastCount} clients across ${userClients.size} users`);
+        } else {
+          broadcastData = {
+            event: 'FriendNotification',
+            channel,
+            data: messageData
+          };
+          
+          clients.forEach(client => {
+            if (client.readyState === client.OPEN && 
+                (client.channel === channel || client.channel === undefined)) {
+              client.send(JSON.stringify(broadcastData));
+            }
+          });
+          console.log(`Broadcasted message from client to ${clients.size} clients on channel ${channel}`);
+        }
       }
     } catch (error) {
       console.error('Error parsing message:', error);
@@ -114,11 +132,28 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {
     console.log('WebSocket connection closed');
     clients.delete(ws);
+    
+    if (ws.userId && userClients.has(ws.userId)) {
+      userClients.get(ws.userId).delete(ws);
+      if (userClients.get(ws.userId).size === 0) {
+        userClients.delete(ws.userId);
+        console.log(`User ${ws.userId} disconnected completely`);
+      } else {
+        console.log(`User ${ws.userId} still has ${userClients.get(ws.userId).size} connections`);
+      }
+    }
   });
 
   ws.on('error', (error) => {
     console.error('WebSocket error:', error);
     clients.delete(ws);
+    
+    if (ws.userId && userClients.has(ws.userId)) {
+      userClients.get(ws.userId).delete(ws);
+      if (userClients.get(ws.userId).size === 0) {
+        userClients.delete(ws.userId);
+      }
+    }
   });
 });
 
@@ -132,18 +167,20 @@ app.post('/broadcast/message', (req, res) => {
   };
 
   let broadcastCount = 0;
-  clients.forEach(client => {
-    if (client.readyState === client.OPEN && 
-        (client.channel === channel || client.channel === undefined)) {
-      client.send(JSON.stringify(broadcastData));
-      broadcastCount++;
-    }
+  userClients.forEach((clientSet, userId) => {
+    clientSet.forEach(client => {
+      if (client.readyState === client.OPEN) {
+        client.send(JSON.stringify(broadcastData));
+        broadcastCount++;
+      }
+    });
   });
 
-  console.log(`Broadcasted message to ${broadcastCount} clients on channel ${channel}`);
+  console.log(`Broadcasted message to ${broadcastCount} clients across ${userClients.size} users on channel ${channel}`);
   res.json({ 
     status: 'Message broadcasted', 
     clients: broadcastCount,
+    users: userClients.size,
     message: message
   });
 });
@@ -160,15 +197,18 @@ app.post('/broadcast/task-update', (req, res) => {
     }
   };
 
-  clients.forEach(client => {
-    if (client.readyState === client.OPEN && 
-        (client.channel === channel || client.channel === undefined)) {
-      client.send(JSON.stringify(broadcastData));
-    }
+  let broadcastCount = 0;
+  userClients.forEach((clientSet, userId) => {
+    clientSet.forEach(client => {
+      if (client.readyState === client.OPEN) {
+        client.send(JSON.stringify(broadcastData));
+        broadcastCount++;
+      }
+    });
   });
 
-  console.log(`Broadcasted task update to ${clients.size} clients on channel ${channel}`);
-  res.json({ status: 'Task update broadcasted', clients: clients.size });
+  console.log(`Broadcasted task update to ${broadcastCount} clients across ${userClients.size} users on channel ${channel}`);
+  res.json({ status: 'Task update broadcasted', clients: broadcastCount, users: userClients.size });
 });
 
 app.post('/broadcast/friend-notification', (req, res) => {
@@ -197,62 +237,60 @@ app.post('/broadcast/friend-notification', (req, res) => {
   };
 
   let broadcastCount = 0;
-  clients.forEach(client => {
-    if (client.readyState === client.OPEN && 
-        (client.channel === channel || client.channel === undefined)) {
-      client.send(JSON.stringify(broadcastData));
-      broadcastCount++;
-    }
+  userClients.forEach((clientSet, userId) => {
+    clientSet.forEach(client => {
+      if (client.readyState === client.OPEN) {
+        client.send(JSON.stringify(broadcastData));
+        broadcastCount++;
+      }
+    });
   });
 
-  console.log(`Broadcasted friend notification (${action}) to ${broadcastCount} clients on channel ${channel}`);
-  res.json({ status: 'Friend notification broadcasted', clients: broadcastCount, action });
+  console.log(`Broadcasted friend notification (${action}) to ${broadcastCount} clients across ${userClients.size} users on channel ${channel}`);
+  res.json({ status: 'Friend notification broadcasted', clients: broadcastCount, users: userClients.size, action });
 });
 
-app.post('/broadcast/video-call-notification', (req, res) => {
-  const { 
-    type,
-    callId,
-    meetingId,
-    token,
-    from_user,
-    to_user,
-    target_user_id,
-    channel = 'video-calls' 
-  } = req.body;
+app.post('/broadcast/video-call-test', (req, res) => {
+  const { notification, channel = 'video-calls' } = req.body;
   
   const broadcastData = {
     event: 'VideoCallNotification',
     channel,
-    data: {
-      type,
-      callId,
-      meetingId,
-      token,
-      from_user,
-      to_user,
-      target_user_id,
-      timestamp: new Date().toISOString()
-    }
+    data: notification
   };
 
   let broadcastCount = 0;
-  clients.forEach(client => {
-    if (client.readyState === client.OPEN && 
-        (client.channel === channel || client.channel === undefined)) {
-      client.send(JSON.stringify(broadcastData));
-      broadcastCount++;
-    }
+  
+  userClients.forEach((clientSet, userId) => {
+    clientSet.forEach(client => {
+      if (client.readyState === client.OPEN) {
+        client.send(JSON.stringify(broadcastData));
+        broadcastCount++;
+      }
+    });
   });
 
-  console.log(`Broadcasted video call notification (${type}) to ${broadcastCount} clients on channel ${channel}`);
-  res.json({ status: 'Video call notification broadcasted', clients: broadcastCount, type });
+  console.log(`Broadcasted test video call notification to ${broadcastCount} clients across ${userClients.size} users`);
+  res.json({ 
+    status: 'Test video call notification broadcasted', 
+    clients: broadcastCount,
+    users: userClients.size,
+    notification: notification.type
+  });
 });
 
 app.get('/status', (req, res) => {
+  const connectedUsers = Array.from(userClients.keys());
+  const userConnectionCounts = {};
+  userClients.forEach((clients, userId) => {
+    userConnectionCounts[userId] = clients.size;
+  });
+  
   res.json({ 
     status: 'WebSocket server running',
-    clients: clients.size,
+    totalClients: clients.size,
+    connectedUsers: connectedUsers.length,
+    userConnections: userConnectionCounts,
     port: 8080
   });
 });
