@@ -331,7 +331,7 @@ class UserController extends Controller
             $user = $this->userRepository->findByEmail($validated['email']);
             
             if (!$user || !Hash::check($validated['password'], $user->password_hash)) {
-                return response()->json(['message' => 'Invalid credentials'], 401);
+                return response()->json(['message' => 'Invalid email or password'], 401);
             }
 
             $token = $user->createToken('auth-token')->plainTextToken;
@@ -350,7 +350,12 @@ class UserController extends Controller
                 'token' => $token
             ]);
         } catch (ValidationException $e) {
-            return response()->json(['errors' => $e->errors()], 422);
+            $allErrors = $e->errors();
+            $firstErrorArray = array_values($allErrors)[0] ?? ['Validation failed'];
+            $firstError = $firstErrorArray[0] ?? 'Validation failed';
+            return response()->json(['message' => $firstError], 422);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Login failed. Please try again.'], 500);
         }
     }
 
@@ -408,7 +413,12 @@ class UserController extends Controller
                 'token' => $token
             ], 201);
         } catch (ValidationException $e) {
-            return response()->json(['errors' => $e->errors()], 422);
+            $allErrors = $e->errors();
+            $firstErrorArray = array_values($allErrors)[0] ?? ['Validation failed'];
+            $firstError = $firstErrorArray[0] ?? 'Validation failed';
+            return response()->json(['message' => $firstError], 422);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Registration failed. Please try again.'], 500);
         }
     }
 
@@ -513,9 +523,12 @@ class UserController extends Controller
                 'token' => $token
             ]);
         } catch (ValidationException $e) {
-            return response()->json(['errors' => $e->errors()], 422);
+            $allErrors = $e->errors();
+            $firstErrorArray = array_values($allErrors)[0] ?? ['Validation failed'];
+            $firstError = $firstErrorArray[0] ?? 'Validation failed';
+            return response()->json(['message' => $firstError], 422);
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Google authentication failed'], 500);
+            return response()->json(['message' => 'Google authentication failed. Please try again.'], 500);
         }
     }
 

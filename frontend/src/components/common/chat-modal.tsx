@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { Send, X, GripVertical, User, MessageCircle, Loader2 } from 'lucide-react';
 import type { IChatModal, IChatMessage } from '../../interfaces/IChatModal';
 import { notificationService } from '../../services/notification-service';
-import { useToast } from './toast';
 import { formatChatTime } from '../../utils/time-utils';
 
 export default function ChatModal({
@@ -21,8 +20,6 @@ export default function ChatModal({
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
-  
-  const { showError, showSuccess } = useToast();
 
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
@@ -48,11 +45,10 @@ export default function ChatModal({
       setTimeout(scrollToBottom, 100);
     } catch (error) {
       console.error('Failed to load conversation:', error);
-      showError('Failed to load messages', 'Please try again');
     } finally {
       setLoading(false);
     }
-  }, [currentUser, chatUser, isOpen, showError, scrollToBottom]);
+  }, [currentUser, chatUser, isOpen, scrollToBottom]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !currentUser || !chatUser || sending) return;
@@ -77,8 +73,6 @@ export default function ChatModal({
       setMessages(prev => [...prev, enhancedMessage]);
       setNewMessage('');
       
-      showSuccess('Message sent', 'Your message was sent successfully');
-      
       if (onSendMessage) {
         onSendMessage(messageData.message);
       }
@@ -86,7 +80,6 @@ export default function ChatModal({
       setTimeout(scrollToBottom, 100);
     } catch (error) {
       console.error('Failed to send message:', error);
-      showError('Failed to send message', 'Please try again');
     } finally {
       setSending(false);
     }
@@ -140,7 +133,6 @@ export default function ChatModal({
         } else if (notification.type === 'message_failed' && notification.message) {
           const tempId = notification.message.id;
           setMessages(prev => prev.filter(msg => msg.id !== tempId));
-          showError('Message failed to send', 'Please try again');
         }
       };
       

@@ -4,8 +4,7 @@ import FriendsModal from '../common/friends-modal';
 import LoginModal from '../common/login-modal';
 import ChatModal from '../common/chat-modal';
 import VideoModal from '../common/video-modal';
-import { useMessageNotifications } from '../../hooks/use-message-notification';
-import { useVideoCallNotifications } from '../../hooks/use-video-call-notifications';
+import { useUnifiedNotifications } from '../../hooks/use-unified-notifications';
 import type { AppState, AppAction } from '../../hooks/use-app-state';
 import type { IUser } from '../../interfaces/IUser';
 
@@ -55,15 +54,12 @@ const ModalsContainer = memo(function ModalsContainer({
     setVideoOpen(true);
   };
 
-  const { ToastContainer } = useMessageNotifications({ 
+  useUnifiedNotifications({ 
     onOpenChat: handleOpenChat,
+    onJoinVideoCall: handleJoinVideoCall,
     currentUser: state.auth.currentUser 
   });
 
-  const { ToastContainer: VideoToastContainer } = useVideoCallNotifications({
-    onJoinVideoCall: handleJoinVideoCall,
-    currentUser: state.auth.currentUser
-  });
   return (
     <>
       <SearchModal
@@ -101,9 +97,6 @@ const ModalsContainer = memo(function ModalsContainer({
           chatUser={chatWithUser}
         />
       )}
-
-      <ToastContainer />
-      <VideoToastContainer />
     </>
   );
 });

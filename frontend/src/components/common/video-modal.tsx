@@ -1,16 +1,17 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { X, GripVertical, Camera, CameraOff, Mic, MicOff, Users, Video, Phone, Search, Maximize, Minimize, Monitor, MonitorSpeaker } from 'lucide-react';
+import { X, GripVertical, Camera, CameraOff, Mic, MicOff, Users, Video, Phone, Search, Maximize, Minimize, Monitor, MonitorSpeaker, UserPlus, Share2, Check } from 'lucide-react';
 import { MeetingProvider, useMeeting, useParticipant } from '@videosdk.live/react-sdk';
 import type { IVideoModal } from '../../interfaces/IVideoModal';
 import type { IFriend } from '../../interfaces/IFriend';
+import type { IUser } from '../../interfaces/IUser';
 import { createMeeting } from '../../services/video-call-service';
 import { notificationService } from '../../services/notification-service';
 import { FriendApi } from '../../apis/friend-api';
 import { useToast } from './toast';
 import LoadingSpinner from './loading-spinner';
 import { createMediaStreamFromTrack, attachMediaStreamToElement } from '../../utils/media-stream-utils';
-import { getGridColumnsClass } from '../../utils/grid-utils';
+
 
 function FriendSelector({ 
   friends, 
@@ -90,19 +91,169 @@ function FriendSelector({
   );
 }
 
+function CallInterface({ 
+  friends, 
+  selectedFriends, 
+  onToggleFriend,
+  onStartCall,
+  onJoinByMeetingId,
+  loading 
+}: { 
+  friends: IFriend[]; 
+  selectedFriends: Set<number>; 
+  onToggleFriend: (friendId: number) => void;
+  onStartCall: () => void;
+  onJoinByMeetingId: (meetingId: string) => void;
+  loading: boolean;
+}) {
+  const [showJoinInput, setShowJoinInput] = useState(false);
+  const [meetingIdInput, setMeetingIdInput] = useState('');
+  const { showError } = useToast();
+
+  const handleJoinByMeetingId = () => {
+    if (!meetingIdInput.trim()) {
+      showError('Meeting ID Required', 'Please enter a valid meeting ID');
+      return;
+    }
+    onJoinByMeetingId(meetingIdInput.trim());
+    setMeetingIdInput('');
+    setShowJoinInput(false);
+  };
+
+  return (
+    <div className="p-3 space-y-3">
+      <div className="text-center">
+        <h3 className="text-white text-sm font-medium mb-1">Video Call</h3>
+        <p className="text-white/60 text-xs">Start a new call or join existing</p>
+      </div>
+      
+      <div className="flex gap-2">
+        <motion.button
+          onClick={() => setShowJoinInput(!showJoinInput)}
+          className={`flex-1 px-3 py-2 rounded-lg text-white text-xs font-medium transition-colors flex items-center justify-center gap-1 ${
+            showJoinInput ? 'bg-green-500/80 hover:bg-green-500' : 'bg-white/20 hover:bg-white/30'
+          }`}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <Video className="w-3 h-3" />
+          Join Call
+        </motion.button>
+      </div>
+
+      {showJoinInput && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          className="space-y-2"
+        >
+          <input
+            type="text"
+            placeholder="Enter Meeting ID..."
+            value={meetingIdInput}
+            onChange={(e) => setMeetingIdInput(e.target.value)}
+            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 text-xs focus:outline-none focus:ring-1 focus:ring-green-500/50 focus:border-transparent"
+          />
+          <div className="flex gap-2">
+            <motion.button
+              onClick={handleJoinByMeetingId}
+              disabled={!meetingIdInput.trim() || loading}
+              className="flex-1 px-3 py-2 bg-green-500/80 hover:bg-green-500 disabled:bg-white/10 disabled:cursor-not-allowed rounded-lg text-white text-xs font-medium transition-colors"
+              whileHover={{ scale: !meetingIdInput.trim() ? 1 : 1.02 }}
+              whileTap={{ scale: !meetingIdInput.trim() ? 1 : 0.98 }}
+            >
+              Join Meeting
+            </motion.button>
+            <motion.button
+              onClick={() => {
+                setShowJoinInput(false);
+                setMeetingIdInput('');
+              }}
+              className="px-3 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white text-xs font-medium transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Cancel
+            </motion.button>
+          </div>
+        </motion.div>
+      )}
+      
+      <div className="border-t border-white/10 pt-3">
+        <p className="text-white/60 text-xs mb-2">Or invite friends:</p>
+        <FriendSelector
+          friends={friends}
+          selectedFriends={selectedFriends}
+          onToggleFriend={onToggleFriend}
+        />
+        
+        <div className="mt-3">
+          <motion.button
+            onClick={onStartCall}
+            disabled={selectedFriends.size === 0 || loading}
+            className="w-full px-3 py-2 bg-blue-500/80 hover:bg-blue-500 disabled:bg-white/10 disabled:cursor-not-allowed rounded-lg text-white text-xs font-medium transition-colors flex items-center justify-center gap-1"
+            whileHover={{ scale: selectedFriends.size > 0 ? 1.02 : 1 }}
+            whileTap={{ scale: selectedFriends.size > 0 ? 0.98 : 1 }}
+          >
+            <Video className="w-3 h-3" />
+            Start Call {selectedFriends.size > 0 ? `(${selectedFriends.size})` : ''}
+          </motion.button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function VideoParticipantView({ 
   participantId, 
   onParticipantClick, 
-  isFullscreenFocus = false 
+  isFullscreenFocus = false,
+  currentUser,
+  friends = []
 }: { 
   participantId: string;
   onParticipantClick?: (participantId: string) => void;
   isFullscreenFocus?: boolean;
+  currentUser?: IUser | null;
+  friends?: IFriend[];
 }) {
   const { webcamStream, micStream, webcamOn, micOn, isLocal, displayName, screenShareStream, screenShareOn } = useParticipant(participantId);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const screenShareRef = useRef<HTMLVideoElement | null>(null);
+
+  // Get user profile information
+  const getUserProfile = () => {
+    if (isLocal && currentUser) {
+      return {
+        username: currentUser.username,
+        avatar: currentUser.avatar
+      };
+    }
+    
+    // For remote participants, try to match by displayName with friends
+    const matchedFriend = friends.find(f => 
+      f.friend && (
+        f.friend.username === displayName ||
+        f.friend.username === (displayName || participantId)
+      )
+    );
+    
+    if (matchedFriend?.friend) {
+      return {
+        username: matchedFriend.friend.username,
+        avatar: matchedFriend.friend.avatar
+      };
+    }
+    
+    return {
+      username: displayName || participantId,
+      avatar: null
+    };
+  };
+
+  const userProfile = getUserProfile();
 
   useEffect(() => {
     if (screenShareStream && screenShareRef.current) {
@@ -151,6 +302,7 @@ function VideoParticipantView({
     >
       {screenShareOn && screenShareStream ? (
         <div className="relative w-full h-full">
+          {/* Screen share content */}
           <video
             ref={screenShareRef}
             className="w-full h-full object-contain bg-black"
@@ -163,8 +315,11 @@ function VideoParticipantView({
               <Monitor className="w-3 h-3 text-white" />
             </div>
           </div>
-          {webcamOn && (
-            <div className="absolute bottom-2 right-2 w-20 h-16 bg-white/10 rounded-lg overflow-hidden border border-white/20">
+          
+          {/* Camera section when screen sharing */}
+          {webcamOn ? (
+            // Scenario 2: Camera ON + Screen share ON = Picture-in-picture camera
+            <div className="absolute bottom-2 right-2 w-24 h-20 bg-white/10 rounded-lg overflow-hidden border border-white/20">
               <video
                 ref={videoRef}
                 className="w-full h-full object-cover"
@@ -172,10 +327,36 @@ function VideoParticipantView({
                 playsInline
                 muted={isLocal}
               />
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-0.5">
+                <p className="text-white text-xs font-medium truncate">
+                  {userProfile.username}
+                </p>
+              </div>
+            </div>
+          ) : (
+            // Scenario 3: Camera OFF + Screen share ON = Small profile picture overlay
+            <div className="absolute bottom-2 right-2 w-16 h-16 bg-white/10 rounded-lg overflow-hidden border border-white/20 flex items-center justify-center">
+              {userProfile.avatar ? (
+                <img
+                  src={userProfile.avatar}
+                  alt={userProfile.username}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-white/20 to-white/10 rounded-lg flex items-center justify-center">
+                  <Users className="w-6 h-6 text-white/60" />
+                </div>
+              )}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-0.5">
+                <p className="text-white text-xs font-medium truncate">
+                  {userProfile.username}
+                </p>
+              </div>
             </div>
           )}
         </div>
       ) : webcamOn ? (
+        // Camera only (no screen share)
         <video
           ref={videoRef}
           className="w-full h-full object-cover"
@@ -184,10 +365,38 @@ function VideoParticipantView({
           muted={isLocal}
         />
       ) : (
+        // Scenario 1: Camera OFF (no screen share) = Big profile picture
         <div className="w-full h-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
-          <div className="text-center text-white/60">
-            <Camera className={`mx-auto mb-1 ${isFullscreenFocus ? 'w-12 h-12' : 'w-6 h-6'}`} />
-            <span className={isFullscreenFocus ? 'text-sm' : 'text-xs'}>Camera Off</span>
+          <div className="text-center">
+            {userProfile.avatar ? (
+              <div className="mx-auto mb-3 relative">
+                <img
+                  src={userProfile.avatar}
+                  alt={userProfile.username}
+                  className={`object-cover rounded-full border-2 border-white/20 ${
+                    isFullscreenFocus ? 'w-24 h-24' : 'w-16 h-16'
+                  }`}
+                />
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-red-500/80 rounded-full flex items-center justify-center border-2 border-white/20">
+                  <CameraOff className="w-3 h-3 text-white" />
+                </div>
+              </div>
+            ) : (
+              <div className={`mx-auto mb-3 bg-white/20 rounded-full flex items-center justify-center border-2 border-white/20 relative ${
+                isFullscreenFocus ? 'w-24 h-24' : 'w-16 h-16'
+              }`}>
+                <Users className={`text-white/60 ${isFullscreenFocus ? 'w-10 h-10' : 'w-8 h-8'}`} />
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-red-500/80 rounded-full flex items-center justify-center border-2 border-white/20">
+                  <CameraOff className="w-3 h-3 text-white" />
+                </div>
+              </div>
+            )}
+            <p className={`text-white/80 font-medium ${isFullscreenFocus ? 'text-sm' : 'text-xs'}`}>
+              {userProfile.username}
+            </p>
+            <span className={`text-white/60 ${isFullscreenFocus ? 'text-sm' : 'text-xs'}`}>
+              Camera Off
+            </span>
           </div>
         </div>
       )}
@@ -206,12 +415,15 @@ function VideoParticipantView({
         )}
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1">
-        <p className={`text-white font-medium truncate ${isFullscreenFocus ? 'text-sm' : 'text-xs'}`}>
-          {displayName || participantId}
-          {isFullscreenFocus && <span className="ml-2 text-white/60">(Focus)</span>}
-        </p>
-      </div>
+      {/* Bottom name display - only show when not screen sharing */}
+      {!screenShareOn && (
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1">
+          <p className={`text-white font-medium truncate ${isFullscreenFocus ? 'text-sm' : 'text-xs'}`}>
+            {userProfile.username}
+            {isFullscreenFocus && <span className="ml-2 text-white/60">(Focus)</span>}
+          </p>
+        </div>
+      )}
 
       {!isLocal && (
         <audio ref={audioRef} autoPlay playsInline />
@@ -224,16 +436,28 @@ function VideoMeetingContent({
   onClose, 
   autoJoin = false, 
   isFullscreen, 
-  onToggleFullscreen 
+  onToggleFullscreen,
+  currentUser,
+  friends = [],
+  meetingId,
+  onAddUsers
 }: { 
   onClose: () => void; 
   autoJoin?: boolean;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
+  currentUser?: IUser | null;
+  friends?: IFriend[];
+  meetingId?: string;
+  onAddUsers?: (selectedUsers: IUser[]) => void;
 }) {
   const [joined, setJoined] = useState(false);
   const [hasAttemptedJoin, setHasAttemptedJoin] = useState(false);
   const [focusedParticipant, setFocusedParticipant] = useState<string | null>(null);
+  const [showAddUsers, setShowAddUsers] = useState(false);
+  const [selectedNewUsers, setSelectedNewUsers] = useState<Set<number>>(new Set());
+  const [copied, setCopied] = useState(false);
+  const { showSuccess, showError } = useToast();
   const { 
     join, 
     leave, 
@@ -265,7 +489,11 @@ function VideoMeetingContent({
   useEffect(() => {
     if (autoJoin && !joined && !hasAttemptedJoin) {
       setHasAttemptedJoin(true);
-      join();
+      const timeoutId = setTimeout(() => {
+        join();
+      }, 500); 
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [autoJoin, joined, hasAttemptedJoin, join]);
 
@@ -276,6 +504,56 @@ function VideoMeetingContent({
   const handleLeave = () => {
     leave();
   };
+
+  const handleShareMeeting = async () => {
+    if (!meetingId) return;
+    
+    try {
+      await navigator.clipboard.writeText(meetingId);
+      setCopied(true);
+      showSuccess('Meeting ID Copied', 'Share this ID with others to join');
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      showError('Copy Failed', 'Could not copy meeting ID');
+    }
+  };
+
+  const handleToggleNewUser = (friendId: number) => {
+    setSelectedNewUsers(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(friendId)) {
+        newSet.delete(friendId);
+      } else {
+        newSet.add(friendId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleAddUsers = () => {
+    if (selectedNewUsers.size === 0) {
+      showError('Select Users', 'Please select at least one user to add');
+      return;
+    }
+
+    const usersToAdd = friends
+      .filter(f => f.friend && selectedNewUsers.has(f.friend.id))
+      .map(f => f.friend!);
+
+    if (onAddUsers) {
+      onAddUsers(usersToAdd);
+    }
+
+    setSelectedNewUsers(new Set());
+    setShowAddUsers(false);
+    showSuccess('Invites Sent', `Invited ${usersToAdd.length} user${usersToAdd.length > 1 ? 's' : ''} to join`);
+  };
+
+  useEffect(() => {
+    setHasAttemptedJoin(false);
+    setJoined(false);
+    setFocusedParticipant(null);
+  }, [autoJoin]); 
 
   const getVideoGridClass = () => {
     if (focusedParticipant) return 'grid-cols-1';
@@ -297,6 +575,8 @@ function VideoMeetingContent({
             participantId={focusedParticipant} 
             onParticipantClick={handleParticipantClick}
             isFullscreenFocus={true}
+            currentUser={currentUser}
+            friends={friends}
           />
         </div>
       );
@@ -307,6 +587,8 @@ function VideoMeetingContent({
         key={participantId} 
         participantId={participantId} 
         onParticipantClick={handleParticipantClick}
+        currentUser={currentUser}
+        friends={friends}
       />
     ));
   };
@@ -355,6 +637,89 @@ function VideoMeetingContent({
           </div>
         )}
       </div>
+
+      {showAddUsers && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          className={`border-t border-white/10 bg-white/5 ${isFullscreen ? 'p-4' : 'p-3'}`}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h4 className={`text-white font-medium ${isFullscreen ? 'text-sm' : 'text-xs'}`}>
+              Add Users to Call
+            </h4>
+            <motion.button
+              onClick={() => setShowAddUsers(false)}
+              className="text-white/60 hover:text-white p-1 rounded"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <X className="w-3 h-3" />
+            </motion.button>
+          </div>
+          
+          <div className={`${isFullscreen ? 'max-h-40' : 'max-h-28'} overflow-y-auto space-y-1`}>
+            {friends.filter(f => f.friend).map((friendship) => {
+              const friend = friendship.friend!;
+              return (
+                <motion.div
+                  key={friend.id}
+                  className={`flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors ${
+                    selectedNewUsers.has(friend.id) 
+                      ? 'bg-green-500/30 border border-green-400/50' 
+                      : 'bg-white/5 hover:bg-white/10'
+                  }`}
+                  onClick={() => handleToggleNewUser(friend.id)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className={`rounded-full flex items-center justify-center border border-white/20 ${
+                    isFullscreen ? 'w-8 h-8' : 'w-6 h-6'
+                  }`}>
+                    {friend.avatar ? (
+                      <img
+                        src={friend.avatar}
+                        alt={friend.username}
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      <Users className={`text-white/70 ${isFullscreen ? 'w-4 h-4' : 'w-3 h-3'}`} />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-white font-medium truncate ${isFullscreen ? 'text-sm' : 'text-xs'}`}>
+                      {friend.username}
+                    </p>
+                  </div>
+                  {selectedNewUsers.has(friend.id) && (
+                    <div className="w-4 h-4 bg-green-400 rounded-full flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5 text-white" />
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
+          
+          {friends.length > 0 && (
+            <div className="flex gap-2 mt-3">
+              <motion.button
+                onClick={handleAddUsers}
+                disabled={selectedNewUsers.size === 0}
+                className={`flex-1 px-3 py-2 bg-green-500/80 hover:bg-green-500 disabled:bg-white/10 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors flex items-center justify-center gap-1 ${
+                  isFullscreen ? 'text-sm' : 'text-xs'
+                }`}
+                whileHover={{ scale: selectedNewUsers.size > 0 ? 1.02 : 1 }}
+                whileTap={{ scale: selectedNewUsers.size > 0 ? 0.98 : 1 }}
+              >
+                <UserPlus className="w-3 h-3" />
+                Add {selectedNewUsers.size > 0 ? `(${selectedNewUsers.size})` : ''}
+              </motion.button>
+            </div>
+          )}
+        </motion.div>
+      )}
 
       <div className={`flex items-center justify-center border-t border-white/10 bg-white/5 ${
         isFullscreen ? 'gap-4 p-4' : 'gap-2 p-3'
@@ -414,6 +779,36 @@ function VideoMeetingContent({
           ) : (
             <Monitor className={isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} />
           )}
+        </motion.button>
+
+        <motion.button
+          onClick={handleShareMeeting}
+          className={`bg-white/20 hover:bg-white/30 rounded-lg text-white transition-colors ${
+            isFullscreen ? 'p-3' : 'p-2'
+          }`}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          {copied ? (
+            <Check className={isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} />
+          ) : (
+            <Share2 className={isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} />
+          )}
+        </motion.button>
+
+        <motion.button
+          onClick={() => setShowAddUsers(!showAddUsers)}
+          className={`rounded-lg text-white transition-colors ${
+            isFullscreen ? 'p-3' : 'p-2'
+          } ${
+            showAddUsers 
+              ? 'bg-green-500/80 hover:bg-green-500' 
+              : 'bg-white/20 hover:bg-white/30'
+          }`}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <UserPlus className={isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} />
         </motion.button>
 
         <motion.button
@@ -501,6 +896,10 @@ export default function VideoModal({
       return;
     }
 
+    if (loading) {
+      return;
+    }
+
     setLoading(true);
     try {
       const { roomId, token } = await createMeeting();
@@ -525,11 +924,16 @@ export default function VideoModal({
 
       showSuccess('Call Started', `Calling ${selectedFriendUsers.length} friend${selectedFriendUsers.length > 1 ? 's' : ''}`);
     } catch (error) {
+      console.error('Error starting video call:', error);
       showError('Failed to create meeting', 'Please try again');
+      setMeetingId("");
+      setToken("");
+      setShowFriendSelector(true);
+      setIsCreatedMeeting(false);
     } finally {
       setLoading(false);
     }
-  }, [currentUser, selectedFriends, friends, showError, showSuccess]);
+  }, [currentUser, selectedFriends, friends, showError, showSuccess, loading]);
 
   const joinExistingMeeting = useCallback((meetingId: string, token: string) => {
     setMeetingId(meetingId);
@@ -539,6 +943,45 @@ export default function VideoModal({
     showInfo('Joining Call', 'Connecting to video call...');
   }, [showInfo]);
 
+  const handleJoinByMeetingId = useCallback(async (inputMeetingId: string) => {
+    if (!currentUser) {
+      showError('Authentication Required', 'Please login to join a video call');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { token } = await createMeeting();
+      joinExistingMeeting(inputMeetingId, token);
+    } catch (error) {
+      console.error('Error joining meeting:', error);
+      showError('Failed to join meeting', 'Invalid meeting ID or connection error');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser, joinExistingMeeting, showError]);
+
+  const handleAddUsersToCall = useCallback(async (usersToAdd: IUser[]) => {
+    if (!currentUser || !meetingId || !token) return;
+
+    try {
+      const newCallId = `call_${Date.now()}_${currentUser.id}`;
+      
+      await notificationService.sendVideoCallInvite(
+        newCallId,
+        meetingId,
+        token,
+        currentUser,
+        usersToAdd
+      );
+
+      showSuccess('Invites Sent', `Invited ${usersToAdd.length} user${usersToAdd.length > 1 ? 's' : ''} to join the call`);
+    } catch (error) {
+      console.error('Error adding users to call:', error);
+      showError('Failed to send invites', 'Please try again');
+    }
+  }, [currentUser, meetingId, token, showSuccess, showError]);
+
   const handleClose = () => {
     setMeetingId("");
     setToken("");
@@ -546,6 +989,7 @@ export default function VideoModal({
     setSelectedFriends(new Set());
     setIsCreatedMeeting(false);
     setIsFullscreen(false);
+    setLoading(false);
     onClose();
   };
 
@@ -672,31 +1116,14 @@ export default function VideoModal({
                 </div>
               </div>
             ) : showFriendSelector ? (
-              <div className="p-3 space-y-3">
-                <div className="text-center">
-                  <h3 className="text-white text-sm font-medium mb-1">Start Video Call</h3>
-                  <p className="text-white/60 text-xs">Select friends to invite</p>
-                </div>
-                
-                <FriendSelector
-                  friends={friends}
-                  selectedFriends={selectedFriends}
-                  onToggleFriend={handleToggleFriend}
-                />
-                
-                <div className="flex gap-2">
-                  <motion.button
-                    onClick={startVideoCall}
-                    disabled={selectedFriends.size === 0 || loading}
-                    className="flex-1 px-3 py-2 bg-blue-500/80 hover:bg-blue-500 disabled:bg-white/10 disabled:cursor-not-allowed rounded-lg text-white text-xs font-medium transition-colors flex items-center justify-center gap-1"
-                    whileHover={{ scale: selectedFriends.size > 0 ? 1.02 : 1 }}
-                    whileTap={{ scale: selectedFriends.size > 0 ? 0.98 : 1 }}
-                  >
-                    <Video className="w-3 h-3" />
-                    Call {selectedFriends.size > 0 ? `(${selectedFriends.size})` : ''}
-                  </motion.button>
-                </div>
-              </div>
+              <CallInterface
+                friends={friends}
+                selectedFriends={selectedFriends}
+                onToggleFriend={handleToggleFriend}
+                onStartCall={startVideoCall}
+                onJoinByMeetingId={handleJoinByMeetingId}
+                loading={loading}
+              />
             ) : meetingId && token ? (
               <MeetingProvider
                 config={{
@@ -713,6 +1140,10 @@ export default function VideoModal({
                   autoJoin={isCreatedMeeting || !!joinMeetingData} 
                   isFullscreen={isFullscreen}
                   onToggleFullscreen={toggleFullscreen}
+                  currentUser={currentUser}
+                  friends={friends}
+                  meetingId={meetingId}
+                  onAddUsers={handleAddUsersToCall}
                 />
               </MeetingProvider>
             ) : (

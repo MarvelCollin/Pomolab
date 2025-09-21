@@ -35,6 +35,26 @@ wss.on('connection', (ws) => {
         }
         userClients.get(data.userId).add(ws);
         console.log(`User ${data.userId} connected, total clients for user: ${userClients.get(data.userId).size}`);
+      } else if (data.type === 'canvas_action') {
+        const { data: canvasData } = data;
+        
+        const broadcastData = {
+          event: 'CanvasAction',
+          channel: 'canvas-sessions',
+          data: canvasData
+        };
+
+        let broadcastCount = 0;
+        userClients.forEach((clientSet, userId) => {
+          clientSet.forEach(client => {
+            if (client.readyState === client.OPEN) {
+              client.send(JSON.stringify(broadcastData));
+              broadcastCount++;
+            }
+          });
+        });
+        
+        console.log(`Broadcasted canvas action (${canvasData.action}) from session ${canvasData.sessionId} to ${broadcastCount} clients`);
       } else if (data.type === 'send_message') {
         const { data: messageData } = data;
         
@@ -108,6 +128,23 @@ wss.on('connection', (ws) => {
             });
           });
           console.log(`Broadcasted video call notification to ${broadcastCount} clients across ${userClients.size} users`);
+        } else if (channel === 'canvas-sessions') {
+          broadcastData = {
+            event: 'CanvasNotification',
+            channel,
+            data: messageData
+          };
+          
+          let broadcastCount = 0;
+          userClients.forEach((clientSet, userId) => {
+            clientSet.forEach(client => {
+              if (client.readyState === client.OPEN) {
+                client.send(JSON.stringify(broadcastData));
+                broadcastCount++;
+              }
+            });
+          });
+          console.log(`Broadcasted canvas notification to ${broadcastCount} clients across ${userClients.size} users`);
         } else {
           broadcastData = {
             event: 'FriendNotification',
@@ -276,6 +313,41 @@ app.post('/broadcast/video-call-test', (req, res) => {
     clients: broadcastCount,
     users: userClients.size,
     notification: notification.type
+  });
+});
+
+app.post('/broadcast/canvas-action', (req, res) => {
+  const { action, sessionId, userId, data, channel = 'canvas-sessions' } = req.body;
+  
+  const broadcastData = {
+    event: 'CanvasAction',
+    channel,
+    data: {
+      action,
+      sessionId,
+      userId,
+      data,
+      timestamp: new Date().toISOString()
+    }
+  };
+
+  let broadcastCount = 0;
+  userClients.forEach((clientSet, userId) => {
+    clientSet.forEach(client => {
+      if (client.readyState === client.OPEN) {
+        client.send(JSON.stringify(broadcastData));
+        broadcastCount++;
+      }
+    });
+  });
+
+  console.log(`Broadcasted canvas action (${action}) from session ${sessionId} to ${broadcastCount} clients across ${userClients.size} users`);
+  res.json({ 
+    status: 'Canvas action broadcasted', 
+    clients: broadcastCount,
+    users: userClients.size,
+    action,
+    sessionId
   });
 });
 

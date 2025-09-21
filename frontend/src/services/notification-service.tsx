@@ -22,19 +22,38 @@ export interface IVideoCallNotification {
   timestamp: string;
 }
 
+export interface ICanvasNotification {
+  type: 'canvas_invite' | 'canvas_joined' | 'canvas_left' | 'canvas_ended';
+  sessionId: string;
+  from_user: IUser;
+  to_user: IUser;
+  sessionName?: string;
+  timestamp: string;
+}
+
 class NotificationService {
   private messageListeners: { [userId: number]: ((notification: IMessageNotification) => void)[] } = {};
   private videoCallListeners: { [userId: number]: ((notification: IVideoCallNotification) => void)[] } = {};
+  private canvasListeners: { [userId: number]: ((notification: ICanvasNotification) => void)[] } = {};
   private toastCallbacks: ((type: string, title: string, message?: string, options?: any) => void)[] = [];
   private chatOpenCallback: ((user: IUser) => void) | null = null;
   private videoModalOpenCallback: ((meetingId: string, token: string) => void) | null = null;
+  private canvasJoinCallback: ((sessionId: string, sessionName?: string) => void) | null = null;
   private currentUser: IUser | null = null;
   private isMessageInitialized: boolean = false;
   private isVideoCallInitialized: boolean = false;
+  private isCanvasInitialized: boolean = false;
   private userCache: { [userId: number]: IUser } = {};
   private openChatUsers: Set<number> = new Set();
   private processedNotifications: Set<string> = new Set();
   private notificationExpiry: { [key: string]: number } = {};
+  private toastSettings: { 
+    messageSuccess: boolean;
+    messageFailed: boolean;
+  } = {
+    messageSuccess: true,
+    messageFailed: true
+  };
 
   constructor() {
     this.initializeMessageListening();
@@ -57,6 +76,9 @@ class NotificationService {
     if (type.startsWith('video_call_')) {
       return `${type}_${data.callId}_${data.from_user?.id}_${data.to_user?.id}`;
     }
+    if (type.startsWith('canvas_')) {
+      return `${type}_${data.sessionId}_${data.from_user?.id}_${data.to_user?.id}`;
+    }
     return `${type}_${data.message?.id}_${data.from_user?.id}_${data.to_user?.id}`;
   }
 
@@ -78,6 +100,10 @@ class NotificationService {
     
     if (user && !this.isVideoCallInitialized) {
       this.initializeVideoCallListening();
+    }
+    
+    if (user && !this.isCanvasInitialized) {
+      this.initializeCanvasListening();
     }
     
     socketService.setCurrentUser(user?.id || null);
@@ -118,7 +144,31 @@ class NotificationService {
     this.isVideoCallInitialized = true;
   }
 
+  private initializeCanvasListening(): void {
+    if (this.isCanvasInitialized) {
+      return;
+    }
+    
+    socketService.subscribeToChannel('canvas-sessions', (data: any) => {
+      if (data.event === 'CanvasNotification' && data.data) {
+        this.handleCanvasNotification(data.data);
+      } else if (data.type && (data.type.startsWith('canvas_'))) {
+        this.handleCanvasNotification(data);
+      }
+    });
+    
+    this.isCanvasInitialized = true;
+  }
+
   private handleMessageNotification(notification: any): void {
+    if (!this.currentUser) return;
+    
+    const notificationKey = this.generateNotificationKey(notification.type, notification);
+    
+    if (this.isNotificationProcessed(notificationKey)) {
+      return;
+    }
+    
     const messageNotification: IMessageNotification = {
       type: notification.type,
       message: notification.message,
@@ -127,7 +177,16 @@ class NotificationService {
       timestamp: notification.timestamp || new Date().toISOString()
     };
     
-    if (this.currentUser && notification.message.to_user_id === this.currentUser.id) {
+    const shouldProcessNotification = 
+      (notification.type === 'message_received' && notification.message.to_user_id === this.currentUser.id) ||
+      (notification.type === 'message_sent' && notification.message.from_user_id === this.currentUser.id) ||
+      (notification.type === 'message_updated' && 
+       (notification.message.from_user_id === this.currentUser.id || notification.message.to_user_id === this.currentUser.id)) ||
+      (notification.type === 'message_failed' && notification.message.from_user_id === this.currentUser.id);
+    
+    if (shouldProcessNotification) {
+      this.markNotificationProcessed(notificationKey);
+      
       if (this.messageListeners[this.currentUser.id]) {
         this.messageListeners[this.currentUser.id].forEach(callback => {
           callback(messageNotification);
@@ -181,8 +240,49 @@ class NotificationService {
     }
   }
 
+  private handleCanvasNotification(notification: any): void {
+    if (!this.currentUser) return;
+    
+    const notificationKey = this.generateNotificationKey(notification.type, notification);
+    
+    if (this.isNotificationProcessed(notificationKey)) {
+      return;
+    }
+    
+    const canvasNotification: ICanvasNotification = {
+      type: notification.type,
+      sessionId: notification.sessionId,
+      from_user: notification.from_user,
+      to_user: notification.to_user,
+      sessionName: notification.sessionName,
+      timestamp: notification.timestamp || new Date().toISOString()
+    };
+    
+    const shouldProcessNotification = 
+      (notification.type === 'canvas_invite' && notification.to_user?.id === this.currentUser.id) ||
+      (notification.type === 'canvas_joined' && notification.from_user?.id === this.currentUser.id) ||
+      (notification.type === 'canvas_left' && 
+       (notification.from_user?.id === this.currentUser.id || notification.to_user?.id === this.currentUser.id)) ||
+      (notification.type === 'canvas_ended' && 
+       (notification.from_user?.id === this.currentUser.id || notification.to_user?.id === this.currentUser.id));
+    
+    if (shouldProcessNotification) {
+      this.markNotificationProcessed(notificationKey);
+      
+      if (this.canvasListeners[this.currentUser.id]) {
+        this.canvasListeners[this.currentUser.id].forEach(callback => {
+          callback(canvasNotification);
+        });
+      }
+      
+      this.triggerCanvasToastNotification(canvasNotification).catch(error => {
+        console.error('Error triggering canvas toast notification:', error);
+      });
+    }
+  }
+
   private async triggerMessageToastNotification(notification: IMessageNotification): Promise<void> {
-    if (notification.type === 'message_received' || notification.type === 'message_updated') {
+    if (notification.type === 'message_received') {
       const shouldShowNotification = this.currentUser && 
         notification.message.to_user_id === this.currentUser.id &&
         notification.message.from_user_id !== this.currentUser.id &&
@@ -205,9 +305,17 @@ class NotificationService {
         });
       }
     } else if (notification.type === 'message_failed') {
-      this.toastCallbacks.forEach(callback => {
-        callback('error', 'Message Failed', 'Failed to send message');
-      });
+      if (this.toastSettings.messageFailed) {
+        this.toastCallbacks.forEach(callback => {
+          callback('error', 'Message Failed', 'Failed to send message');
+        });
+      }
+    } else if (notification.type === 'message_sent') {
+      if (this.currentUser && notification.message.from_user_id === this.currentUser.id && this.toastSettings.messageSuccess) {
+        this.toastCallbacks.forEach(callback => {
+          callback('success', 'Message Sent', 'Your message was sent successfully');
+        });
+      }
     }
   }
 
@@ -238,6 +346,42 @@ class NotificationService {
     }
   }
 
+  private async triggerCanvasToastNotification(notification: ICanvasNotification): Promise<void> {
+    if (notification.type === 'canvas_invite') {
+      const options = {
+        onClick: () => this.acceptCanvasInvite(notification),
+        userData: notification.from_user,
+        persistent: false,
+        duration: 15000
+      };
+      
+      this.toastCallbacks.forEach(callback => {
+        callback('info', `Canvas invite from ${notification.from_user.username}`, 
+          `Join ${notification.sessionName || 'drawing session'}`, options);
+      });
+    } else if (notification.type === 'canvas_joined') {
+      this.toastCallbacks.forEach(callback => {
+        callback('success', 'Canvas Joined', `${notification.to_user.username} joined the drawing session`);
+      });
+    } else if (notification.type === 'canvas_left') {
+      this.toastCallbacks.forEach(callback => {
+        callback('warning', 'Canvas Left', `${notification.from_user.username} left the drawing session`);
+      });
+    } else if (notification.type === 'canvas_ended') {
+      this.toastCallbacks.forEach(callback => {
+        callback('info', 'Canvas Ended', 'The drawing session has ended');
+      });
+    }
+  }
+
+  private acceptCanvasInvite(notification: ICanvasNotification): void {
+    if (this.canvasJoinCallback) {
+      this.canvasJoinCallback(notification.sessionId, notification.sessionName);
+    }
+    
+    this.sendCanvasResponse(notification.sessionId, 'joined', notification.from_user);
+  }
+
   private acceptVideoCall(notification: IVideoCallNotification): void {
     if (this.videoModalOpenCallback) {
       this.videoModalOpenCallback(notification.meetingId, notification.token);
@@ -252,6 +396,10 @@ class NotificationService {
 
   public setVideoModalOpenCallback(callback: (meetingId: string, token: string) => void): void {
     this.videoModalOpenCallback = callback;
+  }
+
+  public setCanvasJoinCallback(callback: (sessionId: string, sessionName?: string) => void): void {
+    this.canvasJoinCallback = callback;
   }
 
   private openChatWithUser(user: IUser): void {
@@ -289,10 +437,16 @@ class NotificationService {
 
   public setChatOpen(userId: number): void {
     this.openChatUsers.add(userId);
+    this.toastSettings.messageSuccess = false;
+    this.toastSettings.messageFailed = false;
   }
 
   public setChatClosed(userId: number): void {
     this.openChatUsers.delete(userId);
+    if (this.openChatUsers.size === 0) {
+      this.toastSettings.messageSuccess = true;
+      this.toastSettings.messageFailed = true;
+    }
   }
 
   public subscribeToToastNotifications(callback: (type: string, title: string, message?: string, options?: any) => void): () => void {
@@ -437,6 +591,22 @@ class NotificationService {
     socketService.broadcastVideoCallNotification(notificationData, fromUser.id);
   }
 
+  private sendCanvasResponse(
+    sessionId: string,
+    response: 'joined' | 'left',
+    fromUser: IUser
+  ): void {
+    const notificationData = {
+      type: `canvas_${response}` as 'canvas_joined' | 'canvas_left',
+      sessionId,
+      from_user: this.currentUser!,
+      to_user: fromUser,
+      timestamp: new Date().toISOString()
+    };
+
+    socketService.broadcastCanvasNotification(notificationData);
+  }
+
   public sendVideoCallEnd(callId: string, participants: IUser[]): void {
     for (const participant of participants) {
       const notificationData = {
@@ -453,12 +623,70 @@ class NotificationService {
     }
   }
 
+  public async sendCanvasInvite(
+    sessionId: string,
+    sessionName: string,
+    fromUser: IUser,
+    toUsers: IUser[]
+  ): Promise<void> {
+    for (const toUser of toUsers) {
+      const notificationData = {
+        type: 'canvas_invite',
+        sessionId,
+        sessionName,
+        from_user: fromUser,
+        to_user: toUser,
+        timestamp: new Date().toISOString()
+      };
+
+      socketService.broadcastCanvasNotification(notificationData);
+    }
+  }
+
+  public sendCanvasEnd(sessionId: string, participants: IUser[]): void {
+    for (const participant of participants) {
+      const notificationData = {
+        type: 'canvas_ended',
+        sessionId,
+        from_user: this.currentUser!,
+        to_user: participant,
+        timestamp: new Date().toISOString()
+      };
+
+      socketService.broadcastCanvasNotification(notificationData);
+    }
+  }
+
   public async getConversation(userId1: number, userId2: number): Promise<IMessage[]> {
     return MessageApi.getConversation(userId1, userId2);
   }
 
+  public showToast(type: 'success' | 'error' | 'warning' | 'info', title: string, message?: string, options?: any): void {
+    this.toastCallbacks.forEach(callback => {
+      callback(type, title, message, options);
+    });
+  }
+
   public isConnected(): boolean {
     return socketService.getConnectionStatus();
+  }
+
+  public subscribeToUserCanvasNotifications(userId: number, callback: (notification: ICanvasNotification) => void): () => void {
+    if (!this.canvasListeners[userId]) {
+      this.canvasListeners[userId] = [];
+    }
+    
+    this.canvasListeners[userId].push(callback);
+
+    return () => {
+      if (this.canvasListeners[userId]) {
+        this.canvasListeners[userId] = this.canvasListeners[userId].filter(cb => cb !== callback);
+        
+        if (this.canvasListeners[userId].length === 0) {
+          delete this.canvasListeners[userId];
+        }
+      }
+    };
   }
 }
 

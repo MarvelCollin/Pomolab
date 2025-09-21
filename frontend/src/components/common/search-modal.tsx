@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Users, UserPlus, Video } from 'lucide-react';
+import { Search, X, Users, Video } from 'lucide-react';
 import type { ISearchModalProps, ISearchResult } from '../../interfaces/ISearchModal';
 import { AuthTrigger } from '../../utils/auth-trigger';
 

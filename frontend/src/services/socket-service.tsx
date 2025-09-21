@@ -140,6 +140,10 @@ class SocketService {
         return this.subscribeToChannel('video-calls', callback);
     }
 
+    public listenToCanvasNotifications(callback: (data: any) => void): () => void {
+        return this.subscribeToChannel('canvas-sessions', callback);
+    }
+
     public listenToUserChannel(userId: number, callback: (data: any) => void): () => void {
         return this.subscribeToChannel(`user-${userId}`, callback);
     }
@@ -183,6 +187,25 @@ class SocketService {
             };
             
             this.ws.send(JSON.stringify(payload));
+        }
+    }
+
+    public sendCanvasAction(canvasActionData: any): void {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({
+                type: 'canvas_action',
+                data: canvasActionData
+            }));
+        }
+    }
+
+    public broadcastCanvasNotification(notificationData: any): void {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({
+                type: 'broadcast',
+                channel: 'canvas-sessions',
+                data: notificationData
+            }));
         }
     }
 

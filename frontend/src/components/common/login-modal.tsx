@@ -17,11 +17,43 @@ interface LoginModalProps {
   onLogin: (user: IUser, token: string) => void;
 }
 
+interface ValidationErrors {
+  email?: string;
+  password?: string;
+  username?: string;
+}
+
+const validateEmail = (email: string): string | null => {
+  if (!email) return 'Email is required';
+  if (email.length < 3) return 'Email must be at least 3 characters';
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) return 'Please enter a valid email address';
+  if (email.length > 255) return 'Email must not exceed 255 characters';
+  return null;
+};
+
+const validatePassword = (password: string): string | null => {
+  if (!password) return 'Password is required';
+  if (password.length < 8) return 'Password must be at least 8 characters';
+  if (password.length > 255) return 'Password must not exceed 255 characters';
+  return null;
+};
+
+const validateUsername = (username: string): string | null => {
+  if (!username) return 'Username is required';
+  if (username.length < 2) return 'Username must be at least 2 characters';
+  if (username.length > 255) return 'Username must not exceed 255 characters';
+  const usernameRegex = /^[a-zA-Z0-9_-]+$/;
+  if (!usernameRegex.test(username)) return 'Username can only contain letters, numbers, underscores, and hyphens';
+  return null;
+};
+
 export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   
   const [loginData, setLoginData] = useState({
     email: '',
@@ -38,7 +70,37 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
     setLoginData({ email: '', password: '' });
     setRegisterData({ username: '', email: '', password: '' });
     setError('');
+    setValidationErrors({});
     setShowPassword(false);
+  };
+
+  const validateLoginForm = (): boolean => {
+    const errors: ValidationErrors = {};
+    
+    const emailError = validateEmail(loginData.email);
+    if (emailError) errors.email = emailError;
+    
+    const passwordError = validatePassword(loginData.password);
+    if (passwordError) errors.password = passwordError;
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateRegisterForm = (): boolean => {
+    const errors: ValidationErrors = {};
+    
+    const usernameError = validateUsername(registerData.username);
+    if (usernameError) errors.username = usernameError;
+    
+    const emailError = validateEmail(registerData.email);
+    if (emailError) errors.email = emailError;
+    
+    const passwordError = validatePassword(registerData.password);
+    if (passwordError) errors.password = passwordError;
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleClose = () => {
@@ -48,8 +110,14 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    setValidationErrors({});
+
+    if (!validateLoginForm()) {
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const response = await UserApi.login(loginData);
@@ -64,8 +132,14 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    setValidationErrors({});
+
+    if (!validateRegisterForm()) {
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const response = await UserApi.register(registerData);
@@ -122,6 +196,7 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
   const switchMode = () => {
     setIsLoginMode(!isLoginMode);
     setError('');
+    setValidationErrors({});
   };
 
   if (!isOpen) return null;
@@ -176,12 +251,27 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
                   <input
                     type="text"
                     value={registerData.username}
-                    onChange={(e) => setRegisterData({...registerData, username: e.target.value})}
-                    className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-white/40 focus:bg-white/15 transition-all"
+                    onChange={(e) => {
+                      setRegisterData({...registerData, username: e.target.value});
+                      if (validationErrors.username) {
+                        setValidationErrors({...validationErrors, username: undefined});
+                      }
+                    }}
+                    className={`w-full pl-12 pr-4 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:bg-white/15 transition-all ${
+                      validationErrors.username ? 'border-red-400 focus:border-red-400' : 'border-white/20 focus:border-white/40'
+                    }`}
                     placeholder="Enter your username"
-                    required
                   />
                 </div>
+                {validationErrors.username && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-1 text-sm text-red-300"
+                  >
+                    {validationErrors.username}
+                  </motion.p>
+                )}
               </div>
             )}
 
@@ -192,20 +282,36 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/50" />
                 <input
-                  type="email"
+                  type="text"
                   value={isLoginMode ? loginData.email : registerData.email}
                   onChange={(e) => {
                     if (isLoginMode) {
                       setLoginData({...loginData, email: e.target.value});
+                      if (validationErrors.email) {
+                        setValidationErrors({...validationErrors, email: undefined});
+                      }
                     } else {
                       setRegisterData({...registerData, email: e.target.value});
+                      if (validationErrors.email) {
+                        setValidationErrors({...validationErrors, email: undefined});
+                      }
                     }
                   }}
-                  className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-white/40 focus:bg-white/15 transition-all"
+                  className={`w-full pl-12 pr-4 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:bg-white/15 transition-all ${
+                    validationErrors.email ? 'border-red-400 focus:border-red-400' : 'border-white/20 focus:border-white/40'
+                  }`}
                   placeholder="Enter your email"
-                  required
                 />
               </div>
+              {validationErrors.email && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-1 text-sm text-red-300"
+                >
+                  {validationErrors.email}
+                </motion.p>
+              )}
             </div>
 
             <div>
@@ -220,14 +326,20 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
                   onChange={(e) => {
                     if (isLoginMode) {
                       setLoginData({...loginData, password: e.target.value});
+                      if (validationErrors.password) {
+                        setValidationErrors({...validationErrors, password: undefined});
+                      }
                     } else {
                       setRegisterData({...registerData, password: e.target.value});
+                      if (validationErrors.password) {
+                        setValidationErrors({...validationErrors, password: undefined});
+                      }
                     }
                   }}
-                  className="w-full pl-12 pr-12 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-white/40 focus:bg-white/15 transition-all"
+                  className={`w-full pl-12 pr-12 py-3 bg-white/10 border rounded-lg text-white placeholder-white/50 focus:outline-none focus:bg-white/15 transition-all ${
+                    validationErrors.password ? 'border-red-400 focus:border-red-400' : 'border-white/20 focus:border-white/40'
+                  }`}
                   placeholder="Enter your password"
-                  minLength={8}
-                  required
                 />
                 <button
                   type="button"
@@ -237,6 +349,15 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+              {validationErrors.password && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-1 text-sm text-red-300"
+                >
+                  {validationErrors.password}
+                </motion.p>
+              )}
             </div>
 
             <button

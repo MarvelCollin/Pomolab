@@ -794,6 +794,7 @@ const ToolBar = memo(function ToolBar({
       <CanvasModal
         isOpen={canvasOpen}
         onClose={() => setCanvasOpen(false)}
+        currentUser={currentUser}
       />
 
     </motion.div>

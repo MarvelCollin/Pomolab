@@ -17,8 +17,7 @@ import { useTimerLogic } from '../hooks/use-timer-logic';
 import { useBackground } from '../hooks/use-background';
 import { useMusic } from '../hooks/use-music';
 import { useAudioEffect } from '../hooks/use-audio-effect';
-import { useFriendNotifications } from '../hooks/use-friend-notifications';
-import { useToast } from '../components/common/toast';
+import { useUnifiedNotifications, type FriendNotificationCallbacks } from '../hooks/use-unified-notifications';
 import { AuthTrigger } from '../utils/auth-trigger';
 import type { IBackground } from '../interfaces/IBackground';
 import '../app.css';
@@ -81,30 +80,33 @@ export default function Home() {
     closeMiniTimer
   } = useTimerLogic(dispatch, state.pomodoro, handleSessionComplete);
 
-  const {
-    showSuccess,
-    showError,
-    showWarning,
-    showInfo,
-    ToastContainer
-  } = useToast();
-
-  useFriendNotifications(state.auth.currentUser, {
+  const friendCallbacks: FriendNotificationCallbacks = {
     onFriendRequestSent: (data) => {
-      showSuccess('Friend Request Sent', data.message);
+      console.log('Friend request sent:', data);
     },
     onFriendRequestReceived: (data) => {
-      showInfo('Friend Request Received', data.message);
+      console.log('Friend request received:', data);
     },
     onFriendRequestAccepted: (data) => {
-      showSuccess('Friend Request Accepted', data.message);
+      console.log('Friend request accepted:', data);
     },
     onFriendRequestRejected: (data) => {
-      showWarning('Friend Request Rejected', data.message);
+      console.log('Friend request rejected:', data);
     },
     onFriendRemoved: (data) => {
-      showError('Friend Removed', data.message);
+      console.log('Friend removed:', data);
     }
+  };
+
+  const { ToastContainer } = useUnifiedNotifications({
+    onOpenChat: (user) => {
+      console.log('Opening chat with:', user);
+    },
+    onJoinVideoCall: (meetingId, token) => {
+      console.log('Joining video call:', meetingId, token);
+    },
+    friendCallbacks,
+    currentUser: state.auth.currentUser
   });
 
   useEffect(() => {
