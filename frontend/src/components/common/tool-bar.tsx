@@ -28,6 +28,7 @@ import type { IAudioEffect } from '../../interfaces/IAudioEffect';
 import type { IUser } from '../../interfaces/IUser';
 import FriendsModal from './friends-modal';
 import VideoModal from './video-modal';
+import CanvasModal from './canvas';
 
 interface ToolBarProps {
   showBackgroundSelector: boolean;
@@ -100,6 +101,7 @@ const ToolBar = memo(function ToolBar({
   const [showFriendsModal, setShowFriendsModal] = useState(false);
   
   const [videoOpen, setVideoOpen] = useState(false);
+  const [canvasOpen, setCanvasOpen] = useState(false);
 
   const sendTestNotification = async () => {
     if (!currentUser) return;
@@ -335,13 +337,6 @@ const ToolBar = memo(function ToolBar({
                 >
                   <div className="relative">
                     <Music className="w-4 h-4 text-white/90" />
-                    {currentMusic && (
-                      <motion.div
-                        className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full"
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      />
-                    )}
                   </div>
                   <span className="text-white text-sm font-medium">Music Library</span>
                 </motion.button>
@@ -388,6 +383,19 @@ const ToolBar = memo(function ToolBar({
                     <span className="text-white text-sm font-medium">Video Call</span>
                   </motion.button>
                 )}
+
+                <motion.button
+                  onClick={() => {
+                    setCanvasOpen(true);
+                    setShowMainMenu(false);
+                  }}
+                  className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group"
+                  whileHover={{ x: 4 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Square className="w-4 h-4 text-white/90" />
+                  <span className="text-white text-sm font-medium">Canvas</span>
+                </motion.button>
 
                 {currentUser && (
                   <motion.button
@@ -782,6 +790,12 @@ const ToolBar = memo(function ToolBar({
         onClose={() => setVideoOpen(false)}
         currentUser={currentUser}
       />
+
+      <CanvasModal
+        isOpen={canvasOpen}
+        onClose={() => setCanvasOpen(false)}
+      />
+
     </motion.div>
   );
 });

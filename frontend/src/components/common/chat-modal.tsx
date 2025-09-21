@@ -4,6 +4,7 @@ import { Send, X, GripVertical, User, MessageCircle, Loader2 } from 'lucide-reac
 import type { IChatModal, IChatMessage } from '../../interfaces/IChatModal';
 import { notificationService } from '../../services/notification-service';
 import { useToast } from './toast';
+import { formatChatTime } from '../../utils/time-utils';
 
 export default function ChatModal({
   isOpen,
@@ -96,11 +97,6 @@ export default function ChatModal({
       e.preventDefault();
       handleSendMessage();
     }
-  };
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   useEffect(() => {
@@ -257,7 +253,7 @@ export default function ChatModal({
                           <p className={`text-xs ${
                             message.isOwn ? 'text-blue-100' : 'text-white/60'
                           }`}>
-                            {formatTime(message.created_at)}
+                            {formatChatTime(message.created_at)}
                           </p>
                           {message.isTemporary && (
                             <div className="w-2 h-2 bg-white/50 rounded-full animate-pulse ml-2" />

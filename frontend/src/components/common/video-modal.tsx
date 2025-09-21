@@ -143,7 +143,7 @@ function VideoParticipantView({
   return (
     <motion.div 
       className={`relative h-full bg-white/5 rounded-lg overflow-hidden cursor-pointer ${
-        isFullscreenFocus ? 'min-h-[calc(100vh-160px)]' : 'min-h-[120px]'
+        isFullscreenFocus ? 'min-h-[calc(100vh-280px)] max-h-[calc(100vh-280px)]' : 'min-h-[120px]'
       }`}
       onClick={() => onParticipantClick?.(participantId)}
       whileHover={{ scale: isFullscreenFocus ? 1 : 1.02 }}
@@ -339,14 +339,14 @@ function VideoMeetingContent({
             focusedParticipant 
               ? 'h-full' 
               : `grid gap-${isFullscreen ? '4' : '2'} h-full ${
-                  isFullscreen ? 'min-h-[calc(100vh-120px)]' : 'min-h-[200px]'
+                  isFullscreen ? 'min-h-[calc(100vh-220px)]' : 'min-h-[250px] max-h-[300px]'
                 } ${getVideoGridClass()}`
           }`}>
             {renderParticipants()}
           </div>
         ) : (
           <div className={`flex items-center justify-center h-full ${
-            isFullscreen ? 'min-h-[calc(100vh-120px)]' : 'min-h-[200px]'
+            isFullscreen ? 'min-h-[calc(100vh-220px)]' : 'min-h-[250px] max-h-[300px]'
           }`}>
             <div className="text-center text-white/60">
               <Users className={`mx-auto mb-2 ${isFullscreen ? 'w-12 h-12' : 'w-6 h-6'}`} />
@@ -358,7 +358,7 @@ function VideoMeetingContent({
 
       <div className={`flex items-center justify-center border-t border-white/10 bg-white/5 ${
         isFullscreen ? 'gap-4 p-4' : 'gap-2 p-3'
-      }`}>
+      } flex-shrink-0`}>
         <motion.button
           onClick={() => toggleMic()}
           className={`rounded-lg transition-colors ${
@@ -584,8 +584,8 @@ export default function VideoModal({
         whileDrag={{ scale: 1.02, rotate: 1 }}
         className={`${
           isFullscreen 
-            ? 'fixed inset-4 w-auto h-auto' 
-            : 'absolute top-16 right-4 w-80 h-96 max-w-[85vw] max-h-[85vh]'
+            ? 'fixed inset-8 w-auto h-auto max-h-[calc(100vh-64px)]' 
+            : 'absolute top-16 right-4 w-80 h-[420px] max-w-[85vw] max-h-[85vh]'
         } bg-white/10 backdrop-blur-3xl border border-white/20 ${
           isFullscreen ? 'rounded-xl' : 'rounded-2xl'
         } shadow-2xl pointer-events-auto overflow-hidden`}

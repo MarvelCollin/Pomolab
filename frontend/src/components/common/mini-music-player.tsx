@@ -2,6 +2,7 @@ import React, { useState, useEffect, memo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Settings, Music, X } from 'lucide-react';
 import type { IMusic, IMusicPlayerState } from '../../interfaces/IMusic';
+import { formatMusicTime } from '../../utils/time-utils';
 
 interface MiniMusicPlayerProps {
   setShowMusicPlayer: (show: boolean) => void;
@@ -27,12 +28,6 @@ function MiniMusicPlayer({
   onSeekTo
 }: MiniMusicPlayerProps) {
   const [showMusicSettings, setShowMusicSettings] = useState(false);
-
-  const formatTime = (time: number): string => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
 
   const handleProgressClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const progressBar = event.currentTarget;
@@ -95,7 +90,7 @@ function MiniMusicPlayer({
               <div className="flex-1 min-w-0">
                 <div className="text-white text-sm font-medium truncate drop-shadow-sm">{currentMusic.name}</div>
                 <div className="text-white/50 text-xs mt-0.5">
-                  {formatTime(playerState.currentTime)} / {formatTime(playerState.duration)}
+                  {formatMusicTime(playerState.currentTime)} / {formatMusicTime(playerState.duration)}
                 </div>
               </div>
               

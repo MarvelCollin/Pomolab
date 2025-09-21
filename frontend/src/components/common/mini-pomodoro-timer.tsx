@@ -3,6 +3,7 @@ import { Play, Pause, RotateCcw, X, GripVertical } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { IMiniPomodoroTimer } from '../../interfaces/IMiniPomodoroTimer';
 import { SESSION_TYPES } from '../../constants/session-constants';
+import { formatTimerTime } from '../../utils/time-utils';
 
 export default function MiniPomodoroTimer({
   currentSession,
@@ -14,12 +15,6 @@ export default function MiniPomodoroTimer({
   sessionLabels
 }: IMiniPomodoroTimer) {
   const constraintsRef = useRef(null);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const getSessionColor = () => {
     switch (currentSession) {
@@ -85,16 +80,16 @@ export default function MiniPomodoroTimer({
                 className="text-3xl font-bold text-white mb-1 tracking-tight"
                 animate={{ 
                   color: isRunning 
-                    ? currentSession === 'focus' 
+                    ? currentSession === SESSION_TYPES.FOCUS 
                       ? '#ef4444' 
-                      : currentSession === 'short-break'
+                      : currentSession === SESSION_TYPES.SHORT_BREAK
                       ? '#22c55e'
                       : '#3b82f6'
                     : '#ffffff'
                 }}
                 transition={{ duration: 0.3 }}
               >
-                {formatTime(timeLeft)}
+                {formatTimerTime(timeLeft)}
               </motion.div>
               <div className="w-8 h-0.5 bg-white/20 mx-auto rounded-full" />
             </div>

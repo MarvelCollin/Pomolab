@@ -12,39 +12,9 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
 
   const allResults: ISearchResult[] = [
     {
-      id: 'friends-list',
-      title: 'Friends List',
-      description: 'View and manage your friends',
-      category: 'friends',
-      icon: Users,
-      requireAuth: true,
-      action: () => {
-        if (AuthTrigger.checkAuthForMutation()) {
-          if (onOpenFriendsModal) {
-            onOpenFriendsModal();
-          }
-        }
-      }
-    },
-    {
-      id: 'add-friends',
-      title: 'Add Friends',
-      description: 'Find and add new friends',
-      category: 'friends',
-      icon: UserPlus,
-      requireAuth: true,
-      action: () => {
-        if (AuthTrigger.checkAuthForMutation()) {
-          if (onOpenFriendsModal) {
-            onOpenFriendsModal();
-          }
-        }
-      }
-    },
-    {
       id: 'friend-requests',
-      title: 'Friend Requests',
-      description: 'View pending friend requests',
+      title: 'Friends',
+      description: 'View and manage your friends',
       category: 'friends',
       icon: Users,
       requireAuth: true,

@@ -28,7 +28,5 @@ RUN chown -R www-data:www-data /var/www/html \
 
 RUN composer install --optimize-autoloader
 
-RUN npm install && npm run build
-
 EXPOSE 9000
 CMD ["php-fpm"]
