@@ -3,6 +3,7 @@ import { useParticipant } from '@videosdk.live/react-sdk';
 import { Mic, MicOff, Camera, CameraOff, User, Maximize2 } from 'lucide-react';
 import type { IParticipantView } from '../../interfaces/IParticipantView';
 import ParticipantModal from './participant-modal';
+import { createMediaStreamFromTrack, attachMediaStreamToElement } from '../../utils/media-stream-utils';
 
 export default function ParticipantView({ participantId }: IParticipantView) {
   const { webcamStream, micStream, webcamOn, micOn, isLocal, displayName } = useParticipant(participantId);
@@ -12,10 +13,8 @@ export default function ParticipantView({ participantId }: IParticipantView) {
 
   useEffect(() => {
     if (webcamStream && videoRef.current) {
-      const mediaStream = new MediaStream();
-      mediaStream.addTrack(webcamStream.track);
-      videoRef.current.srcObject = mediaStream;
-      videoRef.current.play().catch(console.error);
+      const mediaStream = createMediaStreamFromTrack(webcamStream.track);
+      attachMediaStreamToElement(videoRef.current, mediaStream);
     }
     return () => {
       if (videoRef.current) {
@@ -26,10 +25,8 @@ export default function ParticipantView({ participantId }: IParticipantView) {
 
   useEffect(() => {
     if (micStream && audioRef.current && !isLocal) {
-      const mediaStream = new MediaStream();
-      mediaStream.addTrack(micStream.track);
-      audioRef.current.srcObject = mediaStream;
-      audioRef.current.play().catch(console.error);
+      const mediaStream = createMediaStreamFromTrack(micStream.track);
+      attachMediaStreamToElement(audioRef.current, mediaStream);
     }
     return () => {
       if (audioRef.current) {

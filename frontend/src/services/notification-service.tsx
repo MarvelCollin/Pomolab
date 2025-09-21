@@ -33,9 +33,40 @@ class NotificationService {
   private isVideoCallInitialized: boolean = false;
   private userCache: { [userId: number]: IUser } = {};
   private openChatUsers: Set<number> = new Set();
+  private processedNotifications: Set<string> = new Set();
+  private notificationExpiry: { [key: string]: number } = {};
 
   constructor() {
     this.initializeMessageListening();
+    this.cleanupExpiredNotifications();
+  }
+
+  private cleanupExpiredNotifications(): void {
+    setInterval(() => {
+      const now = Date.now();
+      Object.keys(this.notificationExpiry).forEach(key => {
+        if (this.notificationExpiry[key] < now) {
+          this.processedNotifications.delete(key);
+          delete this.notificationExpiry[key];
+        }
+      });
+    }, 60000);
+  }
+
+  private generateNotificationKey(type: string, data: any): string {
+    if (type.startsWith('video_call_')) {
+      return `${type}_${data.callId}_${data.from_user?.id}_${data.to_user?.id}`;
+    }
+    return `${type}_${data.message?.id}_${data.from_user?.id}_${data.to_user?.id}`;
+  }
+
+  private isNotificationProcessed(key: string): boolean {
+    return this.processedNotifications.has(key);
+  }
+
+  private markNotificationProcessed(key: string): void {
+    this.processedNotifications.add(key);
+    this.notificationExpiry[key] = Date.now() + 300000;
   }
 
   public setCurrentUser(user: IUser | null): void {
@@ -110,6 +141,14 @@ class NotificationService {
   }
 
   private handleVideoCallNotification(notification: any): void {
+    if (!this.currentUser) return;
+    
+    const notificationKey = this.generateNotificationKey(notification.type, notification);
+    
+    if (this.isNotificationProcessed(notificationKey)) {
+      return;
+    }
+    
     const videoCallNotification: IVideoCallNotification = {
       type: notification.type,
       callId: notification.callId,
@@ -120,7 +159,16 @@ class NotificationService {
       timestamp: notification.timestamp || new Date().toISOString()
     };
     
-    if (this.currentUser) {
+    const shouldProcessNotification = 
+      (notification.type === 'video_call_invite' && notification.to_user?.id === this.currentUser.id) ||
+      (notification.type === 'video_call_accepted' && notification.from_user?.id === this.currentUser.id) ||
+      (notification.type === 'video_call_rejected' && notification.from_user?.id === this.currentUser.id) ||
+      (notification.type === 'video_call_ended' && 
+       (notification.from_user?.id === this.currentUser.id || notification.to_user?.id === this.currentUser.id));
+    
+    if (shouldProcessNotification) {
+      this.markNotificationProcessed(notificationKey);
+      
       if (this.videoCallListeners[this.currentUser.id]) {
         this.videoCallListeners[this.currentUser.id].forEach(callback => {
           callback(videoCallNotification);

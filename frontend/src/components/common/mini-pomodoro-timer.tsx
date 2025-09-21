@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Play, Pause, RotateCcw, X, GripVertical } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { IMiniPomodoroTimer } from '../../interfaces/IMiniPomodoroTimer';
+import { SESSION_TYPES } from '../../constants/session-constants';
 
 export default function MiniPomodoroTimer({
   currentSession,
@@ -22,11 +23,11 @@ export default function MiniPomodoroTimer({
 
   const getSessionColor = () => {
     switch (currentSession) {
-      case 'focus':
+      case SESSION_TYPES.FOCUS:
         return 'bg-red-500/20 border-red-500/30';
-      case 'short-break':
+      case SESSION_TYPES.SHORT_BREAK:
         return 'bg-green-500/20 border-green-500/30';
-      case 'long-break':
+      case SESSION_TYPES.LONG_BREAK:
         return 'bg-blue-500/20 border-blue-500/30';
       default:
         return 'bg-white/10 border-white/20';
@@ -58,9 +59,9 @@ export default function MiniPomodoroTimer({
                 <GripVertical className="w-3 h-3 text-white/40 cursor-move" />
                 <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
                   isRunning 
-                    ? currentSession === 'focus' 
+                    ? currentSession === SESSION_TYPES.FOCUS 
                       ? 'bg-red-400 animate-pulse shadow-red-400/50 shadow-lg' 
-                      : currentSession === 'short-break'
+                      : currentSession === SESSION_TYPES.SHORT_BREAK
                       ? 'bg-green-400 animate-pulse shadow-green-400/50 shadow-lg'
                       : 'bg-blue-400 animate-pulse shadow-blue-400/50 shadow-lg'
                     : 'bg-white/40'

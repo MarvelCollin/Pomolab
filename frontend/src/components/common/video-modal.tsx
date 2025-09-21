@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { X, GripVertical, Camera, CameraOff, Mic, MicOff, Users, Video, Phone, Search } from 'lucide-react';
+import { X, GripVertical, Camera, CameraOff, Mic, MicOff, Users, Video, Phone, Search, Maximize, Minimize, Monitor, MonitorSpeaker } from 'lucide-react';
 import { MeetingProvider, useMeeting, useParticipant } from '@videosdk.live/react-sdk';
 import type { IVideoModal } from '../../interfaces/IVideoModal';
 import type { IFriend } from '../../interfaces/IFriend';
@@ -9,6 +9,8 @@ import { notificationService } from '../../services/notification-service';
 import { FriendApi } from '../../apis/friend-api';
 import { useToast } from './toast';
 import LoadingSpinner from './loading-spinner';
+import { createMediaStreamFromTrack, attachMediaStreamToElement } from '../../utils/media-stream-utils';
+import { getGridColumnsClass } from '../../utils/grid-utils';
 
 function FriendSelector({ 
   friends, 
@@ -27,21 +29,21 @@ function FriendSelector({
   );
 
   return (
-    <div className="space-y-3">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/60" />
+    <div className="space-y-2 w-full">
+      <div className="relative w-full">
+        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-white/60" />
         <input
           type="text"
           placeholder="Search friends..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-white/10 border border-white/20 rounded-xl pl-10 pr-3 py-2 text-white placeholder-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
+          className="w-full bg-white/10 border border-white/20 rounded-lg pl-7 pr-2 py-1.5 text-white placeholder-white/50 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-transparent"
         />
       </div>
       
-      <div className="max-h-40 overflow-y-auto space-y-1">
+      <div className="max-h-32 overflow-y-auto overflow-x-hidden space-y-1 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
         {filteredFriends.length === 0 ? (
-          <p className="text-white/60 text-sm text-center py-4">
+          <p className="text-white/60 text-xs text-center py-3">
             {searchQuery ? 'No friends found' : 'No friends available'}
           </p>
         ) : (
@@ -50,7 +52,7 @@ function FriendSelector({
             return (
             <motion.div
               key={friend.id}
-              className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
+              className={`flex items-center gap-2 p-1.5 rounded-md cursor-pointer transition-colors w-full ${
                 selectedFriends.has(friend.id) 
                   ? 'bg-blue-500/30 border border-blue-400/50' 
                   : 'bg-white/5 hover:bg-white/10'
@@ -59,7 +61,7 @@ function FriendSelector({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+              <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                 {friend.avatar ? (
                   <img
                     src={friend.avatar}
@@ -67,16 +69,16 @@ function FriendSelector({
                     className="w-full h-full rounded-full object-cover"
                   />
                 ) : (
-                  <Users className="w-4 h-4 text-white/70" />
+                  <Users className="w-3 h-3 text-white/70" />
                 )}
               </div>
-              <div className="flex-1">
-                <p className="text-white text-sm font-medium">{friend.username}</p>
-                <p className="text-white/60 text-xs">Available</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-xs font-medium truncate">{friend.username}</p>
+                <p className="text-white/60 text-xs truncate">Available</p>
               </div>
               {selectedFriends.has(friend.id) && (
-                <div className="w-4 h-4 bg-blue-400 rounded-full flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white rounded-full" />
+                <div className="w-3 h-3 bg-blue-400 rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className="w-1.5 h-1.5 bg-white rounded-full" />
                 </div>
               )}
             </motion.div>
@@ -88,17 +90,36 @@ function FriendSelector({
   );
 }
 
-function VideoParticipantView({ participantId }: { participantId: string }) {
-  const { webcamStream, micStream, webcamOn, micOn, isLocal, displayName } = useParticipant(participantId);
+function VideoParticipantView({ 
+  participantId, 
+  onParticipantClick, 
+  isFullscreenFocus = false 
+}: { 
+  participantId: string;
+  onParticipantClick?: (participantId: string) => void;
+  isFullscreenFocus?: boolean;
+}) {
+  const { webcamStream, micStream, webcamOn, micOn, isLocal, displayName, screenShareStream, screenShareOn } = useParticipant(participantId);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const screenShareRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    if (screenShareStream && screenShareRef.current) {
+      const mediaStream = createMediaStreamFromTrack(screenShareStream.track);
+      attachMediaStreamToElement(screenShareRef.current, mediaStream);
+    }
+    return () => {
+      if (screenShareRef.current) {
+        screenShareRef.current.srcObject = null;
+      }
+    };
+  }, [screenShareStream]);
 
   useEffect(() => {
     if (webcamStream && videoRef.current) {
-      const mediaStream = new MediaStream();
-      mediaStream.addTrack(webcamStream.track);
-      videoRef.current.srcObject = mediaStream;
-      videoRef.current.play().catch(console.error);
+      const mediaStream = createMediaStreamFromTrack(webcamStream.track);
+      attachMediaStreamToElement(videoRef.current, mediaStream);
     }
     return () => {
       if (videoRef.current) {
@@ -109,10 +130,8 @@ function VideoParticipantView({ participantId }: { participantId: string }) {
 
   useEffect(() => {
     if (micStream && audioRef.current && !isLocal) {
-      const mediaStream = new MediaStream();
-      mediaStream.addTrack(micStream.track);
-      audioRef.current.srcObject = mediaStream;
-      audioRef.current.play().catch(console.error);
+      const mediaStream = createMediaStreamFromTrack(micStream.track);
+      attachMediaStreamToElement(audioRef.current, mediaStream);
     }
     return () => {
       if (audioRef.current) {
@@ -122,8 +141,41 @@ function VideoParticipantView({ participantId }: { participantId: string }) {
   }, [micStream, isLocal]);
 
   return (
-    <div className="relative h-full bg-white/5 rounded-xl overflow-hidden">
-      {webcamOn ? (
+    <motion.div 
+      className={`relative h-full bg-white/5 rounded-lg overflow-hidden cursor-pointer ${
+        isFullscreenFocus ? 'min-h-[calc(100vh-160px)]' : 'min-h-[120px]'
+      }`}
+      onClick={() => onParticipantClick?.(participantId)}
+      whileHover={{ scale: isFullscreenFocus ? 1 : 1.02 }}
+      whileTap={{ scale: isFullscreenFocus ? 1 : 0.98 }}
+    >
+      {screenShareOn && screenShareStream ? (
+        <div className="relative w-full h-full">
+          <video
+            ref={screenShareRef}
+            className="w-full h-full object-contain bg-black"
+            autoPlay
+            playsInline
+            muted={isLocal}
+          />
+          <div className="absolute top-2 left-2">
+            <div className="bg-blue-500/80 p-1 rounded-full">
+              <Monitor className="w-3 h-3 text-white" />
+            </div>
+          </div>
+          {webcamOn && (
+            <div className="absolute bottom-2 right-2 w-20 h-16 bg-white/10 rounded-lg overflow-hidden border border-white/20">
+              <video
+                ref={videoRef}
+                className="w-full h-full object-cover"
+                autoPlay
+                playsInline
+                muted={isLocal}
+              />
+            </div>
+          )}
+        </div>
+      ) : webcamOn ? (
         <video
           ref={videoRef}
           className="w-full h-full object-cover"
@@ -134,43 +186,64 @@ function VideoParticipantView({ participantId }: { participantId: string }) {
       ) : (
         <div className="w-full h-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
           <div className="text-center text-white/60">
-            <Camera className="w-8 h-8 mx-auto mb-2" />
-            <span className="text-sm">Camera Off</span>
+            <Camera className={`mx-auto mb-1 ${isFullscreenFocus ? 'w-12 h-12' : 'w-6 h-6'}`} />
+            <span className={isFullscreenFocus ? 'text-sm' : 'text-xs'}>Camera Off</span>
           </div>
         </div>
       )}
       
-      <div className="absolute top-2 left-2 flex items-center gap-1">
-        <div className={`p-1 rounded-full ${micOn ? 'bg-green-500/80' : 'bg-red-500/80'}`}>
-          {micOn ? <Mic className="w-3 h-3 text-white" /> : <MicOff className="w-3 h-3 text-white" />}
+      <div className="absolute top-1 left-1 flex items-center gap-1">
+        <div className={`p-0.5 rounded-full ${micOn ? 'bg-green-500/80' : 'bg-red-500/80'}`}>
+          {micOn ? <Mic className="w-2.5 h-2.5 text-white" /> : <MicOff className="w-2.5 h-2.5 text-white" />}
         </div>
-        <div className={`p-1 rounded-full ${webcamOn ? 'bg-green-500/80' : 'bg-red-500/80'}`}>
-          {webcamOn ? <Camera className="w-3 h-3 text-white" /> : <CameraOff className="w-3 h-3 text-white" />}
+        <div className={`p-0.5 rounded-full ${webcamOn ? 'bg-green-500/80' : 'bg-red-500/80'}`}>
+          {webcamOn ? <Camera className="w-2.5 h-2.5 text-white" /> : <CameraOff className="w-2.5 h-2.5 text-white" />}
         </div>
+        {screenShareOn && (
+          <div className="p-0.5 rounded-full bg-blue-500/80">
+            <Monitor className="w-2.5 h-2.5 text-white" />
+          </div>
+        )}
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-        <p className="text-white text-xs font-medium truncate">{displayName || participantId}</p>
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1">
+        <p className={`text-white font-medium truncate ${isFullscreenFocus ? 'text-sm' : 'text-xs'}`}>
+          {displayName || participantId}
+          {isFullscreenFocus && <span className="ml-2 text-white/60">(Focus)</span>}
+        </p>
       </div>
 
       {!isLocal && (
         <audio ref={audioRef} autoPlay playsInline />
       )}
-    </div>
+    </motion.div>
   );
 }
 
-function VideoMeetingContent({ onClose, autoJoin = false }: { onClose: () => void; autoJoin?: boolean }) {
+function VideoMeetingContent({ 
+  onClose, 
+  autoJoin = false, 
+  isFullscreen, 
+  onToggleFullscreen 
+}: { 
+  onClose: () => void; 
+  autoJoin?: boolean;
+  isFullscreen: boolean;
+  onToggleFullscreen: () => void;
+}) {
   const [joined, setJoined] = useState(false);
   const [hasAttemptedJoin, setHasAttemptedJoin] = useState(false);
+  const [focusedParticipant, setFocusedParticipant] = useState<string | null>(null);
   const { 
     join, 
     leave, 
     toggleMic, 
     toggleWebcam, 
+    toggleScreenShare,
     participants, 
     localMicOn, 
-    localWebcamOn 
+    localWebcamOn,
+    localScreenShareOn
   } = useMeeting({
     onMeetingJoined: () => {
       setJoined(true);
@@ -179,7 +252,15 @@ function VideoMeetingContent({ onClose, autoJoin = false }: { onClose: () => voi
       onClose();
     },
   });
-  const participantIds = Array.from(participants.keys());
+  const participantIds = Array.from(participants.keys()).filter((id, index, array) => 
+    array.indexOf(id) === index
+  );
+
+  const handleParticipantClick = (participantId: string) => {
+    if (isFullscreen) {
+      setFocusedParticipant(focusedParticipant === participantId ? null : participantId);
+    }
+  };
 
   useEffect(() => {
     if (autoJoin && !joined && !hasAttemptedJoin) {
@@ -196,12 +277,38 @@ function VideoMeetingContent({ onClose, autoJoin = false }: { onClose: () => voi
     leave();
   };
 
-  const getGridClass = () => {
+  const getVideoGridClass = () => {
+    if (focusedParticipant) return 'grid-cols-1';
     const count = participantIds.length;
     if (count === 1) return 'grid-cols-1';
-    if (count === 2) return 'grid-cols-2';
+    if (count === 2) return 'grid-cols-1 sm:grid-cols-2';
+    if (count === 3) return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
     if (count <= 4) return 'grid-cols-2';
-    return 'grid-cols-2';
+    if (count <= 6) return 'grid-cols-2 lg:grid-cols-3';
+    return 'grid-cols-2 lg:grid-cols-3';
+  };
+
+  const renderParticipants = () => {
+    if (focusedParticipant) {
+      return (
+        <div className="h-full">
+          <VideoParticipantView 
+            key={focusedParticipant} 
+            participantId={focusedParticipant} 
+            onParticipantClick={handleParticipantClick}
+            isFullscreenFocus={true}
+          />
+        </div>
+      );
+    }
+
+    return participantIds.map((participantId) => (
+      <VideoParticipantView 
+        key={participantId} 
+        participantId={participantId} 
+        onParticipantClick={handleParticipantClick}
+      />
+    ));
   };
 
   if (!joined) {
@@ -225,28 +332,38 @@ function VideoMeetingContent({ onClose, autoJoin = false }: { onClose: () => voi
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex-1 p-3">
+    <div className="h-full flex flex-col min-h-0">
+      <div className={`flex-1 min-h-0 ${isFullscreen ? 'p-4' : 'p-2'}`}>
         {participantIds.length > 0 ? (
-          <div className={`grid gap-2 h-full ${getGridClass()}`}>
-            {participantIds.map((participantId) => (
-              <VideoParticipantView key={participantId} participantId={participantId} />
-            ))}
+          <div className={`${
+            focusedParticipant 
+              ? 'h-full' 
+              : `grid gap-${isFullscreen ? '4' : '2'} h-full ${
+                  isFullscreen ? 'min-h-[calc(100vh-120px)]' : 'min-h-[200px]'
+                } ${getVideoGridClass()}`
+          }`}>
+            {renderParticipants()}
           </div>
         ) : (
-          <div className="flex items-center justify-center h-full">
+          <div className={`flex items-center justify-center h-full ${
+            isFullscreen ? 'min-h-[calc(100vh-120px)]' : 'min-h-[200px]'
+          }`}>
             <div className="text-center text-white/60">
-              <Users className="w-8 h-8 mx-auto mb-2" />
-              <p className="text-sm">Waiting for participants...</p>
+              <Users className={`mx-auto mb-2 ${isFullscreen ? 'w-12 h-12' : 'w-6 h-6'}`} />
+              <p className={isFullscreen ? 'text-sm' : 'text-xs'}>Waiting for participants...</p>
             </div>
           </div>
         )}
       </div>
 
-      <div className="flex items-center justify-center gap-2 p-3 border-t border-white/10">
+      <div className={`flex items-center justify-center border-t border-white/10 bg-white/5 ${
+        isFullscreen ? 'gap-4 p-4' : 'gap-2 p-3'
+      }`}>
         <motion.button
           onClick={() => toggleMic()}
-          className={`p-2 rounded-lg transition-colors ${
+          className={`rounded-lg transition-colors ${
+            isFullscreen ? 'p-3' : 'p-2'
+          } ${
             localMicOn 
               ? 'bg-white/20 hover:bg-white/30 text-white' 
               : 'bg-red-500/80 hover:bg-red-500 text-white'
@@ -254,12 +371,18 @@ function VideoMeetingContent({ onClose, autoJoin = false }: { onClose: () => voi
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          {localMicOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+          {localMicOn ? (
+            <Mic className={isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} />
+          ) : (
+            <MicOff className={isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} />
+          )}
         </motion.button>
         
         <motion.button
           onClick={() => toggleWebcam()}
-          className={`p-2 rounded-lg transition-colors ${
+          className={`rounded-lg transition-colors ${
+            isFullscreen ? 'p-3' : 'p-2'
+          } ${
             localWebcamOn 
               ? 'bg-white/20 hover:bg-white/30 text-white' 
               : 'bg-red-500/80 hover:bg-red-500 text-white'
@@ -267,16 +390,56 @@ function VideoMeetingContent({ onClose, autoJoin = false }: { onClose: () => voi
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          {localWebcamOn ? <Camera className="w-4 h-4" /> : <CameraOff className="w-4 h-4" />}
+          {localWebcamOn ? (
+            <Camera className={isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} />
+          ) : (
+            <CameraOff className={isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} />
+          )}
+        </motion.button>
+
+        <motion.button
+          onClick={() => toggleScreenShare()}
+          className={`rounded-lg transition-colors ${
+            isFullscreen ? 'p-3' : 'p-2'
+          } ${
+            localScreenShareOn 
+              ? 'bg-blue-500/80 hover:bg-blue-500 text-white' 
+              : 'bg-white/20 hover:bg-white/30 text-white'
+          }`}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          {localScreenShareOn ? (
+            <MonitorSpeaker className={isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} />
+          ) : (
+            <Monitor className={isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} />
+          )}
+        </motion.button>
+
+        <motion.button
+          onClick={onToggleFullscreen}
+          className={`bg-white/20 hover:bg-white/30 rounded-lg text-white transition-colors ${
+            isFullscreen ? 'p-3' : 'p-2'
+          }`}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          {isFullscreen ? (
+            <Minimize className={isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} />
+          ) : (
+            <Maximize className={isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} />
+          )}
         </motion.button>
         
         <motion.button
           onClick={handleLeave}
-          className="p-2 bg-red-500/80 hover:bg-red-500 rounded-lg text-white transition-colors"
+          className={`bg-red-500/80 hover:bg-red-500 rounded-lg text-white transition-colors ${
+            isFullscreen ? 'p-3' : 'p-2'
+          }`}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          <Phone className="w-4 h-4" />
+          <Phone className={isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} />
         </motion.button>
       </div>
     </div>
@@ -297,7 +460,12 @@ export default function VideoModal({
   const [selectedFriends, setSelectedFriends] = useState<Set<number>>(new Set());
   const [showFriendSelector, setShowFriendSelector] = useState(true);
   const [isCreatedMeeting, setIsCreatedMeeting] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const { showError, showSuccess, showInfo } = useToast();
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
 
   const loadFriends = useCallback(async () => {
     if (!currentUser) return;
@@ -377,6 +545,7 @@ export default function VideoModal({
     setShowFriendSelector(true);
     setSelectedFriends(new Set());
     setIsCreatedMeeting(false);
+    setIsFullscreen(false);
     onClose();
   };
 
@@ -398,45 +567,98 @@ export default function VideoModal({
   return (
     <motion.div
       ref={constraintsRef}
-      className="fixed inset-0 pointer-events-none z-50"
+      className={`fixed ${isFullscreen ? 'inset-0' : 'inset-0 pointer-events-none'} z-[60]`}
     >
+      {isFullscreen && (
+        <motion.div 
+          className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        />
+      )}
       <motion.div
-        drag
+        drag={!isFullscreen}
         dragConstraints={constraintsRef}
         dragElastic={0.1}
         whileDrag={{ scale: 1.02, rotate: 1 }}
-        className="absolute top-20 left-80 w-96 h-80 bg-white/10 backdrop-blur-3xl border border-white/20 rounded-3xl shadow-2xl pointer-events-auto overflow-hidden"
+        className={`${
+          isFullscreen 
+            ? 'fixed inset-4 w-auto h-auto' 
+            : 'absolute top-16 right-4 w-80 h-96 max-w-[85vw] max-h-[85vh]'
+        } bg-white/10 backdrop-blur-3xl border border-white/20 ${
+          isFullscreen ? 'rounded-xl' : 'rounded-2xl'
+        } shadow-2xl pointer-events-auto overflow-hidden`}
         initial={{ opacity: 0, scale: 0.8, y: -50 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
+        animate={{ 
+          opacity: 1, 
+          scale: 1, 
+          y: 0,
+          transition: { duration: 0.4, ease: "easeOut" }
+        }}
         exit={{ opacity: 0, scale: 0.8, y: -50 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
+        layout
       >
         <div className="relative h-full flex flex-col">
           <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
           
-          <div className="relative flex items-center justify-between p-4 border-b border-white/10">
-            <div className="flex items-center gap-3">
-              <GripVertical className="w-4 h-4 text-white/40 cursor-move" />
+          <div className={`relative flex items-center justify-between border-b border-white/10 ${
+            isFullscreen ? 'p-4' : 'p-3'
+          }`}>
+            <div className="flex items-center gap-2">
+              {!isFullscreen && (
+                <GripVertical className="w-3 h-3 text-white/40 cursor-move" />
+              )}
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center border border-white/20">
-                  <Video className="w-4 h-4 text-white/80" />
+                <div className={`bg-white/20 rounded-full flex items-center justify-center border border-white/20 ${
+                  isFullscreen ? 'w-8 h-8' : 'w-6 h-6'
+                }`}>
+                  <Video className={`text-white/80 ${isFullscreen ? 'w-4 h-4' : 'w-3 h-3'}`} />
                 </div>
                 <div>
-                  <h3 className="text-white text-sm font-medium">Video Call</h3>
-                  <p className="text-white/60 text-xs">
+                  <h3 className={`text-white font-medium ${
+                    isFullscreen ? 'text-sm' : 'text-xs'
+                  }`}>
+                    Video Call {isFullscreen && '(Fullscreen)'}
+                  </h3>
+                  <p className={`text-white/60 ${isFullscreen ? 'text-sm' : 'text-xs'}`}>
                     {currentUser ? `${currentUser.username}` : 'Guest User'}
                   </p>
                 </div>
               </div>
             </div>
-            <motion.button
-              onClick={handleClose}
-              className="p-1.5 hover:bg-white/20 rounded-full transition-colors group"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <X className="w-4 h-4 text-white/60 group-hover:text-white" />
-            </motion.button>
+            <div className="flex items-center gap-1">
+              <motion.button
+                onClick={toggleFullscreen}
+                className={`hover:bg-white/20 rounded-full transition-colors group ${
+                  isFullscreen ? 'p-2' : 'p-1'
+                }`}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                {isFullscreen ? (
+                  <Minimize className={`text-white/60 group-hover:text-white ${
+                    isFullscreen ? 'w-4 h-4' : 'w-3 h-3'
+                  }`} />
+                ) : (
+                  <Maximize className={`text-white/60 group-hover:text-white ${
+                    isFullscreen ? 'w-4 h-4' : 'w-3 h-3'
+                  }`} />
+                )}
+              </motion.button>
+              <motion.button
+                onClick={handleClose}
+                className={`hover:bg-white/20 rounded-full transition-colors group ${
+                  isFullscreen ? 'p-2' : 'p-1'
+                }`}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <X className={`text-white/60 group-hover:text-white ${
+                  isFullscreen ? 'w-4 h-4' : 'w-3 h-3'
+                }`} />
+              </motion.button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-hidden relative">
@@ -450,10 +672,10 @@ export default function VideoModal({
                 </div>
               </div>
             ) : showFriendSelector ? (
-              <div className="p-4 space-y-4">
+              <div className="p-3 space-y-3">
                 <div className="text-center">
-                  <h3 className="text-white text-lg font-medium mb-2">Start Video Call</h3>
-                  <p className="text-white/60 text-sm">Select friends to invite to the call</p>
+                  <h3 className="text-white text-sm font-medium mb-1">Start Video Call</h3>
+                  <p className="text-white/60 text-xs">Select friends to invite</p>
                 </div>
                 
                 <FriendSelector
@@ -466,11 +688,11 @@ export default function VideoModal({
                   <motion.button
                     onClick={startVideoCall}
                     disabled={selectedFriends.size === 0 || loading}
-                    className="flex-1 px-4 py-2 bg-blue-500/80 hover:bg-blue-500 disabled:bg-white/10 disabled:cursor-not-allowed rounded-xl text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 px-3 py-2 bg-blue-500/80 hover:bg-blue-500 disabled:bg-white/10 disabled:cursor-not-allowed rounded-lg text-white text-xs font-medium transition-colors flex items-center justify-center gap-1"
                     whileHover={{ scale: selectedFriends.size > 0 ? 1.02 : 1 }}
                     whileTap={{ scale: selectedFriends.size > 0 ? 0.98 : 1 }}
                   >
-                    <Video className="w-4 h-4" />
+                    <Video className="w-3 h-3" />
                     Call {selectedFriends.size > 0 ? `(${selectedFriends.size})` : ''}
                   </motion.button>
                 </div>
@@ -486,7 +708,12 @@ export default function VideoModal({
                 }}
                 token={token}
               >
-                <VideoMeetingContent onClose={handleClose} autoJoin={isCreatedMeeting || !!joinMeetingData} />
+                <VideoMeetingContent 
+                  onClose={handleClose} 
+                  autoJoin={isCreatedMeeting || !!joinMeetingData} 
+                  isFullscreen={isFullscreen}
+                  onToggleFullscreen={toggleFullscreen}
+                />
               </MeetingProvider>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">

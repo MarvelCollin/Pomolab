@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useParticipant } from '@videosdk.live/react-sdk';
 import { Mic, MicOff, Camera, CameraOff, User } from 'lucide-react';
 import type { IParticipantModal } from '../../interfaces/IParticipantModal';
+import { createMediaStreamFromTrack, attachMediaStreamToElement } from '../../utils/media-stream-utils';
 
 export default function ParticipantModal({ participantId, isOpen, onClose }: IParticipantModal) {
   const { webcamStream, micStream, webcamOn, micOn, isLocal, displayName } = useParticipant(participantId);
@@ -10,10 +11,8 @@ export default function ParticipantModal({ participantId, isOpen, onClose }: IPa
 
   useEffect(() => {
     if (webcamStream && videoRef.current) {
-      const mediaStream = new MediaStream();
-      mediaStream.addTrack(webcamStream.track);
-      videoRef.current.srcObject = mediaStream;
-      videoRef.current.play().catch(console.error);
+      const mediaStream = createMediaStreamFromTrack(webcamStream.track);
+      attachMediaStreamToElement(videoRef.current, mediaStream);
     }
     return () => {
       if (videoRef.current) {
@@ -24,10 +23,8 @@ export default function ParticipantModal({ participantId, isOpen, onClose }: IPa
 
   useEffect(() => {
     if (micStream && audioRef.current && !isLocal) {
-      const mediaStream = new MediaStream();
-      mediaStream.addTrack(micStream.track);
-      audioRef.current.srcObject = mediaStream;
-      audioRef.current.play().catch(console.error);
+      const mediaStream = createMediaStreamFromTrack(micStream.track);
+      attachMediaStreamToElement(audioRef.current, mediaStream);
     }
     return () => {
       if (audioRef.current) {

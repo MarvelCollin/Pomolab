@@ -4,6 +4,7 @@ import { Mic, MicOff, Camera, CameraOff } from 'lucide-react';
 import type { IMeetingView } from '../../interfaces/IMeetingView';
 import ParticipantView from './participant-view';
 import LoadingSpinner from '../common/loading-spinner';
+import { getGridColumnsClass } from '../../utils/grid-utils';
 
 export default function MeetingView({ meetingId, onLeave }: IMeetingView) {
   const [joined, setJoined] = useState<string>("JOINING");
@@ -26,15 +27,6 @@ export default function MeetingView({ meetingId, onLeave }: IMeetingView) {
 
   const participantIds = Array.from(participants.keys());
   const participantCount = participantIds.length;
-
-  const getGridColumns = () => {
-    if (participantCount === 1) return 'grid-cols-1';
-    if (participantCount === 2) return 'grid-cols-1 md:grid-cols-2';
-    if (participantCount <= 4) return 'grid-cols-1 md:grid-cols-2';
-    if (participantCount <= 6) return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
-    if (participantCount <= 9) return 'grid-cols-2 md:grid-cols-3';
-    return 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4';
-  };
 
   const joinMeeting = () => {
     setJoined("JOINING");
@@ -70,7 +62,7 @@ export default function MeetingView({ meetingId, onLeave }: IMeetingView) {
           </header>
 
           <main className="flex-1 p-6 overflow-hidden">
-            <div className={`grid gap-4 h-full ${getGridColumns()}`}>
+            <div className={`grid gap-4 h-full ${getGridColumnsClass(participantCount)}`}>
               {participantIds.map((participantId) => (
                 <ParticipantView key={participantId} participantId={participantId} />
               ))}
