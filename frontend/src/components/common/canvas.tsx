@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, GripVertical, Brush, Square, Circle, Minus, Eraser, Palette, RotateCcw, Download, Maximize2, Minimize2, UserPlus, Send, Undo2, Eye, ZoomIn, ZoomOut, Move } from 'lucide-react';
+import { X, GripVertical, Brush, Square, Circle, Minus, Eraser, Palette, RotateCcw, Download, Maximize2, Minimize2, UserPlus, Send, Undo2, Eye } from 'lucide-react';
 import { notificationService } from '../../services/notification-service';
 import { socketService } from '../../services/socket-service';
 import { FriendApi } from '../../apis/friend-api';
@@ -10,7 +10,6 @@ import type {
   IDrawingTool, 
   IDrawingAction, 
   IUserCursor, 
-  IViewportState, 
   ICanvasSession 
 } from '../../interfaces/ICanvas';
 
@@ -20,7 +19,6 @@ const drawingTools: IDrawingTool[] = [
   { id: 'rectangle', icon: Square, name: 'Rectangle' },
   { id: 'circle', icon: Circle, name: 'Circle' },
   { id: 'eraser', icon: Eraser, name: 'Eraser' },
-  { id: 'pan', icon: Move, name: 'Pan' },
 ];
 
 const colors = [
@@ -60,10 +58,12 @@ function ToolButton({
 
 function ColorPicker({ 
   selectedColor, 
-  onColorChange 
+  onColorChange,
+  isCompact = false
 }: { 
   selectedColor: string; 
   onColorChange: (color: string) => void; 
+  isCompact?: boolean;
 }) {
   const [showCustomPicker, setShowCustomPicker] = useState(false);
   const [customColor, setCustomColor] = useState('#ffffff');
@@ -75,18 +75,18 @@ function ColorPicker({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="flex items-center gap-2 text-white/80">
-        <Palette className="w-4 h-4" />
-        <span className="text-sm font-medium">Colors</span>
+        <Palette className="w-3 h-3" />
+        <span className={`text-xs font-medium ${isCompact ? 'hidden' : ''}`}>Colors</span>
       </div>
       
-      <div className="grid grid-cols-5 gap-2">
-        {colors.map((color) => (
+      <div className={`grid gap-1 ${isCompact ? 'grid-cols-3' : 'grid-cols-5'}`}>
+        {colors.slice(0, isCompact ? 6 : colors.length).map((color) => (
           <motion.button
             key={color}
             onClick={() => onColorChange(color)}
-            className={`w-8 h-8 rounded-lg border-2 transition-all ${
+            className={`${isCompact ? 'w-6 h-6' : 'w-8 h-8'} rounded-lg border-2 transition-all ${
               selectedColor === color ? 'border-white shadow-lg scale-110' : 'border-white/30 hover:border-white/60'
             }`}
             style={{ backgroundColor: color }}
@@ -97,59 +97,65 @@ function ColorPicker({
         ))}
       </div>
 
-      <div className="space-y-2">
-        <motion.button
-          onClick={() => setShowCustomPicker(!showCustomPicker)}
-          className="w-full px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors text-sm flex items-center gap-2"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <Eye className="w-4 h-4" />
-          Custom Color
-        </motion.button>
-        
-        {showCustomPicker && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="space-y-2"
+      {!isCompact && (
+        <div className="space-y-2">
+          <motion.button
+            onClick={() => setShowCustomPicker(!showCustomPicker)}
+            className="w-full px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors text-sm flex items-center gap-2"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
-            <input
-              type="color"
-              value={customColor}
-              onChange={handleCustomColorChange}
-              className="w-full h-10 rounded-lg border border-white/30 bg-transparent cursor-pointer"
-            />
-            <div className="text-white/50 text-xs text-center font-mono">
-              {customColor.toUpperCase()}
-            </div>
-          </motion.div>
-        )}
-      </div>
+            <Eye className="w-4 h-4" />
+            Custom Color
+          </motion.button>
+          
+          {showCustomPicker && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-2"
+            >
+              <input
+                type="color"
+                value={customColor}
+                onChange={handleCustomColorChange}
+                className="w-full h-10 rounded-lg border border-white/30 bg-transparent cursor-pointer"
+              />
+              <div className="text-white/50 text-xs text-center font-mono">
+                {customColor.toUpperCase()}
+              </div>
+            </motion.div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 function BrushSizePicker({ 
   selectedSize, 
-  onSizeChange 
+  onSizeChange,
+  isCompact = false
 }: { 
   selectedSize: number; 
   onSizeChange: (size: number) => void; 
+  isCompact?: boolean;
 }) {
+  const displaySizes = isCompact ? [2, 5, 10, 20] : brushSizes;
+  
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="flex items-center gap-2 text-white/80">
-        <Brush className="w-4 h-4" />
-        <span className="text-sm font-medium">Brush Size</span>
+        <Brush className="w-3 h-3" />
+        <span className={`text-xs font-medium ${isCompact ? 'hidden' : ''}`}>Size</span>
       </div>
-      <div className="space-y-2">
-        {brushSizes.map((size) => (
+      <div className="space-y-1">
+        {displaySizes.map((size) => (
           <motion.button
             key={size}
             onClick={() => onSizeChange(size)}
-            className={`w-full h-10 rounded-lg border-2 flex items-center justify-center transition-all ${
+            className={`w-full ${isCompact ? 'h-8' : 'h-10'} rounded-lg border-2 flex items-center justify-center transition-all ${
               selectedSize === size 
                 ? 'border-white bg-white/20 shadow-lg' 
                 : 'border-white/30 hover:border-white/60 hover:bg-white/10'
@@ -158,15 +164,15 @@ function BrushSizePicker({
             whileTap={{ scale: 0.98 }}
             title={`Size: ${size}px`}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <div 
                 className="rounded-full bg-white shadow-sm"
                 style={{ 
-                  width: Math.max(4, Math.min(size, 16)), 
-                  height: Math.max(4, Math.min(size, 16))
+                  width: Math.max(3, Math.min(size, isCompact ? 12 : 16)), 
+                  height: Math.max(3, Math.min(size, isCompact ? 12 : 16))
                 }}
               />
-              <span className="text-white/70 text-sm">{size}px</span>
+              <span className={`text-white/70 ${isCompact ? 'text-xs' : 'text-sm'}`}>{size}</span>
             </div>
           </motion.button>
         ))}
@@ -354,6 +360,7 @@ function DrawingCanvas({
   setIsFullscreen,
   currentUser,
   sessionId,
+  canvasSession,
   drawingActions,
   setDrawingActions
 }: { 
@@ -363,25 +370,20 @@ function DrawingCanvas({
   setIsFullscreen: (value: boolean) => void;
   currentUser?: { id: number; username: string } | null;
   sessionId: string;
+  canvasSession: ICanvasSession | null;
   drawingActions: IDrawingAction[];
   setDrawingActions: React.Dispatch<React.SetStateAction<IDrawingAction[]>>;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  // @ts-ignore - Will be used later
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [isPanning, setIsPanning] = useState(false);
   const [activeTool, setActiveTool] = useState('brush');
   const [selectedColor, setSelectedColor] = useState('#ffffff');
   const [brushSize, setBrushSize] = useState(5);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [currentStroke, setCurrentStroke] = useState<{x: number, y: number}[]>([]);
   const [undoHistory, setUndoHistory] = useState<ImageData[]>([]);
-  
-  const [viewportState, setViewportState] = useState<IViewportState>({ x: 0, y: 0, zoom: 1 });
-  const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
   const [showInvitePanel, setShowInvitePanel] = useState(false);
-  
   const [userCursors, setUserCursors] = useState<Map<number, IUserCursor>>(new Map());
 
   useEffect(() => {
@@ -390,35 +392,25 @@ function DrawingCanvas({
     
     const resizeCanvas = () => {
       const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
       
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
+      canvas.width = rect.width;
+      canvas.height = rect.height;
       
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.scale(dpr, dpr);
-        ctx.setTransform(
-          viewportState.zoom * dpr, 0, 0, 
-          viewportState.zoom * dpr, 
-          viewportState.x * dpr, 
-          viewportState.y * dpr
-        );
-        
         ctx.fillStyle = 'transparent';
-        ctx.fillRect(
-          -viewportState.x / viewportState.zoom, 
-          -viewportState.y / viewportState.zoom, 
-          rect.width / viewportState.zoom, 
-          rect.height / viewportState.zoom
-        );
+        ctx.fillRect(0, 0, rect.width, rect.height);
+        
+        drawingActions.forEach(action => {
+          applyDrawingAction(action);
+        });
       }
     };
 
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     return () => window.removeEventListener('resize', resizeCanvas);
-  }, [viewportState]);
+  }, [isFullscreen, drawingActions]);
 
   useEffect(() => {
     const unsubscribe = socketService.listenToCanvasNotifications((data: any) => {
@@ -426,7 +418,6 @@ function DrawingCanvas({
         const action = data.data.data as IDrawingAction;
         if (action.userId !== currentUser?.id) {
           if (action.type === 'canvas_state') {
-            // Handle canvas state synchronization for new participants
             const stateActions = action as any;
             if (stateActions.actions && Array.isArray(stateActions.actions)) {
               setDrawingActions(stateActions.actions);
@@ -457,13 +448,14 @@ function DrawingCanvas({
             }, 3000);
           } else {
             applyDrawingAction(action);
+            setDrawingActions(prev => [...prev, action]);
           }
         }
       }
     });
 
     return unsubscribe;
-  }, [sessionId, currentUser?.id, viewportState]);
+  }, [sessionId, currentUser?.id]);
 
   // Handle canvas resize when fullscreen changes
   useEffect(() => {
@@ -471,30 +463,20 @@ function DrawingCanvas({
     if (!canvas) return;
     
     setTimeout(() => {
-      const oldWidth = canvas.width;
-      const oldHeight = canvas.height;
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
       
-      // Save current canvas content
-      const imageData = canvas.getContext('2d')?.getImageData(0, 0, oldWidth, oldHeight);
-      
-      // Resize canvas with DPI scaling
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = canvas.offsetWidth * dpr;
-      canvas.height = canvas.offsetHeight * dpr;
-      
-      // Restore canvas content with viewport transform
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.scale(dpr, dpr);
-        ctx.setTransform(viewportState.zoom, 0, 0, viewportState.zoom, viewportState.x, viewportState.y);
         ctx.fillStyle = 'rgba(240, 240, 240, 0.15)';
-        ctx.fillRect(-viewportState.x / viewportState.zoom, -viewportState.y / viewportState.zoom, canvas.offsetWidth / viewportState.zoom, canvas.offsetHeight / viewportState.zoom);
-        if (imageData) {
-          ctx.putImageData(imageData, 0, 0);
-        }
+        ctx.fillRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+        
+        drawingActions.forEach(action => {
+          applyDrawingAction(action);
+        });
       }
     }, 100);
-  }, [isFullscreen, viewportState]);
+  }, [isFullscreen]);
 
   const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -504,10 +486,9 @@ function DrawingCanvas({
     const clientX = e.clientX - rect.left;
     const clientY = e.clientY - rect.top;
     
-    // Transform to canvas coordinates considering viewport
     return {
-      x: (clientX - viewportState.x) / viewportState.zoom,
-      y: (clientY - viewportState.y) / viewportState.zoom
+      x: clientX,
+      y: clientY
     };
   };
 
@@ -555,10 +536,14 @@ function DrawingCanvas({
 
   const broadcastAction = (action: IDrawingAction) => {
     if (currentUser && sessionId) {
+      // Get all user IDs from session participants
+      const targetUsers = canvasSession?.participants?.map(participant => participant.id) || [];
+      
       socketService.sendCanvasAction({
         action: 'draw',
         sessionId: sessionId,
         userId: currentUser.id,
+        targetUsers: targetUsers,
         data: action,
         timestamp: Date.now()
       });
@@ -570,15 +555,8 @@ function DrawingCanvas({
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
-    // Save current transform
     ctx.save();
     
-    // Apply viewport transform
-    const dpr = window.devicePixelRatio || 1;
-    ctx.scale(dpr, dpr);
-    ctx.setTransform(viewportState.zoom, 0, 0, viewportState.zoom, viewportState.x, viewportState.y);
-
-    // Set drawing styles
     ctx.globalCompositeOperation = action.tool === 'eraser' ? 'destination-out' : 'source-over';
     ctx.strokeStyle = action.color;
     ctx.lineWidth = action.size;
@@ -637,23 +615,15 @@ function DrawingCanvas({
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         break;
       case 'cursor_move':
-        // Update cursor position for other users
         if (action.userId !== currentUser?.id) {
           updateUserCursor(action);
         }
         break;
       case 'undo':
-        // Undo is handled locally, no need to apply from remote
         break;
     }
     
-    // Restore transform
     ctx.restore();
-    
-    // Store action for new participants (except cursor moves)
-    if (action.type !== 'cursor_move') {
-      setDrawingActions(prev => [...prev, action]);
-    }
   };
 
   // Update user cursor position
@@ -687,16 +657,13 @@ function DrawingCanvas({
     return Array.from(userCursors.entries()).map(([userId, cursor]) => {
       if (cursor.userId === currentUser?.id) return null;
       
-      const screenX = (cursor.x + viewportState.x) * viewportState.zoom;
-      const screenY = (cursor.y + viewportState.y) * viewportState.zoom;
-      
       return (
         <div
           key={userId}
           className="absolute pointer-events-none z-10 flex items-center"
           style={{
-            left: screenX,
-            top: screenY,
+            left: cursor.x,
+            top: cursor.y,
             transform: 'translate(-2px, -2px)'
           }}
         >
@@ -715,13 +682,6 @@ function DrawingCanvas({
     if (!canvas || !ctx || !currentUser) return;
 
     const { x, y } = getCanvasCoordinates(e);
-
-    if (activeTool === 'pan') {
-      setIsPanning(true);
-      setLastPanPoint({ x: e.clientX, y: e.clientY });
-      onDrawingStart();
-      return;
-    }
 
     saveCanvasState();
 
@@ -764,18 +724,7 @@ function DrawingCanvas({
 
     const { x, y } = getCanvasCoordinates(e);
 
-    if (activeTool === 'pan' && isPanning) {
-      const deltaX = e.clientX - lastPanPoint.x;
-      const deltaY = e.clientY - lastPanPoint.y;
-      
-      setViewportState(prevState => ({
-        ...prevState,
-        x: prevState.x + deltaX,
-        y: prevState.y + deltaY
-      }));
-      
-      setLastPanPoint({ x: e.clientX, y: e.clientY });
-    } else if (activeTool === 'brush' || activeTool === 'eraser') {
+    if (activeTool === 'brush' || activeTool === 'eraser') {
       ctx.lineTo(x, y);
       ctx.stroke();
       
@@ -809,9 +758,7 @@ function DrawingCanvas({
 
     const { x, y } = getCanvasCoordinates(e);
     
-    if (activeTool === 'pan') {
-      setIsPanning(false);
-    } else if (activeTool === 'brush' || activeTool === 'eraser') {
+    if (activeTool === 'brush' || activeTool === 'eraser') {
       const action: IDrawingAction = {
         type: 'stroke_end',
         tool: activeTool,
@@ -860,7 +807,6 @@ function DrawingCanvas({
 
     const { x, y } = getCanvasCoordinates(e);
     
-    // Broadcast cursor position for real-time tracking
     const cursorAction: IDrawingAction = {
       type: 'cursor_move',
       tool: 'cursor',
@@ -876,32 +822,9 @@ function DrawingCanvas({
       id: generateActionId()
     };
     
-    // Only broadcast cursor position if not drawing (to avoid spam)
     if (!isDrawing) {
       broadcastAction(cursorAction);
     }
-  };
-
-  // Handle wheel zoom
-  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
-    
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-    const newZoom = Math.max(0.1, Math.min(5, viewportState.zoom * zoomFactor));
-
-    setViewportState(prevState => ({
-      ...prevState,
-      zoom: newZoom,
-      x: prevState.x + (mouseX - prevState.x) * (1 - zoomFactor),
-      y: prevState.y + (mouseY - prevState.y) * (1 - zoomFactor)
-    }));
   };
 
   const clearCanvas = () => {
@@ -909,7 +832,6 @@ function DrawingCanvas({
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx || !currentUser) return;
     
-    // Save state before clearing
     saveCanvasState();
     
     const action: IDrawingAction = {
@@ -925,15 +847,12 @@ function DrawingCanvas({
       id: generateActionId()
     };
     
-    // Apply locally first for immediate feedback
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = 'rgba(240, 240, 240, 0.15)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Clear local drawing actions
     setDrawingActions([]);
     
-    // Broadcast to other users
     broadcastAction(action);
   };
 
@@ -945,29 +864,6 @@ function DrawingCanvas({
     link.download = `canvas_${sessionId}_${Date.now()}.png`;
     link.href = canvas.toDataURL();
     link.click();
-  };
-
-  // Zoom functions
-  const zoomIn = () => {
-    setViewportState(prevState => ({
-      ...prevState,
-      zoom: Math.min(5, prevState.zoom * 1.2)
-    }));
-  };
-
-  const zoomOut = () => {
-    setViewportState(prevState => ({
-      ...prevState,
-      zoom: Math.max(0.1, prevState.zoom / 1.2)
-    }));
-  };
-
-  const resetZoom = () => {
-    setViewportState({
-      x: 0,
-      y: 0,
-      zoom: 1
-    });
   };
 
   return (
@@ -1015,39 +911,6 @@ function DrawingCanvas({
               <Download className="w-4 h-4" />
             </motion.button>
           </div>
-
-          <div className="flex items-center gap-2 bg-white/10 rounded-xl p-2">
-            <motion.button
-              onClick={zoomOut}
-              className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/60 hover:text-white transition-colors"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              title="Zoom Out"
-            >
-              <ZoomOut className="w-4 h-4" />
-            </motion.button>
-            <div className="px-3 py-2 text-xs text-white/60 font-medium min-w-[4rem] text-center bg-white/5 rounded">
-              {Math.round(viewportState.zoom * 100)}%
-            </div>
-            <motion.button
-              onClick={zoomIn}
-              className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/60 hover:text-white transition-colors"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              title="Zoom In"
-            >
-              <ZoomIn className="w-4 h-4" />
-            </motion.button>
-            <motion.button
-              onClick={resetZoom}
-              className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/60 hover:text-white transition-colors"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              title="Reset Zoom"
-            >
-              <Eye className="w-4 h-4" />
-            </motion.button>
-          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -1073,18 +936,22 @@ function DrawingCanvas({
       </div>
       
       <div className="flex-1 flex min-h-0">
-        <div className="flex-shrink-0 w-64 border-r border-white/10 bg-black/10 backdrop-blur-sm">
-          <div className="p-4 space-y-6 h-full overflow-y-auto">
-            <ColorPicker
-              selectedColor={selectedColor}
-              onColorChange={setSelectedColor}
-            />
-            <BrushSizePicker
-              selectedSize={brushSize}
-              onSizeChange={setBrushSize}
-            />
+        {isFullscreen && (
+          <div className="flex-shrink-0 w-64 border-r border-white/10 bg-black/10 backdrop-blur-sm transition-all duration-300">
+            <div className="p-3 space-y-4 h-full overflow-y-auto">
+              <ColorPicker
+                selectedColor={selectedColor}
+                onColorChange={setSelectedColor}
+                isCompact={false}
+              />
+              <BrushSizePicker
+                selectedSize={brushSize}
+                onSizeChange={setBrushSize}
+                isCompact={false}
+              />
+            </div>
           </div>
-        </div>
+        )}
         
         <div className="flex-1 relative bg-gradient-to-br from-white/5 to-white/10">
           <canvas
@@ -1111,7 +978,6 @@ function DrawingCanvas({
                 }
               }
             }}
-            onWheel={handleWheel}
           />
           {renderCursors()}
           
@@ -1138,7 +1004,9 @@ function DrawingCanvas({
 export default function CanvasModal({
   isOpen,
   onClose,
-  currentUser
+  currentUser,
+  pendingSession,
+  onSessionJoined
 }: ICanvasModal) {
   const constraintsRef = useRef(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -1150,16 +1018,40 @@ export default function CanvasModal({
 
   useEffect(() => {
     if (isOpen && currentUser) {
-      const sessionId = `session_${currentUser.id}_${Date.now()}`;
-      const newSession: ICanvasSession = {
-        id: sessionId,
-        name: `${currentUser.username}'s Canvas`,
-        participants: [currentUser as IUser],
-        createdBy: currentUser.id,
-        createdAt: new Date().toISOString()
-      };
-      setCanvasSession(newSession);
-      setParticipants([currentUser as IUser]);
+      let sessionId: string;
+      let sessionName: string;
+      
+      if (pendingSession) {
+        sessionId = pendingSession.sessionId;
+        sessionName = pendingSession.sessionName || 'Shared Canvas';
+        
+        const joinedSession: ICanvasSession = {
+          id: sessionId,
+          name: sessionName,
+          participants: [currentUser as IUser],
+          createdBy: 0,
+          createdAt: new Date().toISOString()
+        };
+        setCanvasSession(joinedSession);
+        setParticipants([currentUser as IUser]);
+        
+        if (onSessionJoined) {
+          onSessionJoined();
+        }
+      } else {
+        sessionId = `session_${currentUser.id}_${Date.now()}`;
+        sessionName = `${currentUser.username}'s Canvas`;
+        
+        const newSession: ICanvasSession = {
+          id: sessionId,
+          name: sessionName,
+          participants: [currentUser as IUser],
+          createdBy: currentUser.id,
+          createdAt: new Date().toISOString()
+        };
+        setCanvasSession(newSession);
+        setParticipants([currentUser as IUser]);
+      }
 
       notificationService.setCanvasJoinCallback((sessionId: string, sessionName?: string) => {
         joinCanvasSession(sessionId, sessionName);
@@ -1174,7 +1066,7 @@ export default function CanvasModal({
 
       return unsubscribe;
     }
-  }, [isOpen, currentUser]);
+  }, [isOpen, currentUser, pendingSession]);
 
   const handleCanvasNotification = (notification: any) => {
     switch (notification.type) {
@@ -1372,6 +1264,7 @@ export default function CanvasModal({
                 setIsFullscreen={setIsFullscreen}
                 currentUser={currentUser}
                 sessionId={canvasSession.id}
+                canvasSession={canvasSession}
                 drawingActions={drawingActions}
                 setDrawingActions={setDrawingActions}
               />

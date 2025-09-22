@@ -45,14 +45,27 @@ wss.on('connection', (ws) => {
         };
 
         let broadcastCount = 0;
-        userClients.forEach((clientSet, userId) => {
-          clientSet.forEach(client => {
-            if (client.readyState === client.OPEN) {
-              client.send(JSON.stringify(broadcastData));
-              broadcastCount++;
+        if (canvasData.targetUsers && Array.isArray(canvasData.targetUsers)) {
+          canvasData.targetUsers.forEach(userId => {
+            if (userClients.has(userId)) {
+              userClients.get(userId).forEach(client => {
+                if (client.readyState === client.OPEN) {
+                  client.send(JSON.stringify(broadcastData));
+                  broadcastCount++;
+                }
+              });
             }
           });
-        });
+        } else {
+          userClients.forEach((clientSet, userId) => {
+            clientSet.forEach(client => {
+              if (client.readyState === client.OPEN) {
+                client.send(JSON.stringify(broadcastData));
+                broadcastCount++;
+              }
+            });
+          });
+        }
         
         console.log(`Broadcasted canvas action (${canvasData.action}) from session ${canvasData.sessionId} to ${broadcastCount} clients`);
       } else if (data.type === 'send_message') {
@@ -77,16 +90,20 @@ wss.on('connection', (ws) => {
         };
 
         let broadcastCount = 0;
-        userClients.forEach((clientSet, userId) => {
-          clientSet.forEach(client => {
-            if (client.readyState === client.OPEN) {
-              client.send(JSON.stringify(broadcastData));
-              broadcastCount++;
-            }
-          });
+        const targetUsers = [messageData.from_user_id, messageData.to_user_id];
+        
+        targetUsers.forEach(userId => {
+          if (userClients.has(userId)) {
+            userClients.get(userId).forEach(client => {
+              if (client.readyState === client.OPEN) {
+                client.send(JSON.stringify(broadcastData));
+                broadcastCount++;
+              }
+            });
+          }
         });
         
-        console.log(`Broadcasted message from ${messageData.from_user_id} to ${messageData.to_user_id} to ${broadcastCount} clients across ${userClients.size} users`);
+        console.log(`Broadcasted message from ${messageData.from_user_id} to ${messageData.to_user_id} to ${broadcastCount} targeted clients`);
       } else if (data.type === 'direct_message') {
         const { data: messageData } = data;
         
@@ -97,16 +114,20 @@ wss.on('connection', (ws) => {
         };
 
         let broadcastCount = 0;
-        userClients.forEach((clientSet, userId) => {
-          clientSet.forEach(client => {
-            if (client.readyState === client.OPEN) {
-              client.send(JSON.stringify(broadcastData));
-              broadcastCount++;
-            }
-          });
+        const targetUsers = [messageData.message?.from_user_id, messageData.message?.to_user_id].filter(Boolean);
+        
+        targetUsers.forEach(userId => {
+          if (userClients.has(userId)) {
+            userClients.get(userId).forEach(client => {
+              if (client.readyState === client.OPEN) {
+                client.send(JSON.stringify(broadcastData));
+                broadcastCount++;
+              }
+            });
+          }
         });
         
-        console.log(`Broadcasted message update (${messageData.type}) to ${broadcastCount} clients across ${userClients.size} users`);
+        console.log(`Broadcasted message update (${messageData.type}) to ${broadcastCount} targeted clients`);
       } else if (data.type === 'broadcast') {
         const { channel, data: messageData } = data;
         
@@ -119,15 +140,19 @@ wss.on('connection', (ws) => {
           };
           
           let broadcastCount = 0;
-          userClients.forEach((clientSet, userId) => {
-            clientSet.forEach(client => {
-              if (client.readyState === client.OPEN) {
-                client.send(JSON.stringify(broadcastData));
-                broadcastCount++;
-              }
-            });
+          const targetUsers = [messageData.from_user?.id, messageData.to_user?.id, messageData.target_user_id].filter(Boolean);
+          
+          targetUsers.forEach(userId => {
+            if (userClients.has(userId)) {
+              userClients.get(userId).forEach(client => {
+                if (client.readyState === client.OPEN) {
+                  client.send(JSON.stringify(broadcastData));
+                  broadcastCount++;
+                }
+              });
+            }
           });
-          console.log(`Broadcasted video call notification to ${broadcastCount} clients across ${userClients.size} users`);
+          console.log(`Broadcasted video call notification to ${broadcastCount} targeted clients`);
         } else if (channel === 'canvas-sessions') {
           broadcastData = {
             event: 'CanvasNotification',
@@ -136,15 +161,19 @@ wss.on('connection', (ws) => {
           };
           
           let broadcastCount = 0;
-          userClients.forEach((clientSet, userId) => {
-            clientSet.forEach(client => {
-              if (client.readyState === client.OPEN) {
-                client.send(JSON.stringify(broadcastData));
-                broadcastCount++;
-              }
-            });
+          const targetUsers = [messageData.from_user?.id, messageData.to_user?.id].filter(Boolean);
+          
+          targetUsers.forEach(userId => {
+            if (userClients.has(userId)) {
+              userClients.get(userId).forEach(client => {
+                if (client.readyState === client.OPEN) {
+                  client.send(JSON.stringify(broadcastData));
+                  broadcastCount++;
+                }
+              });
+            }
           });
-          console.log(`Broadcasted canvas notification to ${broadcastCount} clients across ${userClients.size} users`);
+          console.log(`Broadcasted canvas notification to ${broadcastCount} targeted clients`);
         } else {
           broadcastData = {
             event: 'FriendNotification',
@@ -195,7 +224,7 @@ wss.on('connection', (ws) => {
 });
 
 app.post('/broadcast/message', (req, res) => {
-  const { message, channel = 'message-channel' } = req.body;
+  const { message, channel = 'message-channel', targetUsers } = req.body;
   
   const broadcastData = {
     event: 'MessageSent',
@@ -204,16 +233,29 @@ app.post('/broadcast/message', (req, res) => {
   };
 
   let broadcastCount = 0;
-  userClients.forEach((clientSet, userId) => {
-    clientSet.forEach(client => {
-      if (client.readyState === client.OPEN) {
-        client.send(JSON.stringify(broadcastData));
-        broadcastCount++;
+  if (targetUsers && Array.isArray(targetUsers)) {
+    targetUsers.forEach(userId => {
+      if (userClients.has(userId)) {
+        userClients.get(userId).forEach(client => {
+          if (client.readyState === client.OPEN) {
+            client.send(JSON.stringify(broadcastData));
+            broadcastCount++;
+          }
+        });
       }
     });
-  });
+  } else {
+    userClients.forEach((clientSet, userId) => {
+      clientSet.forEach(client => {
+        if (client.readyState === client.OPEN) {
+          client.send(JSON.stringify(broadcastData));
+          broadcastCount++;
+        }
+      });
+    });
+  }
 
-  console.log(`Broadcasted message to ${broadcastCount} clients across ${userClients.size} users on channel ${channel}`);
+  console.log(`Broadcasted message to ${broadcastCount} clients on channel ${channel}`);
   res.json({ 
     status: 'Message broadcasted', 
     clients: broadcastCount,
@@ -274,16 +316,20 @@ app.post('/broadcast/friend-notification', (req, res) => {
   };
 
   let broadcastCount = 0;
-  userClients.forEach((clientSet, userId) => {
-    clientSet.forEach(client => {
-      if (client.readyState === client.OPEN) {
-        client.send(JSON.stringify(broadcastData));
-        broadcastCount++;
-      }
-    });
+  const targetUsers = [user_id, friend_id].filter(Boolean);
+  
+  targetUsers.forEach(userId => {
+    if (userClients.has(userId)) {
+      userClients.get(userId).forEach(client => {
+        if (client.readyState === client.OPEN) {
+          client.send(JSON.stringify(broadcastData));
+          broadcastCount++;
+        }
+      });
+    }
   });
 
-  console.log(`Broadcasted friend notification (${action}) to ${broadcastCount} clients across ${userClients.size} users on channel ${channel}`);
+  console.log(`Broadcasted friend notification (${action}) to ${broadcastCount} targeted clients`);
   res.json({ status: 'Friend notification broadcasted', clients: broadcastCount, users: userClients.size, action });
 });
 

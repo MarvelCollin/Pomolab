@@ -7,6 +7,11 @@ export interface ICanvasModal {
     id: number;
     username: string;
   } | null;
+  pendingSession?: {
+    sessionId: string;
+    sessionName?: string;
+  } | null;
+  onSessionJoined?: () => void;
 }
 
 export interface IDrawingTool {

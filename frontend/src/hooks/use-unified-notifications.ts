@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { notificationService } from '../services/notification-service';
 import { useToast } from '../components/common/toast';
 import type { IUser } from '../interfaces/IUser';
@@ -25,65 +25,74 @@ export const useUnifiedNotifications = ({
   currentUser 
 }: UseUnifiedNotificationsProps = {}) => {
   const { ToastContainer, showSuccess, showError, showWarning, showInfo } = useToast();
+  const currentUserRef = useRef(currentUser);
+  const onOpenChatRef = useRef(onOpenChat);
+  const onJoinVideoCallRef = useRef(onJoinVideoCall);
+  const friendCallbacksRef = useRef(friendCallbacks);
+
+  currentUserRef.current = currentUser;
+  onOpenChatRef.current = onOpenChat;
+  onJoinVideoCallRef.current = onJoinVideoCall;
+  friendCallbacksRef.current = friendCallbacks;
 
   const handleFriendNotification = useCallback((data: any) => {
-    if (!currentUser || !friendCallbacks) return;
+    if (!currentUserRef.current || !friendCallbacksRef.current) return;
 
     const { action, user_id, friend_id, user_data, friend_data } = data;
-    const isCurrentUser = user_id === currentUser.id;
-    const isFriendOfCurrentUser = friend_id === currentUser.id;
+    const isCurrentUser = user_id === currentUserRef.current.id;
+    const isFriendOfCurrentUser = friend_id === currentUserRef.current.id;
 
     switch (action) {
       case 'request_sent':
-        if (isCurrentUser && friendCallbacks.onFriendRequestSent) {
+        if (isCurrentUser && friendCallbacksRef.current.onFriendRequestSent) {
           const message = `Friend request sent to ${friend_data?.username || 'user'}`;
-          friendCallbacks.onFriendRequestSent({ action, user_data, friend_data, message });
+          friendCallbacksRef.current.onFriendRequestSent({ action, user_data, friend_data, message });
           showSuccess('Friend Request Sent', message);
-        } else if (isFriendOfCurrentUser && friendCallbacks.onFriendRequestReceived) {
+        } else if (isFriendOfCurrentUser && friendCallbacksRef.current.onFriendRequestReceived) {
           const message = `${user_data?.username || 'Someone'} sent you a friend request`;
-          friendCallbacks.onFriendRequestReceived({ action, user_data, friend_data, message });
+          friendCallbacksRef.current.onFriendRequestReceived({ action, user_data, friend_data, message });
           showInfo('Friend Request Received', message);
         }
         break;
 
       case 'request_accepted':
-        if ((isCurrentUser || isFriendOfCurrentUser) && friendCallbacks.onFriendRequestAccepted) {
+        if ((isCurrentUser || isFriendOfCurrentUser) && friendCallbacksRef.current.onFriendRequestAccepted) {
           const otherUser = isCurrentUser ? friend_data : user_data;
           const message = `You are now friends with ${otherUser?.username || 'user'}`;
-          friendCallbacks.onFriendRequestAccepted({ action, user_data, friend_data, message });
+          friendCallbacksRef.current.onFriendRequestAccepted({ action, user_data, friend_data, message });
           showSuccess('Friend Request Accepted', message);
         }
         break;
 
       case 'request_rejected':
-        if ((isCurrentUser || isFriendOfCurrentUser) && friendCallbacks.onFriendRequestRejected) {
+        if ((isCurrentUser || isFriendOfCurrentUser) && friendCallbacksRef.current.onFriendRequestRejected) {
           const message = `Friend request ${isCurrentUser ? 'was rejected' : 'rejected'}`;
-          friendCallbacks.onFriendRequestRejected({ action, user_data, friend_data, message });
+          friendCallbacksRef.current.onFriendRequestRejected({ action, user_data, friend_data, message });
           showWarning('Friend Request Rejected', message);
         }
         break;
 
       case 'friend_removed':
-        if ((isCurrentUser || isFriendOfCurrentUser) && friendCallbacks.onFriendRemoved) {
+        if ((isCurrentUser || isFriendOfCurrentUser) && friendCallbacksRef.current.onFriendRemoved) {
           const message = `You are no longer friends with ${(isCurrentUser ? friend_data : user_data)?.username || 'user'}`;
-          friendCallbacks.onFriendRemoved({ action, user_data, friend_data, message });
+          friendCallbacksRef.current.onFriendRemoved({ action, user_data, friend_data, message });
           showError('Friend Removed', message);
         }
         break;
     }
-  }, [currentUser, friendCallbacks, showSuccess, showError, showWarning, showInfo]);
+  }, [showSuccess, showError, showWarning, showInfo]);
 
   useEffect(() => {
-    if (currentUser) {
-      notificationService.setCurrentUser(currentUser);
+    if (currentUserRef.current) {
+      notificationService.setCurrentUser(currentUserRef.current);
     }
     
-    if (onOpenChat) {
-      notificationService.setChatOpenCallback(onOpenChat);
+    if (onOpenChatRef.current) {
+      notificationService.setChatOpenCallback(onOpenChatRef.current);
     }
 
-    if (onJoinVideoCall) {
-      notificationService.setVideoModalOpenCallback(onJoinVideoCall);
+    if (onJoinVideoCallRef.current) {
+      notificationService.setVideoModalOpenCallback(onJoinVideoCallRef.current);
     }
 
     const unsubscribeToast = notificationService.subscribeToToastNotifications((type, title, message, options) => {
@@ -106,7 +115,7 @@ export const useUnifiedNotifications = ({
     });
 
     let unsubscribeFriend: (() => void) | undefined;
-    if (friendCallbacks && currentUser) {
+    if (friendCallbacksRef.current && currentUserRef.current) {
       import('../services/socket-service').then(({ default: socketService }) => {
         unsubscribeFriend = socketService.listenToFriendNotifications(handleFriendNotification);
       });
@@ -118,7 +127,7 @@ export const useUnifiedNotifications = ({
         unsubscribeFriend();
       }
     };
-  }, [currentUser?.id, onOpenChat, onJoinVideoCall, handleFriendNotification, friendCallbacks]);
+  }, [handleFriendNotification, showSuccess, showError, showWarning, showInfo]);
 
   return { ToastContainer, showSuccess, showError, showWarning, showInfo };
 };

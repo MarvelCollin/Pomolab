@@ -200,12 +200,19 @@ class SocketService {
     }
 
     public broadcastCanvasNotification(notificationData: any): void {
+        console.log('🔌 broadcastCanvasNotification called:', notificationData);
+        console.log('WebSocket state:', this.ws?.readyState, 'OPEN:', WebSocket.OPEN);
+        
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify({
+            const payload = {
                 type: 'broadcast',
                 channel: 'canvas-sessions',
                 data: notificationData
-            }));
+            };
+            console.log('📡 Sending WebSocket message:', payload);
+            this.ws.send(JSON.stringify(payload));
+        } else {
+            console.error('❌ WebSocket not ready for broadcast. State:', this.ws?.readyState);
         }
     }
 

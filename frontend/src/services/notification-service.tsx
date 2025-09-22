@@ -73,22 +73,34 @@ class NotificationService {
   }
 
   private generateNotificationKey(type: string, data: any): string {
+    const timestamp = Math.floor(Date.now() / 1000);
+    
     if (type.startsWith('video_call_')) {
-      return `${type}_${data.callId}_${data.from_user?.id}_${data.to_user?.id}`;
+      return `${type}_${data.callId}_${data.from_user?.id}_${data.to_user?.id}_${timestamp}`;
     }
     if (type.startsWith('canvas_')) {
-      return `${type}_${data.sessionId}_${data.from_user?.id}_${data.to_user?.id}`;
+      return `${type}_${data.sessionId}_${data.from_user?.id}_${data.to_user?.id}_${timestamp}`;
     }
-    return `${type}_${data.message?.id}_${data.from_user?.id}_${data.to_user?.id}`;
+    if (type.startsWith('message_')) {
+      return `${type}_${data.message?.id || data.message?.tempId}_${data.message?.from_user_id}_${data.message?.to_user_id}_${timestamp}`;
+    }
+    return `${type}_${JSON.stringify(data)}_${timestamp}`;
   }
 
   private isNotificationProcessed(key: string): boolean {
-    return this.processedNotifications.has(key);
+    const baseKey = key.split('_').slice(0, -1).join('_');
+    const recentKeys = Array.from(this.processedNotifications).filter(k => 
+      k.startsWith(baseKey) && 
+      this.notificationExpiry[k] && 
+      this.notificationExpiry[k] > Date.now() - 10000
+    );
+    
+    return this.processedNotifications.has(key) || recentKeys.length > 0;
   }
 
   private markNotificationProcessed(key: string): void {
     this.processedNotifications.add(key);
-    this.notificationExpiry[key] = Date.now() + 300000;
+    this.notificationExpiry[key] = Date.now() + 120000;
   }
 
   public setCurrentUser(user: IUser | null): void {
@@ -145,11 +157,16 @@ class NotificationService {
   }
 
   private initializeCanvasListening(): void {
+    console.log('🎨 initializeCanvasListening called, isCanvasInitialized:', this.isCanvasInitialized);
+    
     if (this.isCanvasInitialized) {
+      console.log('⚠️ Canvas listening already initialized');
       return;
     }
     
+    console.log('📡 Subscribing to canvas-sessions channel');
     socketService.subscribeToChannel('canvas-sessions', (data: any) => {
+      console.log('📨 Received canvas-sessions data:', data);
       if (data.event === 'CanvasNotification' && data.data) {
         this.handleCanvasNotification(data.data);
       } else if (data.type && (data.type.startsWith('canvas_'))) {
@@ -158,6 +175,7 @@ class NotificationService {
     });
     
     this.isCanvasInitialized = true;
+    console.log('✅ Canvas listening initialized');
   }
 
   private handleMessageNotification(notification: any): void {
@@ -241,11 +259,17 @@ class NotificationService {
   }
 
   private handleCanvasNotification(notification: any): void {
-    if (!this.currentUser) return;
+    console.log('🎨 handleCanvasNotification called:', notification);
+    
+    if (!this.currentUser) {
+      console.log('❌ No current user for canvas notification');
+      return;
+    }
     
     const notificationKey = this.generateNotificationKey(notification.type, notification);
     
     if (this.isNotificationProcessed(notificationKey)) {
+      console.log('⚠️ Canvas notification already processed:', notificationKey);
       return;
     }
     
@@ -258,6 +282,9 @@ class NotificationService {
       timestamp: notification.timestamp || new Date().toISOString()
     };
     
+    console.log('🎯 Processing canvas notification:', canvasNotification);
+    console.log('Current user ID:', this.currentUser.id, 'Target user ID:', notification.to_user?.id);
+    
     const shouldProcessNotification = 
       (notification.type === 'canvas_invite' && notification.to_user?.id === this.currentUser.id) ||
       (notification.type === 'canvas_joined' && notification.from_user?.id === this.currentUser.id) ||
@@ -266,18 +293,26 @@ class NotificationService {
       (notification.type === 'canvas_ended' && 
        (notification.from_user?.id === this.currentUser.id || notification.to_user?.id === this.currentUser.id));
     
+    console.log('Should process notification:', shouldProcessNotification);
+    
     if (shouldProcessNotification) {
+      console.log('✅ Canvas notification matches conditions, processing...');
       this.markNotificationProcessed(notificationKey);
       
       if (this.canvasListeners[this.currentUser.id]) {
+        console.log('📢 Calling canvas listeners for user:', this.currentUser.id);
         this.canvasListeners[this.currentUser.id].forEach(callback => {
           callback(canvasNotification);
         });
+      } else {
+        console.log('❌ No canvas listeners for user:', this.currentUser.id);
       }
       
       this.triggerCanvasToastNotification(canvasNotification).catch(error => {
         console.error('Error triggering canvas toast notification:', error);
       });
+    } else {
+      console.log('❌ Canvas notification does not match processing conditions');
     }
   }
 
@@ -323,6 +358,7 @@ class NotificationService {
     if (notification.type === 'video_call_invite') {
       const options = {
         onClick: () => this.acceptVideoCall(notification),
+        onDismiss: () => this.rejectVideoCall(notification),
         userData: notification.from_user,
         persistent: false,
         duration: 15000
@@ -350,6 +386,7 @@ class NotificationService {
     if (notification.type === 'canvas_invite') {
       const options = {
         onClick: () => this.acceptCanvasInvite(notification),
+        onDismiss: () => this.rejectCanvasInvite(notification),
         userData: notification.from_user,
         persistent: false,
         duration: 15000
@@ -382,12 +419,20 @@ class NotificationService {
     this.sendCanvasResponse(notification.sessionId, 'joined', notification.from_user);
   }
 
+  private rejectCanvasInvite(notification: ICanvasNotification): void {
+    this.sendCanvasResponse(notification.sessionId, 'left', notification.from_user);
+  }
+
   private acceptVideoCall(notification: IVideoCallNotification): void {
     if (this.videoModalOpenCallback) {
       this.videoModalOpenCallback(notification.meetingId, notification.token);
     }
     
     this.sendVideoCallResponse(notification.callId, 'accepted', notification.from_user);
+  }
+
+  private rejectVideoCall(notification: IVideoCallNotification): void {
+    this.sendVideoCallResponse(notification.callId, 'rejected', notification.from_user);
   }
 
   public setChatOpenCallback(callback: (user: IUser) => void): void {
@@ -629,6 +674,8 @@ class NotificationService {
     fromUser: IUser,
     toUsers: IUser[]
   ): Promise<void> {
+    console.log('🎨 sendCanvasInvite called:', { sessionId, sessionName, fromUser, toUsers });
+    
     for (const toUser of toUsers) {
       const notificationData = {
         type: 'canvas_invite',
@@ -639,6 +686,7 @@ class NotificationService {
         timestamp: new Date().toISOString()
       };
 
+      console.log('📤 Broadcasting canvas notification:', notificationData);
       socketService.broadcastCanvasNotification(notificationData);
     }
   }

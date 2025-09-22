@@ -19,13 +19,13 @@ import {
   User,
   LogOut,
   Users,
-  Video,
-  Bell
+  Video
 } from 'lucide-react';
 import type { IBackground } from '../../interfaces/IBackground';
 import type { IMusic } from '../../interfaces/IMusic';
 import type { IAudioEffect } from '../../interfaces/IAudioEffect';
 import type { IUser } from '../../interfaces/IUser';
+import { notificationService } from '../../services/notification-service';
 import FriendsModal from './friends-modal';
 import VideoModal from './video-modal';
 import CanvasModal from './canvas';
@@ -102,48 +102,7 @@ const ToolBar = memo(function ToolBar({
   
   const [videoOpen, setVideoOpen] = useState(false);
   const [canvasOpen, setCanvasOpen] = useState(false);
-
-  const sendTestNotification = async () => {
-    if (!currentUser) return;
-    
-    try {
-      const randomUsers = [
-        { id: 999, username: 'Test User 1', email: 'test1@example.com' },
-        { id: 998, username: 'Test User 2', email: 'test2@example.com' },
-        { id: 997, username: 'Test User 3', email: 'test3@example.com' }
-      ];
-      
-      const randomUser = randomUsers[Math.floor(Math.random() * randomUsers.length)];
-      
-      const testNotificationData = {
-        type: 'video_call_invite',
-        callId: `test_${Date.now()}`,
-        meetingId: `test-meeting-${Math.random().toString(36).substr(2, 9)}`,
-        token: `test-token-${Math.random().toString(36).substr(2, 15)}`,
-        from_user: randomUser,
-        to_user: currentUser,
-        timestamp: new Date().toISOString()
-      };
-
-      const response = await fetch('http://localhost:8080/broadcast/video-call-test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          notification: testNotificationData,
-          channel: 'video-calls'
-        }),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log(`Test notification sent to ${result.clients} connected clients`);
-      }
-    } catch (error) {
-      console.error('Failed to send test notification:', error);
-    }
-  };
+  const [pendingCanvasSession, setPendingCanvasSession] = useState<{sessionId: string, sessionName?: string} | null>(null);
 
   useEffect(() => {
     let ticking = false;
@@ -170,6 +129,15 @@ const ToolBar = memo(function ToolBar({
       return () => window.removeEventListener('scroll', controlToolbar);
     }
   }, [lastScrollY]);
+
+  useEffect(() => {
+    if (currentUser) {
+      notificationService.setCanvasJoinCallback((sessionId: string, sessionName?: string) => {
+        setPendingCanvasSession({ sessionId, sessionName });
+        setCanvasOpen(true);
+      });
+    }
+  }, [currentUser]);
 
   return (
     <motion.div
@@ -270,7 +238,7 @@ const ToolBar = memo(function ToolBar({
                     setPomodoroMinimized(!pomodoroMinimized);
                     setShowMainMenu(false);
                   }}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-white/20 rounded-xl transition-all duration-200 group"
+                  className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group"
                 >
                   <Timer className="w-4 h-4 text-white/90" />
                   <span className="text-white text-sm font-medium">
@@ -396,21 +364,6 @@ const ToolBar = memo(function ToolBar({
                   <Square className="w-4 h-4 text-white/90" />
                   <span className="text-white text-sm font-medium">Canvas</span>
                 </motion.button>
-
-                {currentUser && (
-                  <motion.button
-                    onClick={() => {
-                      sendTestNotification();
-                      setShowMainMenu(false);
-                    }}
-                    className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group bg-orange-500/20 border border-orange-400/30"
-                    whileHover={{ x: 4 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Bell className="w-4 h-4 text-orange-300" />
-                    <span className="text-orange-200 text-sm font-medium">Test Notification</span>
-                  </motion.button>
-                )}
 
                 <div className="h-px bg-white/20 my-2" />
 
@@ -793,8 +746,13 @@ const ToolBar = memo(function ToolBar({
 
       <CanvasModal
         isOpen={canvasOpen}
-        onClose={() => setCanvasOpen(false)}
+        onClose={() => {
+          setCanvasOpen(false);
+          setPendingCanvasSession(null);
+        }}
         currentUser={currentUser}
+        pendingSession={pendingCanvasSession}
+        onSessionJoined={() => setPendingCanvasSession(null)}
       />
 
     </motion.div>

@@ -1,4 +1,4 @@
-  import React, { useEffect, useState, useCallback } from 'react';
+  import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export interface ToastItem {
@@ -9,6 +9,7 @@ export interface ToastItem {
   duration?: number;
   persistent?: boolean;
   onClick?: () => void;
+  onDismiss?: () => void;
   userData?: any;
 }
 
@@ -22,7 +23,7 @@ interface SingleToastProps {
   onRemove: (id: string) => void;
 }
 
-const SingleToast: React.FC<SingleToastProps> = ({ toast, onRemove }) => {
+const SingleToast: React.FC<SingleToastProps> = React.memo(({ toast, onRemove }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
@@ -36,7 +37,7 @@ const SingleToast: React.FC<SingleToastProps> = ({ toast, onRemove }) => {
     }
   }, [toast.id, toast.duration, toast.persistent, isHovered, onRemove]);
 
-  const getToastStyles = () => {
+  const toastStyles = useMemo(() => {
     const baseStyles = "backdrop-blur-md border shadow-2xl";
     
     switch (toast.type) {
@@ -51,9 +52,9 @@ const SingleToast: React.FC<SingleToastProps> = ({ toast, onRemove }) => {
       default:
         return `${baseStyles} bg-gray-500/20 border-gray-400/30 text-gray-100`;
     }
-  };
+  }, [toast.type]);
 
-  const getIcon = () => {
+  const icon = useMemo(() => {
     switch (toast.type) {
       case 'success':
         return 'fas fa-check-circle';
@@ -66,7 +67,7 @@ const SingleToast: React.FC<SingleToastProps> = ({ toast, onRemove }) => {
       default:
         return 'fas fa-bell';
     }
-  };
+  }, [toast.type]);
 
   return (
     <motion.div
@@ -74,14 +75,14 @@ const SingleToast: React.FC<SingleToastProps> = ({ toast, onRemove }) => {
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 300, scale: 0.8 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className={`relative max-w-sm w-full rounded-lg p-4 ${getToastStyles()} ${toast.onClick ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
+      className={`relative max-w-sm w-full rounded-lg p-4 ${toastStyles} ${toast.onClick ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => toast.onClick && toast.onClick()}
     >
       <div className="flex items-start space-x-3">
         <div className="flex-shrink-0">
-          <i className={`${getIcon()} text-lg`} />
+          <i className={`${icon} text-lg`} />
         </div>
         
         <div className="flex-1 min-w-0">
@@ -93,17 +94,57 @@ const SingleToast: React.FC<SingleToastProps> = ({ toast, onRemove }) => {
               {toast.message}
             </p>
           )}
+          
+          {toast.onClick && toast.onDismiss && (
+            <motion.div 
+              className="flex gap-2 mt-2"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <motion.button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toast.onClick && toast.onClick();
+                }}
+                className="px-2 py-1 bg-green-500/30 hover:bg-green-500/50 border border-green-400/50 rounded text-xs font-medium transition-all duration-200"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Accept
+              </motion.button>
+              <motion.button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (toast.onDismiss) {
+                    toast.onDismiss();
+                  }
+                  onRemove(toast.id);
+                }}
+                className="px-2 py-1 bg-red-500/30 hover:bg-red-500/50 border border-red-400/50 rounded text-xs font-medium transition-all duration-200"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Decline
+              </motion.button>
+            </motion.div>
+          )}
         </div>
 
-        <button
+        <motion.button
           onClick={(e) => {
             e.stopPropagation();
+            if (toast.onDismiss) {
+              toast.onDismiss();
+            }
             onRemove(toast.id);
           }}
-          className="flex-shrink-0 ml-2 opacity-60 hover:opacity-100 transition-opacity duration-200"
+          className="flex-shrink-0 ml-2 w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all duration-200"
+          whileHover={{ scale: 1.1, backgroundColor: "rgba(255, 255, 255, 0.25)" }}
+          whileTap={{ scale: 0.9 }}
         >
-          <i className="fas fa-times text-sm" />
-        </button>
+          <i className="fas fa-times text-xs text-white/80 hover:text-white" />
+        </motion.button>
       </div>
 
       {!toast.persistent && (
@@ -119,9 +160,9 @@ const SingleToast: React.FC<SingleToastProps> = ({ toast, onRemove }) => {
       )}
     </motion.div>
   );
-};
+});
 
-const Toast: React.FC<ToastProps> = ({ toasts, onRemove }) => {
+const Toast: React.FC<ToastProps> = React.memo(({ toasts, onRemove }) => {
   return (
     <div className="fixed top-4 right-4 z-50 space-y-3 max-h-screen overflow-hidden">
       <AnimatePresence mode="popLayout">
@@ -135,7 +176,7 @@ const Toast: React.FC<ToastProps> = ({ toasts, onRemove }) => {
       </AnimatePresence>
     </div>
   );
-};
+});
 
 export default Toast;
 
@@ -171,7 +212,10 @@ export const useToast = () => {
     addToast({ type: 'info', title, message, ...options });
   }, [addToast]);
 
-  const ToastContainer = useCallback(() => <Toast toasts={toasts} onRemove={removeToast} />, [toasts, removeToast]);
+  const ToastContainer = useMemo(() => 
+    () => <Toast toasts={toasts} onRemove={removeToast} />, 
+    [toasts, removeToast]
+  );
 
   return {
     toasts,
