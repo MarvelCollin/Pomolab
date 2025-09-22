@@ -44,16 +44,16 @@ function ToolButton({
   return (
     <motion.button
       onClick={onClick}
-      className={`p-3 rounded-xl transition-colors min-w-[3rem] ${
+      className={`p-2 rounded-lg transition-all duration-200 flex items-center justify-center min-w-[2.5rem] ${
         isActive 
-          ? 'bg-blue-500/80 text-white shadow-lg' 
-          : 'bg-white/10 hover:bg-white/20 text-white/60 hover:text-white'
+          ? 'bg-blue-500/80 text-white shadow-lg scale-105' 
+          : 'bg-white/10 hover:bg-white/20 text-white/60 hover:text-white hover:scale-105'
       }`}
-      whileHover={{ scale: 1.05 }}
+      whileHover={{ scale: isActive ? 1.05 : 1.1 }}
       whileTap={{ scale: 0.95 }}
       title={tool.name}
     >
-      <IconComponent className="w-5 h-5" />
+      <IconComponent className="w-4 h-4" />
     </motion.button>
   );
 }
@@ -76,52 +76,52 @@ function ColorPicker({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-1">
-        <Palette className="w-3 h-3 text-white/60" />
-        <span className="text-white/60 text-xs">Color</span>
+      <div className="flex items-center gap-2 text-white/80">
+        <Palette className="w-4 h-4" />
+        <span className="text-sm font-medium">Colors</span>
       </div>
       
-      {/* Preset Colors */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-5 gap-2">
         {colors.map((color) => (
           <motion.button
             key={color}
             onClick={() => onColorChange(color)}
             className={`w-8 h-8 rounded-lg border-2 transition-all ${
-              selectedColor === color ? 'border-white scale-110' : 'border-white/30'
+              selectedColor === color ? 'border-white shadow-lg scale-110' : 'border-white/30 hover:border-white/60'
             }`}
             style={{ backgroundColor: color }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: selectedColor === color ? 1.1 : 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title={color}
           />
         ))}
       </div>
 
-      {/* Custom Color Picker */}
       <div className="space-y-2">
         <motion.button
           onClick={() => setShowCustomPicker(!showCustomPicker)}
-          className="w-full px-2 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-white/60 hover:text-white transition-colors text-xs flex items-center gap-1"
+          className="w-full px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition-colors text-sm flex items-center gap-2"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          <Eye className="w-3 h-3" />
-          Custom
+          <Eye className="w-4 h-4" />
+          Custom Color
         </motion.button>
         
         {showCustomPicker && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
             className="space-y-2"
           >
             <input
               type="color"
               value={customColor}
               onChange={handleCustomColorChange}
-              className="w-full h-8 rounded-lg border border-white/30 bg-transparent cursor-pointer"
+              className="w-full h-10 rounded-lg border border-white/30 bg-transparent cursor-pointer"
             />
-            <div className="text-white/40 text-xs text-center">
+            <div className="text-white/50 text-xs text-center font-mono">
               {customColor.toUpperCase()}
             </div>
           </motion.div>
@@ -139,29 +139,35 @@ function BrushSizePicker({
   onSizeChange: (size: number) => void; 
 }) {
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-1">
-        <Brush className="w-3 h-3 text-white/60" />
-        <span className="text-white/60 text-xs">Size</span>
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 text-white/80">
+        <Brush className="w-4 h-4" />
+        <span className="text-sm font-medium">Brush Size</span>
       </div>
-      <div className="grid grid-cols-2 gap-1.5">
+      <div className="space-y-2">
         {brushSizes.map((size) => (
           <motion.button
             key={size}
             onClick={() => onSizeChange(size)}
-            className={`w-10 h-8 rounded-md border-2 flex items-center justify-center transition-all ${
-              selectedSize === size ? 'border-white bg-white/20' : 'border-white/30'
+            className={`w-full h-10 rounded-lg border-2 flex items-center justify-center transition-all ${
+              selectedSize === size 
+                ? 'border-white bg-white/20 shadow-lg' 
+                : 'border-white/30 hover:border-white/60 hover:bg-white/10'
             }`}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            title={`Size: ${size}px`}
           >
-            <div 
-              className="rounded-full bg-white"
-              style={{ 
-                width: Math.max(2, size / 2.5), 
-                height: Math.max(2, size / 2.5) 
-              }}
-            />
+            <div className="flex items-center gap-3">
+              <div 
+                className="rounded-full bg-white shadow-sm"
+                style={{ 
+                  width: Math.max(4, Math.min(size, 16)), 
+                  height: Math.max(4, Math.min(size, 16))
+                }}
+              />
+              <span className="text-white/70 text-sm">{size}px</span>
+            </div>
           </motion.button>
         ))}
       </div>
@@ -343,16 +349,18 @@ function UserInvitePanel({
 
 function DrawingCanvas({ 
   onDrawingStart, 
-  // onDrawingEnd, 
+  onDrawingEnd, 
   isFullscreen,
+  setIsFullscreen,
   currentUser,
   sessionId,
-  // drawingActions,
+  drawingActions,
   setDrawingActions
 }: { 
   onDrawingStart: () => void; 
   onDrawingEnd: () => void; 
   isFullscreen: boolean;
+  setIsFullscreen: (value: boolean) => void;
   currentUser?: { id: number; username: string } | null;
   sessionId: string;
   drawingActions: IDrawingAction[];
@@ -372,6 +380,7 @@ function DrawingCanvas({
   
   const [viewportState, setViewportState] = useState<IViewportState>({ x: 0, y: 0, zoom: 1 });
   const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
+  const [showInvitePanel, setShowInvitePanel] = useState(false);
   
   const [userCursors, setUserCursors] = useState<Map<number, IUserCursor>>(new Map());
 
@@ -379,22 +388,39 @@ function DrawingCanvas({
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    canvas.width = canvas.offsetWidth * 2;
-    canvas.height = canvas.offsetHeight * 2;
-    
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
+    const resizeCanvas = () => {
+      const rect = canvas.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
-      canvas.width = canvas.offsetWidth * dpr;
-      canvas.height = canvas.offsetHeight * dpr;
-      ctx.scale(dpr, dpr);
       
-      ctx.setTransform(viewportState.zoom, 0, 0, viewportState.zoom, viewportState.x, viewportState.y);
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
       
-      ctx.fillStyle = 'rgba(240, 240, 240, 0.15)';
-      ctx.fillRect(-viewportState.x / viewportState.zoom, -viewportState.y / viewportState.zoom, canvas.offsetWidth / viewportState.zoom, canvas.offsetHeight / viewportState.zoom);
-    }
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.scale(dpr, dpr);
+        ctx.setTransform(
+          viewportState.zoom * dpr, 0, 0, 
+          viewportState.zoom * dpr, 
+          viewportState.x * dpr, 
+          viewportState.y * dpr
+        );
+        
+        ctx.fillStyle = 'transparent';
+        ctx.fillRect(
+          -viewportState.x / viewportState.zoom, 
+          -viewportState.y / viewportState.zoom, 
+          rect.width / viewportState.zoom, 
+          rect.height / viewportState.zoom
+        );
+      }
+    };
 
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    return () => window.removeEventListener('resize', resizeCanvas);
+  }, [viewportState]);
+
+  useEffect(() => {
     const unsubscribe = socketService.listenToCanvasNotifications((data: any) => {
       if (data.event === 'CanvasAction' && data.data && data.data.sessionId === sessionId) {
         const action = data.data.data as IDrawingAction;
@@ -945,115 +971,164 @@ function DrawingCanvas({
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex items-center gap-2 p-3 border-b border-white/20 overflow-x-auto bg-white/5">
-        {drawingTools.map((tool) => (
-          <ToolButton
-            key={tool.id}
-            tool={tool}
-            isActive={activeTool === tool.id}
-            onClick={() => setActiveTool(tool.id)}
-          />
-        ))}
-        <div className="w-px h-8 bg-white/20 mx-2" />
-        <motion.button
-          onClick={undoLastAction}
-          disabled={undoHistory.length === 0}
-          className="p-3 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:text-white/30 rounded-xl text-white/60 hover:text-white transition-colors min-w-[3rem]"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          title="Undo"
-        >
-          <Undo2 className="w-5 h-5" />
-        </motion.button>
-        <motion.button
-          onClick={clearCanvas}
-          className="p-3 bg-white/10 hover:bg-white/20 rounded-xl text-white/60 hover:text-white transition-colors min-w-[3rem]"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          title="Clear Canvas"
-        >
-          <RotateCcw className="w-5 h-5" />
-        </motion.button>
-        <motion.button
-          onClick={downloadCanvas}
-          className="p-3 bg-white/10 hover:bg-white/20 rounded-xl text-white/60 hover:text-white transition-colors min-w-[3rem]"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          title="Download"
-        >
-          <Download className="w-5 h-5" />
-        </motion.button>
-        <div className="w-px h-8 bg-white/20 mx-2" />
-        <motion.button
-          onClick={zoomIn}
-          className="p-3 bg-white/10 hover:bg-white/20 rounded-xl text-white/60 hover:text-white transition-colors min-w-[3rem]"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          title="Zoom In"
-        >
-          <ZoomIn className="w-5 h-5" />
-        </motion.button>
-        <motion.button
-          onClick={zoomOut}
-          className="p-3 bg-white/10 hover:bg-white/20 rounded-xl text-white/60 hover:text-white transition-colors min-w-[3rem]"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          title="Zoom Out"
-        >
-          <ZoomOut className="w-5 h-5" />
-        </motion.button>
-        <motion.button
-          onClick={resetZoom}
-          className="p-3 bg-white/10 hover:bg-white/20 rounded-xl text-white/60 hover:text-white transition-colors min-w-[3rem]"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          title={`Reset Zoom (${Math.round(viewportState.zoom * 100)}%)`}
-        >
-          <Eye className="w-5 h-5" />
-        </motion.button>
+    <div className="h-full flex flex-col bg-gradient-to-br from-gray-900/50 to-gray-800/50">
+      <div className="flex items-center justify-between p-4 border-b border-white/10 bg-black/20 backdrop-blur-sm">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-white/10 rounded-xl p-2">
+            {drawingTools.map((tool) => (
+              <ToolButton
+                key={tool.id}
+                tool={tool}
+                isActive={activeTool === tool.id}
+                onClick={() => setActiveTool(tool.id)}
+              />
+            ))}
+          </div>
+          
+          <div className="flex items-center gap-2 bg-white/10 rounded-xl p-2">
+            <motion.button
+              onClick={undoLastAction}
+              disabled={undoHistory.length === 0}
+              className="p-2 bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:text-white/30 rounded-lg text-white/60 hover:text-white transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Undo"
+            >
+              <Undo2 className="w-4 h-4" />
+            </motion.button>
+            <motion.button
+              onClick={clearCanvas}
+              className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/60 hover:text-white transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Clear Canvas"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </motion.button>
+            <motion.button
+              onClick={downloadCanvas}
+              className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/60 hover:text-white transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Download"
+            >
+              <Download className="w-4 h-4" />
+            </motion.button>
+          </div>
+
+          <div className="flex items-center gap-2 bg-white/10 rounded-xl p-2">
+            <motion.button
+              onClick={zoomOut}
+              className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/60 hover:text-white transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Zoom Out"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </motion.button>
+            <div className="px-3 py-2 text-xs text-white/60 font-medium min-w-[4rem] text-center bg-white/5 rounded">
+              {Math.round(viewportState.zoom * 100)}%
+            </div>
+            <motion.button
+              onClick={zoomIn}
+              className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/60 hover:text-white transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Zoom In"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </motion.button>
+            <motion.button
+              onClick={resetZoom}
+              className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/60 hover:text-white transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Reset Zoom"
+            >
+              <Eye className="w-4 h-4" />
+            </motion.button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <motion.button
+            onClick={() => setShowInvitePanel(!showInvitePanel)}
+            className="p-2 bg-blue-500/20 hover:bg-blue-500/30 rounded-lg text-blue-400 hover:text-blue-300 transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title="Invite Users"
+          >
+            <UserPlus className="w-4 h-4" />
+          </motion.button>
+          <motion.button
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/60 hover:text-white transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </motion.button>
+        </div>
       </div>
       
-      <div className="flex-1 flex">
-        <div className="w-36 p-4 border-r border-white/20 space-y-5 bg-white/5 overflow-y-auto">
-          <ColorPicker
-            selectedColor={selectedColor}
-            onColorChange={setSelectedColor}
-          />
-          <BrushSizePicker
-            selectedSize={brushSize}
-            onSizeChange={setBrushSize}
-          />
+      <div className="flex-1 flex min-h-0">
+        <div className="flex-shrink-0 w-64 border-r border-white/10 bg-black/10 backdrop-blur-sm">
+          <div className="p-4 space-y-6 h-full overflow-y-auto">
+            <ColorPicker
+              selectedColor={selectedColor}
+              onColorChange={setSelectedColor}
+            />
+            <BrushSizePicker
+              selectedSize={brushSize}
+              onSizeChange={setBrushSize}
+            />
+          </div>
         </div>
         
-        <div className={`flex-1 ${isFullscreen ? 'p-4' : 'p-2'}`}>
-          <div className="relative w-full h-full">
-            <canvas
-              ref={canvasRef}
-              className="w-full h-full bg-white/15 rounded-xl cursor-crosshair border border-white/30 shadow-inner"
-              onMouseDown={startDrawing}
-              onMouseMove={(e) => {
-                draw(e);
-                handleMouseMove(e);
-              }}
-              onMouseUp={stopDrawing}
-              onMouseLeave={() => {
-                if (isDrawing) {
-                  setIsDrawing(false);
-                  setCurrentStroke([]);
-                  if (canvasRef.current) {
-                    const ctx = canvasRef.current.getContext('2d');
-                    if (ctx && (activeTool === 'brush' || activeTool === 'eraser')) {
-                      ctx.beginPath();
-                    }
+        <div className="flex-1 relative bg-gradient-to-br from-white/5 to-white/10">
+          <canvas
+            ref={canvasRef}
+            className="absolute inset-0 w-full h-full cursor-crosshair"
+            style={{
+              background: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 50%, rgba(0,0,0,0.1) 100%)'
+            }}
+            onMouseDown={startDrawing}
+            onMouseMove={(e) => {
+              draw(e);
+              handleMouseMove(e);
+            }}
+            onMouseUp={stopDrawing}
+            onMouseLeave={() => {
+              if (isDrawing) {
+                setIsDrawing(false);
+                setCurrentStroke([]);
+                if (canvasRef.current) {
+                  const ctx = canvasRef.current.getContext('2d');
+                  if (ctx && (activeTool === 'brush' || activeTool === 'eraser')) {
+                    ctx.beginPath();
                   }
                 }
+              }
+            }}
+            onWheel={handleWheel}
+          />
+          {renderCursors()}
+          
+          {showInvitePanel && currentUser && (
+            <UserInvitePanel
+              currentUser={currentUser as IUser}
+              onInviteUsers={(users) => {
+                users.forEach(user => {
+                  console.log('Inviting user to canvas:', user);
+                });
+                setShowInvitePanel(false);
               }}
-              onWheel={handleWheel}
+              isVisible={showInvitePanel}
+              onClose={() => setShowInvitePanel(false)}
+              isFullscreen={isFullscreen}
             />
-            {/* Render other users' cursors */}
-            {renderCursors()}
-          </div>
+          )}
         </div>
       </div>
     </div>
@@ -1294,6 +1369,7 @@ export default function CanvasModal({
                 onDrawingStart={handleDrawingStart}
                 onDrawingEnd={handleDrawingEnd}
                 isFullscreen={isFullscreen}
+                setIsFullscreen={setIsFullscreen}
                 currentUser={currentUser}
                 sessionId={canvasSession.id}
                 drawingActions={drawingActions}
