@@ -223,7 +223,6 @@ function VideoParticipantView({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const screenShareRef = useRef<HTMLVideoElement | null>(null);
 
-  // Get user profile information
   const getUserProfile = () => {
     if (isLocal && currentUser) {
       return {
@@ -232,7 +231,6 @@ function VideoParticipantView({
       };
     }
     
-    // For remote participants, try to match by displayName with friends
     const matchedFriend = friends.find(f => 
       f.friend && (
         f.friend.username === displayName ||
@@ -316,9 +314,7 @@ function VideoParticipantView({
             </div>
           </div>
           
-          {/* Camera section when screen sharing */}
           {webcamOn ? (
-            // Scenario 2: Camera ON + Screen share ON = Picture-in-picture camera
             <div className="absolute bottom-2 right-2 w-24 h-20 bg-white/10 rounded-lg overflow-hidden border border-white/20">
               <video
                 ref={videoRef}
@@ -334,7 +330,6 @@ function VideoParticipantView({
               </div>
             </div>
           ) : (
-            // Scenario 3: Camera OFF + Screen share ON = Small profile picture overlay
             <div className="absolute bottom-2 right-2 w-16 h-16 bg-white/10 rounded-lg overflow-hidden border border-white/20 flex items-center justify-center">
               {userProfile.avatar ? (
                 <img
@@ -356,7 +351,6 @@ function VideoParticipantView({
           )}
         </div>
       ) : webcamOn ? (
-        // Camera only (no screen share)
         <video
           ref={videoRef}
           className="w-full h-full object-cover"
@@ -365,7 +359,6 @@ function VideoParticipantView({
           muted={isLocal}
         />
       ) : (
-        // Scenario 1: Camera OFF (no screen share) = Big profile picture
         <div className="w-full h-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
           <div className="text-center">
             {userProfile.avatar ? (
@@ -415,7 +408,6 @@ function VideoParticipantView({
         )}
       </div>
 
-      {/* Bottom name display - only show when not screen sharing */}
       {!screenShareOn && (
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1">
           <p className={`text-white font-medium truncate ${isFullscreenFocus ? 'text-sm' : 'text-xs'}`}>

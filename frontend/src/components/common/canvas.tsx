@@ -367,7 +367,6 @@ function DrawingCanvas({
   setDrawingActions: React.Dispatch<React.SetStateAction<IDrawingAction[]>>;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  // @ts-ignore - Will be used later
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
@@ -426,7 +425,6 @@ function DrawingCanvas({
         const action = data.data.data as IDrawingAction;
         if (action.userId !== currentUser?.id) {
           if (action.type === 'canvas_state') {
-            // Handle canvas state synchronization for new participants
             const stateActions = action as any;
             if (stateActions.actions && Array.isArray(stateActions.actions)) {
               setDrawingActions(stateActions.actions);
@@ -465,7 +463,6 @@ function DrawingCanvas({
     return unsubscribe;
   }, [sessionId, currentUser?.id, viewportState]);
 
-  // Handle canvas resize when fullscreen changes
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -474,15 +471,12 @@ function DrawingCanvas({
       const oldWidth = canvas.width;
       const oldHeight = canvas.height;
       
-      // Save current canvas content
       const imageData = canvas.getContext('2d')?.getImageData(0, 0, oldWidth, oldHeight);
       
-      // Resize canvas with DPI scaling
       const dpr = window.devicePixelRatio || 1;
       canvas.width = canvas.offsetWidth * dpr;
       canvas.height = canvas.offsetHeight * dpr;
       
-      // Restore canvas content with viewport transform
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.scale(dpr, dpr);
@@ -504,7 +498,6 @@ function DrawingCanvas({
     const clientX = e.clientX - rect.left;
     const clientY = e.clientY - rect.top;
     
-    // Transform to canvas coordinates considering viewport
     return {
       x: (clientX - viewportState.x) / viewportState.zoom,
       y: (clientY - viewportState.y) / viewportState.zoom
@@ -521,7 +514,7 @@ function DrawingCanvas({
     if (!canvas || !ctx) return;
     
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    setUndoHistory(prev => [...prev.slice(-9), imageData]); // Keep last 10 states
+    setUndoHistory(prev => [...prev.slice(-9), imageData]); 
   };
 
   const undoLastAction = () => {
@@ -535,7 +528,6 @@ function DrawingCanvas({
     ctx.putImageData(lastState, 0, 0);
     setUndoHistory(prev => prev.slice(0, -1));
     
-    // Broadcast undo action
     if (currentUser && sessionId) {
       const action: IDrawingAction = {
         type: 'undo',
@@ -570,15 +562,12 @@ function DrawingCanvas({
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
-    // Save current transform
     ctx.save();
     
-    // Apply viewport transform
     const dpr = window.devicePixelRatio || 1;
     ctx.scale(dpr, dpr);
     ctx.setTransform(viewportState.zoom, 0, 0, viewportState.zoom, viewportState.x, viewportState.y);
 
-    // Set drawing styles
     ctx.globalCompositeOperation = action.tool === 'eraser' ? 'destination-out' : 'source-over';
     ctx.strokeStyle = action.color;
     ctx.lineWidth = action.size;
@@ -637,26 +626,21 @@ function DrawingCanvas({
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         break;
       case 'cursor_move':
-        // Update cursor position for other users
         if (action.userId !== currentUser?.id) {
           updateUserCursor(action);
         }
         break;
       case 'undo':
-        // Undo is handled locally, no need to apply from remote
         break;
     }
     
-    // Restore transform
     ctx.restore();
     
-    // Store action for new participants (except cursor moves)
     if (action.type !== 'cursor_move') {
       setDrawingActions(prev => [...prev, action]);
     }
   };
 
-  // Update user cursor position
   const updateUserCursor = (action: IDrawingAction) => {
     const cursor: IUserCursor = {
       userId: action.userId,
@@ -669,7 +653,6 @@ function DrawingCanvas({
     
     setUserCursors(prev => new Map(prev.set(action.userId, cursor)));
     
-    // Clean up old cursors (remove after 5 seconds of inactivity)
     setTimeout(() => {
       setUserCursors(prev => {
         const updated = new Map(prev);
@@ -682,7 +665,6 @@ function DrawingCanvas({
     }, 5000);
   };
 
-  // Render user cursors overlay
   const renderCursors = () => {
     return Array.from(userCursors.entries()).map(([userId, cursor]) => {
       if (cursor.userId === currentUser?.id) return null;
@@ -854,13 +836,11 @@ function DrawingCanvas({
     }
   };
 
-  // Handle mouse movement for cursor tracking
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!currentUser) return;
 
     const { x, y } = getCanvasCoordinates(e);
     
-    // Broadcast cursor position for real-time tracking
     const cursorAction: IDrawingAction = {
       type: 'cursor_move',
       tool: 'cursor',
@@ -876,13 +856,11 @@ function DrawingCanvas({
       id: generateActionId()
     };
     
-    // Only broadcast cursor position if not drawing (to avoid spam)
     if (!isDrawing) {
       broadcastAction(cursorAction);
     }
   };
 
-  // Handle wheel zoom
   const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     
@@ -909,7 +887,6 @@ function DrawingCanvas({
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx || !currentUser) return;
     
-    // Save state before clearing
     saveCanvasState();
     
     const action: IDrawingAction = {
@@ -925,15 +902,12 @@ function DrawingCanvas({
       id: generateActionId()
     };
     
-    // Apply locally first for immediate feedback
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = 'rgba(240, 240, 240, 0.15)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Clear local drawing actions
     setDrawingActions([]);
     
-    // Broadcast to other users
     broadcastAction(action);
   };
 
@@ -947,7 +921,6 @@ function DrawingCanvas({
     link.click();
   };
 
-  // Zoom functions
   const zoomIn = () => {
     setViewportState(prevState => ({
       ...prevState,
@@ -1183,7 +1156,6 @@ export default function CanvasModal({
           setParticipants(prev => [...prev, notification.to_user]);
           notificationService.showToast('success', 'User Joined', `${notification.to_user.username} joined the canvas`);
           
-          // Send current canvas state to the new participant
           if (canvasSession && currentUser) {
             socketService.sendCanvasAction({
               action: 'sync_state',
