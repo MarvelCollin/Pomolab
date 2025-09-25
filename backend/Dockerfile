@@ -12,7 +12,8 @@ RUN apt-get update && apt-get install -y \
     unzip \
     libpq-dev \
     nodejs \
-    npm
+    npm \
+    postgresql-client
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -21,6 +22,8 @@ RUN docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 COPY . /var/www/html
+
+RUN chmod +x /var/www/html/wait-for-db.sh
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \

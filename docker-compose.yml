@@ -18,7 +18,8 @@ services:
     networks:
       - pomolab-network
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - DB_CONNECTION=pgsql
       - DB_HOST=db
@@ -26,7 +27,7 @@ services:
       - DB_DATABASE=pomolab
       - DB_USERNAME=root
       - DB_PASSWORD=password
-    command: bash -c "php artisan migrate:fresh --force && php artisan serve --host=0.0.0.0 --port=8000 & php-fpm"
+    command: bash -c "./wait-for-db.sh db 5432 && php artisan migrate:fresh --force && php artisan serve --host=0.0.0.0 --port=8000 & php-fpm"
 
   frontend:
     build:
@@ -83,6 +84,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - pomolab-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d pomolab"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   nginx:
     image: nginx:alpine
