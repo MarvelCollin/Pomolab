@@ -89,11 +89,7 @@ export class MusicService {
     }
 
     createAudioElement(url: string): HTMLAudioElement {
-        if (this.audioElement) {
-            this.audioElement.pause();
-            this.audioElement.src = '';
-            this.audioElement.removeAttribute('data-connected');
-        }
+        this.destroyAudioElement();
         
         this.audioElement = new Audio(url);
         this.audioElement.crossOrigin = 'anonymous';
@@ -108,7 +104,10 @@ export class MusicService {
     destroyAudioElement(): void {
         if (this.audioElement) {
             this.audioElement.pause();
+            this.audioElement.removeAttribute('data-connected');
+            this.audioElement.currentTime = 0;
             this.audioElement.src = '';
+            this.audioElement.load();
             this.audioElement = null;
         }
     }

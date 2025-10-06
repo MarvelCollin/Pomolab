@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Users, Video } from 'lucide-react';
+import { Search, X, Users, Video, BarChart3 } from 'lucide-react';
 import type { ISearchModalProps, ISearchResult } from '../../interfaces/ISearchModal';
 import { AuthTrigger } from '../../utils/auth-trigger';
 
-function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: ISearchModalProps) {
+function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal, onOpenStatsModal }: ISearchModalProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<ISearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -37,6 +37,21 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
         if (AuthTrigger.checkAuthForMutation()) {
           if (onOpenVideoModal) {
             onOpenVideoModal();
+          }
+        }
+      }
+    },
+    {
+      id: 'statistics',
+      title: 'Statistics',
+      description: 'View your activity statistics and insights',
+      category: 'stats',
+      icon: BarChart3,
+      requireAuth: true,
+      action: () => {
+        if (AuthTrigger.checkAuthForMutation()) {
+          if (onOpenStatsModal) {
+            onOpenStatsModal();
           }
         }
       }
@@ -84,6 +99,7 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
   const getCategoryColor = (category: string) => {
     if (category === 'friends') return 'text-emerald-400';
     if (category === 'video') return 'text-blue-400';
+    if (category === 'stats') return 'text-purple-400';
     return 'text-white/60';
   };
 

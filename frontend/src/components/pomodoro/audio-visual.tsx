@@ -47,12 +47,24 @@ function AudioVisual({ currentMusic, playerState }: AudioVisualProps) {
           analyserRef.current = analyser;
         } catch (sourceError) {
           if (sourceError instanceof Error && sourceError.message.includes('already connected')) {
-            if (analyserRef.current) {
-              startVisualization();
-              return;
-            }
+            const analyser = audioContext.createAnalyser();
+            analyser.fftSize = 1024;
+            analyser.smoothingTimeConstant = 0.7;
+            analyser.minDecibels = -90;
+            analyser.maxDecibels = -10;
+            analyserRef.current = analyser;
+          } else {
+            analyserRef.current = null;
           }
-          analyserRef.current = null;
+        }
+      } else {
+        if (!analyserRef.current) {
+          const analyser = audioContext.createAnalyser();
+          analyser.fftSize = 1024;
+          analyser.smoothingTimeConstant = 0.7;
+          analyser.minDecibels = -90;
+          analyser.maxDecibels = -10;
+          analyserRef.current = analyser;
         }
       }
 
@@ -132,22 +144,12 @@ function AudioVisual({ currentMusic, playerState }: AudioVisualProps) {
     }
     
     if (playerState.isPlaying && currentMusic) {
-      const connectAnalyser = async () => {
-        const { musicService } = await import('../../services/music-service');
-        const audioElement = musicService.getAudioElement();
-        
-        if (audioElement && !audioElement.getAttribute('data-connected')) {
-          analyserRef.current = null;
-        }
-        
-        setupAudioAnalyser();
-      };
-      
-      connectAnalyser();
+      analyserRef.current = null;
+      setupAudioAnalyser();
     } else if (!playerState.isPlaying) {
       setAudioData(new Array(150).fill(0));
     }
-  }, [playerState.isPlaying, currentMusic]);
+  }, [playerState.isPlaying, currentMusic?.id]);
 
   useEffect(() => {
     if (playerState.isPlaying && !animationRef.current) {

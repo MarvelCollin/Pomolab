@@ -118,9 +118,6 @@ const MainContent = memo(function MainContent({
                   state.ui.pomodoroMinimized ? 'opacity-0 h-0 overflow-hidden mt-0' : 'opacity-100 h-auto mt-6'
                 }`}
               >
-                <p className="text-white/60 text-sm">
-                  Use the video call feature in the top-right menu to collaborate with friends
-                </p>
               </div>
             </div>
           </div>

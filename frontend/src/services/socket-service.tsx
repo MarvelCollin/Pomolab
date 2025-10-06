@@ -59,40 +59,64 @@ class SocketService {
     private messageCallbacks: { [key: string]: ((data: any) => void)[] } = {};
 
     private handleMessage(data: any): void {
+        console.log('📨 Received WebSocket message:', data);
+        
         if (data.event && data.channel && data.data) {
             const { event, channel, data: messageData } = data;
+            console.log(`📢 Processing message for channel ${channel} with event ${event}:`, messageData);
             
             if (this.messageCallbacks[channel]) {
+                console.log(`📞 Calling ${this.messageCallbacks[channel].length} callbacks for channel ${channel}`);
                 this.messageCallbacks[channel].forEach(callback => {
                     callback({ event, data: messageData });
                 });
+            } else {
+                console.log(`❌ No callbacks registered for channel: ${channel}`);
             }
         } else if (data.channel && data.data) {
             const { channel, data: messageData } = data;
+            console.log(`📢 Processing direct message for channel ${channel}:`, messageData);
             
             if (this.messageCallbacks[channel]) {
+                console.log(`📞 Calling ${this.messageCallbacks[channel].length} callbacks for channel ${channel}`);
                 this.messageCallbacks[channel].forEach(callback => {
                     callback(messageData);
                 });
+            } else {
+                console.log(`❌ No callbacks registered for channel: ${channel}`);
             }
+        } else {
+            console.log('⚠️ Unrecognized message format:', data);
         }
     }
 
     private subscribedChannels: Set<string> = new Set();
 
     public subscribeToChannel(channel: string, callback: (data: any) => void): () => void {
+        console.log(`🔔 Subscribing to channel: ${channel}`);
+        
         if (!this.messageCallbacks[channel]) {
             this.messageCallbacks[channel] = [];
         }
         
+        const existingIndex = this.messageCallbacks[channel].findIndex(cb => cb === callback);
+        if (existingIndex !== -1) {
+            console.log(`⚠️ Callback already registered for channel ${channel}, skipping duplicate`);
+            return () => this.unsubscribeCallback(channel, callback);
+        }
+        
         this.messageCallbacks[channel].push(callback);
+        console.log(`📝 Added callback for channel ${channel}, total callbacks: ${this.messageCallbacks[channel].length}`);
 
         if (!this.subscribedChannels.has(channel) && this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.subscribedChannels.add(channel);
+            console.log(`📡 Sending subscription message for channel: ${channel}`);
             this.ws.send(JSON.stringify({
                 type: 'subscribe',
                 channel: channel
             }));
+        } else {
+            console.log(`⚠️ Channel ${channel} already subscribed or WebSocket not ready. Subscribed: ${this.subscribedChannels.has(channel)}, WS Ready: ${this.ws?.readyState === WebSocket.OPEN}`);
         }
 
         return () => this.unsubscribeCallback(channel, callback);
@@ -266,14 +290,19 @@ class SocketService {
     }
 
     public setCurrentUser(userId: number | null): void {
+        console.log('🔌 Socket service setting current user:', userId);
         this.currentUserId = userId;
         if (userId && this.ws && this.ws.readyState === WebSocket.OPEN) {
+            console.log('📡 Sending user_connect for user:', userId);
             this.sendUserConnect(userId);
+        } else {
+            console.log('⚠️ Cannot send user_connect - WebSocket not ready or no userId');
         }
     }
 
     private sendUserConnect(userId: number): void {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            console.log('📤 Sending user_connect message:', userId);
             this.ws.send(JSON.stringify({
                 type: 'user_connect',
                 userId: userId

@@ -19,7 +19,8 @@ import {
   User,
   LogOut,
   Users,
-  Video
+  Video,
+  BarChart3
 } from 'lucide-react';
 import type { IBackground } from '../../interfaces/IBackground';
 import type { IMusic } from '../../interfaces/IMusic';
@@ -29,6 +30,7 @@ import { notificationService } from '../../services/notification-service';
 import FriendsModal from './friends-modal';
 import VideoModal from './video-modal';
 import CanvasModal from './canvas';
+import StatsModal from './stats-modal';
 
 interface ToolBarProps {
   showBackgroundSelector: boolean;
@@ -99,6 +101,7 @@ const ToolBar = memo(function ToolBar({
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showMainMenu, setShowMainMenu] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
+  const [showStatsModal, setShowStatsModal] = useState(false);
   
   const [videoOpen, setVideoOpen] = useState(false);
   const [canvasOpen, setCanvasOpen] = useState(false);
@@ -349,6 +352,21 @@ const ToolBar = memo(function ToolBar({
                   >
                     <Video className="w-4 h-4 text-white/90" />
                     <span className="text-white text-sm font-medium">Video Call</span>
+                  </motion.button>
+                )}
+
+                {currentUser && (
+                  <motion.button
+                    onClick={() => {
+                      setShowStatsModal(true);
+                      setShowMainMenu(false);
+                    }}
+                    className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group"
+                    whileHover={{ x: 4 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <BarChart3 className="w-4 h-4 text-white/90" />
+                    <span className="text-white text-sm font-medium">Statistics</span>
                   </motion.button>
                 )}
 
@@ -753,6 +771,12 @@ const ToolBar = memo(function ToolBar({
         currentUser={currentUser}
         pendingSession={pendingCanvasSession}
         onSessionJoined={() => setPendingCanvasSession(null)}
+      />
+
+      <StatsModal
+        isOpen={showStatsModal}
+        onClose={() => setShowStatsModal(false)}
+        currentUser={currentUser}
       />
 
     </motion.div>

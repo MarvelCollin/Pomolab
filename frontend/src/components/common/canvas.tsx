@@ -355,7 +355,6 @@ function UserInvitePanel({
 
 function DrawingCanvas({ 
   onDrawingStart, 
-  onDrawingEnd, 
   isFullscreen,
   setIsFullscreen,
   currentUser,
@@ -365,7 +364,6 @@ function DrawingCanvas({
   setDrawingActions
 }: { 
   onDrawingStart: () => void; 
-  onDrawingEnd: () => void; 
   isFullscreen: boolean;
   setIsFullscreen: (value: boolean) => void;
   currentUser?: { id: number; username: string } | null;
@@ -375,7 +373,6 @@ function DrawingCanvas({
   setDrawingActions: React.Dispatch<React.SetStateAction<IDrawingAction[]>>;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [activeTool, setActiveTool] = useState('brush');
   const [selectedColor, setSelectedColor] = useState('#ffffff');
@@ -436,7 +433,7 @@ function DrawingCanvas({
             };
             setUserCursors(prev => new Map(prev.set(action.userId, cursorUpdate)));
             
-            setTimeout(() => {
+            const timeoutId = setTimeout(() => {
               setUserCursors(prev => {
                 const newMap = new Map(prev);
                 const cursor = newMap.get(action.userId);
@@ -446,6 +443,8 @@ function DrawingCanvas({
                 return newMap;
               });
             }, 3000);
+            
+            return () => clearTimeout(timeoutId);
           } else {
             applyDrawingAction(action);
             setDrawingActions(prev => [...prev, action]);
@@ -923,15 +922,17 @@ function DrawingCanvas({
           >
             <UserPlus className="w-4 h-4" />
           </motion.button>
-          <motion.button
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/60 hover:text-white transition-colors"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-          >
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-          </motion.button>
+          {isFullscreen && (
+            <motion.button
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/60 hover:text-white transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Exit Fullscreen"
+            >
+              <Minimize2 className="w-4 h-4" />
+            </motion.button>
+          )}
         </div>
       </div>
       
@@ -1143,14 +1144,6 @@ export default function CanvasModal({
     setIsDraggingDisabled(true);
   };
 
-  const handleDrawingEnd = () => {
-    setIsDraggingDisabled(false);
-  };
-
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
-
   const handleClose = () => {
     if (currentUser && canvasSession && participants.length > 1) {
       const otherParticipants = participants.filter(p => p.id !== currentUser.id);
@@ -1169,11 +1162,11 @@ export default function CanvasModal({
       <motion.div
         drag={!isDraggingDisabled && !isFullscreen}
         dragConstraints={isFullscreen ? false : constraintsRef}
-        dragElastic={0.05}
-        whileDrag={!isFullscreen ? { scale: 1.01 } : {}}
+        dragMomentum={false}
+        dragTransition={{ bounceStiffness: 600, bounceDamping: 20 }}
         className={`${
           isFullscreen 
-            ? 'fixed inset-4 cursor-default' 
+            ? 'fixed inset-0 cursor-default' 
             : 'absolute top-20 left-80 w-96 h-80 cursor-move'
         } bg-white/10 backdrop-blur-3xl border border-white/20 rounded-3xl shadow-2xl pointer-events-auto overflow-hidden transition-all duration-300`}
         initial={{ opacity: 0, scale: 0.9, y: -30 }}
@@ -1185,9 +1178,6 @@ export default function CanvasModal({
         }}
         exit={{ opacity: 0, scale: 0.9, y: -30 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        style={{
-          cursor: isFullscreen ? 'default' : (isDraggingDisabled ? 'crosshair' : 'move')
-        }}
       >
         <div className="relative h-full flex flex-col">
           <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
@@ -1211,34 +1201,24 @@ export default function CanvasModal({
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <motion.button
-                onClick={() => setShowInvitePanel(!showInvitePanel)}
-                className="p-1.5 hover:bg-white/20 rounded-full transition-colors group"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                title="Invite Users"
-              >
-                <UserPlus className="w-4 h-4 text-white/60 group-hover:text-white" />
-              </motion.button>
-              <motion.button
-                onClick={toggleFullscreen}
-                className="p-1.5 hover:bg-white/20 rounded-full transition-colors group"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="w-4 h-4 text-white/60 group-hover:text-white" />
-                ) : (
-                  <Maximize2 className="w-4 h-4 text-white/60 group-hover:text-white" />
-                )}
-              </motion.button>
+            <div className="flex items-center gap-2">
+              {!isFullscreen && (
+                <motion.button
+                  onClick={() => setIsFullscreen(true)}
+                  className="p-2 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-lg text-emerald-400 hover:text-emerald-300 transition-colors"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  title="Expand Canvas"
+                >
+                  <Maximize2 className="w-4 h-4" />
+                </motion.button>
+              )}
               <motion.button
                 onClick={handleClose}
                 className="p-1.5 hover:bg-white/20 rounded-full transition-colors group"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
+                title="Close Canvas"
               >
                 <X className="w-4 h-4 text-white/60 group-hover:text-white" />
               </motion.button>
@@ -1259,7 +1239,6 @@ export default function CanvasModal({
             {canvasSession && (
               <DrawingCanvas 
                 onDrawingStart={handleDrawingStart}
-                onDrawingEnd={handleDrawingEnd}
                 isFullscreen={isFullscreen}
                 setIsFullscreen={setIsFullscreen}
                 currentUser={currentUser}

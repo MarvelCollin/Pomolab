@@ -44,7 +44,6 @@ export default function ChatModal({
       setMessages(enhancedMessages);
       setTimeout(scrollToBottom, 100);
     } catch (error) {
-      console.error('Failed to load conversation:', error);
     } finally {
       setLoading(false);
     }
@@ -79,7 +78,6 @@ export default function ChatModal({
       
       setTimeout(scrollToBottom, 100);
     } catch (error) {
-      console.error('Failed to send message:', error);
     } finally {
       setSending(false);
     }
@@ -158,14 +156,14 @@ export default function ChatModal({
   return (
     <motion.div
       ref={constraintsRef}
-      className="fixed inset-0 pointer-events-none z-50"
+      className="fixed inset-0 pointer-events-none z-[60]"
     >
       <motion.div
         drag
         dragConstraints={constraintsRef}
-        dragElastic={0.1}
-        whileDrag={{ scale: 1.02, rotate: 1 }}
-        className="absolute top-20 right-80 w-80 h-96 bg-white/10 backdrop-blur-3xl border border-white/20 rounded-3xl shadow-2xl pointer-events-auto overflow-hidden"
+        dragMomentum={false}
+        dragTransition={{ bounceStiffness: 600, bounceDamping: 20 }}
+        className="absolute top-16 right-4 w-80 h-96 bg-white/15 backdrop-blur-3xl border border-white/30 rounded-3xl shadow-2xl pointer-events-auto overflow-hidden ring-1 ring-white/20"
         initial={{ opacity: 0, scale: 0.8, y: -50 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.8, y: -50 }}

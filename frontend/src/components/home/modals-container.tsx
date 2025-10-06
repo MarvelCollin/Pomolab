@@ -1,9 +1,11 @@
-import { memo, useState } from 'react';
+import { memo, useState, useCallback } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import SearchModal from '../common/search-modal';
 import FriendsModal from '../common/friends-modal';
 import LoginModal from '../common/login-modal';
 import ChatModal from '../common/chat-modal';
 import VideoModal from '../common/video-modal';
+import StatsModal from '../common/stats-modal';
 import { useUnifiedNotifications } from '../../hooks/use-unified-notifications';
 import type { AppState, AppAction } from '../../hooks/use-app-state';
 import type { IUser } from '../../interfaces/IUser';
@@ -28,31 +30,41 @@ const ModalsContainer = memo(function ModalsContainer({
   const [chatOpen, setChatOpen] = useState(false);
   const [chatWithUser, setChatWithUser] = useState<IUser | null>(null);
   const [videoOpen, setVideoOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
   const [joinMeetingData, setJoinMeetingData] = useState<{meetingId: string; token: string} | null>(null);
 
-  const handleOpenChat = (user: IUser) => {
+  const handleOpenChat = useCallback((user: IUser) => {
     setChatWithUser(user);
     setChatOpen(true);
-  };
+    handleCloseFriendsModal();
+  }, [handleCloseFriendsModal]);
 
-  const handleCloseChat = () => {
+  const handleCloseChat = useCallback(() => {
     setChatOpen(false);
     setChatWithUser(null);
-  };
+  }, []);
 
-  const handleOpenVideoModal = () => {
+  const handleOpenVideoModal = useCallback(() => {
     setVideoOpen(true);
-  };
+  }, []);
 
-  const handleCloseVideoModal = () => {
+  const handleCloseVideoModal = useCallback(() => {
     setVideoOpen(false);
     setJoinMeetingData(null);
-  };
+  }, []);
 
-  const handleJoinVideoCall = (meetingId: string, token: string) => {
+  const handleOpenStatsModal = useCallback(() => {
+    setStatsOpen(true);
+  }, []);
+
+  const handleCloseStatsModal = useCallback(() => {
+    setStatsOpen(false);
+  }, []);
+
+  const handleJoinVideoCall = useCallback((meetingId: string, token: string) => {
     setJoinMeetingData({ meetingId, token });
     setVideoOpen(true);
-  };
+  }, []);
 
   useUnifiedNotifications({ 
     onOpenChat: handleOpenChat,
@@ -67,6 +79,7 @@ const ModalsContainer = memo(function ModalsContainer({
         onClose={handleCloseSearchModal}
         onOpenFriendsModal={handleOpenFriendsModal}
         onOpenVideoModal={handleOpenVideoModal}
+        onOpenStatsModal={handleOpenStatsModal}
       />
 
       <FriendsModal
@@ -89,14 +102,23 @@ const ModalsContainer = memo(function ModalsContainer({
         joinMeetingData={joinMeetingData}
       />
 
-      {chatOpen && chatWithUser && state.auth.currentUser && (
-        <ChatModal
-          isOpen={chatOpen}
-          onClose={handleCloseChat}
-          currentUser={state.auth.currentUser}
-          chatUser={chatWithUser}
-        />
-      )}
+      <StatsModal
+        isOpen={statsOpen}
+        onClose={handleCloseStatsModal}
+        currentUser={state.auth.currentUser}
+      />
+
+      <AnimatePresence>
+        {chatOpen && chatWithUser && state.auth.currentUser && (
+          <ChatModal
+            key={`chat-${chatWithUser.id}`}
+            isOpen={chatOpen}
+            onClose={handleCloseChat}
+            currentUser={state.auth.currentUser}
+            chatUser={chatWithUser}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 });

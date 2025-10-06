@@ -81,30 +81,16 @@ export default function Home() {
   } = useTimerLogic(dispatch, state.pomodoro, handleSessionComplete);
 
   const friendCallbacks: FriendNotificationCallbacks = {
-    onFriendRequestSent: (data) => {
-      console.log('Friend request sent:', data);
-    },
-    onFriendRequestReceived: (data) => {
-      console.log('Friend request received:', data);
-    },
-    onFriendRequestAccepted: (data) => {
-      console.log('Friend request accepted:', data);
-    },
-    onFriendRequestRejected: (data) => {
-      console.log('Friend request rejected:', data);
-    },
-    onFriendRemoved: (data) => {
-      console.log('Friend removed:', data);
-    }
+    onFriendRequestSent: () => {},
+    onFriendRequestReceived: () => {},
+    onFriendRequestAccepted: () => {},
+    onFriendRequestRejected: () => {},
+    onFriendRemoved: () => {}
   };
 
   const { ToastContainer } = useUnifiedNotifications({
-    onOpenChat: (user) => {
-      console.log('Opening chat with:', user);
-    },
-    onJoinVideoCall: (meetingId, token) => {
-      console.log('Joining video call:', meetingId, token);
-    },
+    onOpenChat: () => {},
+    onJoinVideoCall: () => {},
     friendCallbacks,
     currentUser: state.auth.currentUser
   });

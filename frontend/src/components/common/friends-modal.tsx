@@ -58,16 +58,13 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
     
     try {
       const [friendsResponse, requestsResponse, sentResponse] = await Promise.all([
-        FriendApi.getUserFriends(currentUser.id).catch(err => {
-          console.error('Failed to fetch user friends:', err);
+        FriendApi.getUserFriends(currentUser.id).catch(() => {
           return [];
         }),
-        FriendApi.getFriendRequests(currentUser.id).catch(err => {
-          console.error('Failed to fetch friend requests:', err);
+        FriendApi.getFriendRequests(currentUser.id).catch(() => {
           return [];
         }),
-        FriendApi.getSentRequests(currentUser.id).catch(err => {
-          console.error('Failed to fetch sent requests:', err);
+        FriendApi.getSentRequests(currentUser.id).catch(() => {
           return [];
         })
       ]);
@@ -102,7 +99,6 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
     } catch (err) {
       const errorMessage = 'Failed to load friends data';
       setError(errorMessage);
-      console.error('Error loading friends:', err);
       if (showToast) {
         showError(errorMessage, 'Please try again');
       }
@@ -135,7 +131,6 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
         
         setSearchResults(filteredResults);
       } catch (err) {
-        console.error('Error searching users:', err);
         setSearchResults([]);
       } finally {
         setSearchLoading(false);
@@ -170,7 +165,6 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
       const errorMessage = 'Failed to send friend request';
       setError(errorMessage);
       showError(errorMessage, 'Please try again');
-      console.error('Error sending friend request:', err);
     } finally {
       setSendingRequestTo(null);
     }
@@ -192,7 +186,6 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
       const errorMessage = 'Failed to accept friend request';
       setError(errorMessage);
       showError(errorMessage, 'Please try again');
-      console.error('Error accepting friend request:', err);
     } finally {
       setAcceptingRequest(null);
     }
@@ -214,7 +207,6 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
       const errorMessage = 'Failed to reject friend request';
       setError(errorMessage);
       showError(errorMessage, 'Please try again');
-      console.error('Error rejecting friend request:', err);
     } finally {
       setRejectingRequest(null);
     }
@@ -236,7 +228,6 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
       const errorMessage = 'Failed to remove friend';
       setError(errorMessage);
       showError(errorMessage, 'Please try again');
-      console.error('Error removing friend:', err);
     } finally {
       setRemovingFriend(null);
     }
@@ -314,6 +305,7 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.98, y: 10 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
+          onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between p-4 border-b border-white/10">
             <div className="flex items-center gap-3">
@@ -405,14 +397,20 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
                             friend.friend,
                             <div className="flex gap-2">
                               <button
-                                onClick={() => handleOpenChat(friend.friend!)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenChat(friend.friend!);
+                                }}
                                 className="p-2 hover:bg-blue-500/20 rounded-lg transition-colors"
                                 title="Start chat"
                               >
                                 <MessageCircle className="w-4 h-4 text-blue-400 hover:text-blue-300" />
                               </button>
                               <button
-                                onClick={() => handleRemoveFriend(friend.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveFriend(friend.id);
+                                }}
                                 disabled={removingFriend === friend.id}
                                 className="p-2 hover:bg-red-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Remove friend"

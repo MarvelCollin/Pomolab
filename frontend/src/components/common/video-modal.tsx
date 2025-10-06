@@ -1028,7 +1028,7 @@ export default function VideoModal({
         whileDrag={{ scale: 1.02, rotate: 1 }}
         className={`${
           isFullscreen 
-            ? 'fixed inset-8 w-auto h-auto max-h-[calc(100vh-64px)]' 
+            ? 'fixed inset-0 w-auto h-auto' 
             : 'absolute top-16 right-4 w-80 h-[420px] max-w-[85vw] max-h-[85vh]'
         } bg-white/10 backdrop-blur-3xl border border-white/20 ${
           isFullscreen ? 'rounded-xl' : 'rounded-2xl'

@@ -16,7 +16,6 @@ export const useMusic = () => {
   const [musicReady, setMusicReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoPlay, setAutoPlay] = useState(true);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isChangingTrack = useRef(false);
 
@@ -36,15 +35,8 @@ export const useMusic = () => {
             setMusics(prev => prev.map(m => ({ ...m, isActive: m.id === autoNextTrack.id })));
             
             isChangingTrack.current = true;
-            if (audioRef.current) {
-              audioRef.current.pause();
-              audioRef.current.removeEventListener('loadedmetadata', () => {});
-              audioRef.current.removeEventListener('timeupdate', () => {});
-              audioRef.current.removeEventListener('ended', () => {});
-            }
 
-            audioRef.current = musicService.createAudioElement(autoNextTrack.url);
-            const newAudio = audioRef.current;
+            const newAudio = musicService.createAudioElement(autoNextTrack.url);
             newAudio.volume = playerState.volume;
             newAudio.muted = playerState.isMuted;
 
@@ -122,9 +114,10 @@ export const useMusic = () => {
       if (success) {
         setMusics(prev => prev.filter(m => m.id !== music.id));
         if (currentMusic?.id === music.id) {
-          if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.currentTime = 0;
+          const audio = musicService.getAudioElement();
+          if (audio) {
+            audio.pause();
+            audio.currentTime = 0;
           }
           setCurrentMusic(null);
           setPlayerState(prev => ({
@@ -155,12 +148,7 @@ export const useMusic = () => {
     const nextTrack = musicService.getRandomMusic(remainingMusics.length > 0 ? remainingMusics : musics);
     
     if (nextTrack) {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-
-      audioRef.current = musicService.createAudioElement(nextTrack.url);
-      const audio = audioRef.current;
+      const audio = musicService.createAudioElement(nextTrack.url);
 
       audio.volume = playerState.volume;
       audio.muted = playerState.isMuted;
@@ -213,12 +201,7 @@ export const useMusic = () => {
     const prevTrack = musicService.getRandomMusic(remainingMusics.length > 0 ? remainingMusics : musics);
     
     if (prevTrack) {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-
-      audioRef.current = musicService.createAudioElement(prevTrack.url);
-      const audio = audioRef.current;
+      const audio = musicService.createAudioElement(prevTrack.url);
 
       audio.volume = playerState.volume;
       audio.muted = playerState.isMuted;
@@ -266,12 +249,7 @@ export const useMusic = () => {
     try {
       isChangingTrack.current = true;
       
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-
-      audioRef.current = musicService.createAudioElement(music.url);
-      const audio = audioRef.current;
+      const audio = musicService.createAudioElement(music.url);
 
       audio.volume = playerState.volume;
       audio.muted = playerState.isMuted;
@@ -325,8 +303,9 @@ export const useMusic = () => {
   }, [playerState.volume, playerState.isMuted, musics, createAutoNextHandler]);
 
   const seekTo = useCallback((time: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
+    const audio = musicService.getAudioElement();
+    if (audio) {
+      audio.currentTime = time;
       setPlayerState(prev => ({
         ...prev,
         currentTime: time
@@ -336,8 +315,9 @@ export const useMusic = () => {
 
   const setVolume = useCallback((volume: number) => {
     const clampedVolume = Math.max(0, Math.min(1, volume));
-    if (audioRef.current) {
-      audioRef.current.volume = clampedVolume;
+    const audio = musicService.getAudioElement();
+    if (audio) {
+      audio.volume = clampedVolume;
     }
     setPlayerState(prev => ({
       ...prev,
@@ -346,8 +326,9 @@ export const useMusic = () => {
   }, []);
 
   const toggleMute = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.muted = !playerState.isMuted;
+    const audio = musicService.getAudioElement();
+    if (audio) {
+      audio.muted = !playerState.isMuted;
     }
     setPlayerState(prev => ({
       ...prev,
@@ -356,8 +337,9 @@ export const useMusic = () => {
   }, [playerState.isMuted]);
 
   const pauseMusic = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
+    const audio = musicService.getAudioElement();
+    if (audio) {
+      audio.pause();
       setPlayerState(prev => ({
         ...prev,
         isPlaying: false
@@ -366,8 +348,9 @@ export const useMusic = () => {
   }, []);
 
   const resumeMusic = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.play()
+    const audio = musicService.getAudioElement();
+    if (audio) {
+      audio.play()
         .then(() => {
           setPlayerState(prev => ({
             ...prev,
@@ -381,9 +364,10 @@ export const useMusic = () => {
   }, []);
 
   const stopMusic = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+    const audio = musicService.getAudioElement();
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
     }
     setCurrentMusic(null);
     setPlayerState(prev => ({
@@ -422,12 +406,7 @@ export const useMusic = () => {
         );
         
         setTimeout(() => {
-          if (audioRef.current) {
-            audioRef.current.pause();
-          }
-
-          audioRef.current = musicService.createAudioElement(randomMusic.url);
-          const audio = audioRef.current;
+          const audio = musicService.createAudioElement(randomMusic.url);
 
           audio.volume = playerState.volume;
           audio.muted = playerState.isMuted;
@@ -449,22 +428,29 @@ export const useMusic = () => {
           const handleEnded = createAutoNextHandler(randomMusic.id);
           audio.addEventListener('ended', handleEnded);
 
-          audio.play().catch(() => {
-            const handleUserInteraction = async () => {
-              try {
-                await audio.play();
-                setPlayerState(prev => ({
-                  ...prev,
-                  isPlaying: true
-                }));
-                document.removeEventListener('click', handleUserInteraction);
-                document.removeEventListener('keydown', handleUserInteraction);
-              } catch {}
-            };
-            
-            document.addEventListener('click', handleUserInteraction, { once: true });
-            document.addEventListener('keydown', handleUserInteraction, { once: true });
-          });
+          audio.play()
+            .then(() => {
+              setPlayerState(prev => ({
+                ...prev,
+                isPlaying: true
+              }));
+            })
+            .catch(() => {
+              const handleUserInteraction = async () => {
+                try {
+                  await audio.play();
+                  setPlayerState(prev => ({
+                    ...prev,
+                    isPlaying: true
+                  }));
+                  document.removeEventListener('click', handleUserInteraction);
+                  document.removeEventListener('keydown', handleUserInteraction);
+                } catch {}
+              };
+              
+              document.addEventListener('click', handleUserInteraction, { once: true });
+              document.addEventListener('keydown', handleUserInteraction, { once: true });
+            });
         }, 100);
       }
     }
