@@ -373,6 +373,10 @@ function DrawingCanvas({
   setDrawingActions: React.Dispatch<React.SetStateAction<IDrawingAction[]>>;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+<<<<<<< HEAD
+=======
+  const containerRef = useRef<HTMLDivElement>(null);
+>>>>>>> 453402249e08f9646e0ca037adc2c7e064ac64f1
   const [isDrawing, setIsDrawing] = useState(false);
   const [activeTool, setActiveTool] = useState('brush');
   const [selectedColor, setSelectedColor] = useState('#ffffff');
@@ -456,7 +460,6 @@ function DrawingCanvas({
     return unsubscribe;
   }, [sessionId, currentUser?.id]);
 
-  // Handle canvas resize when fullscreen changes
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -465,6 +468,15 @@ function DrawingCanvas({
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
       
+<<<<<<< HEAD
+=======
+      const imageData = canvas.getContext('2d')?.getImageData(0, 0, oldWidth, oldHeight);
+      
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = canvas.offsetWidth * dpr;
+      canvas.height = canvas.offsetHeight * dpr;
+      
+>>>>>>> 453402249e08f9646e0ca037adc2c7e064ac64f1
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.fillStyle = 'rgba(240, 240, 240, 0.15)';
@@ -501,7 +513,7 @@ function DrawingCanvas({
     if (!canvas || !ctx) return;
     
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    setUndoHistory(prev => [...prev.slice(-9), imageData]); // Keep last 10 states
+    setUndoHistory(prev => [...prev.slice(-9), imageData]); 
   };
 
   const undoLastAction = () => {
@@ -515,7 +527,6 @@ function DrawingCanvas({
     ctx.putImageData(lastState, 0, 0);
     setUndoHistory(prev => prev.slice(0, -1));
     
-    // Broadcast undo action
     if (currentUser && sessionId) {
       const action: IDrawingAction = {
         type: 'undo',
@@ -556,6 +567,13 @@ function DrawingCanvas({
 
     ctx.save();
     
+<<<<<<< HEAD
+=======
+    const dpr = window.devicePixelRatio || 1;
+    ctx.scale(dpr, dpr);
+    ctx.setTransform(viewportState.zoom, 0, 0, viewportState.zoom, viewportState.x, viewportState.y);
+
+>>>>>>> 453402249e08f9646e0ca037adc2c7e064ac64f1
     ctx.globalCompositeOperation = action.tool === 'eraser' ? 'destination-out' : 'source-over';
     ctx.strokeStyle = action.color;
     ctx.lineWidth = action.size;
@@ -623,9 +641,15 @@ function DrawingCanvas({
     }
     
     ctx.restore();
+<<<<<<< HEAD
+=======
+    
+    if (action.type !== 'cursor_move') {
+      setDrawingActions(prev => [...prev, action]);
+    }
+>>>>>>> 453402249e08f9646e0ca037adc2c7e064ac64f1
   };
 
-  // Update user cursor position
   const updateUserCursor = (action: IDrawingAction) => {
     const cursor: IUserCursor = {
       userId: action.userId,
@@ -638,7 +662,6 @@ function DrawingCanvas({
     
     setUserCursors(prev => new Map(prev.set(action.userId, cursor)));
     
-    // Clean up old cursors (remove after 5 seconds of inactivity)
     setTimeout(() => {
       setUserCursors(prev => {
         const updated = new Map(prev);
@@ -651,7 +674,6 @@ function DrawingCanvas({
     }, 5000);
   };
 
-  // Render user cursors overlay
   const renderCursors = () => {
     return Array.from(userCursors.entries()).map(([userId, cursor]) => {
       if (cursor.userId === currentUser?.id) return null;
@@ -800,7 +822,6 @@ function DrawingCanvas({
     }
   };
 
-  // Handle mouse movement for cursor tracking
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!currentUser) return;
 
@@ -826,6 +847,30 @@ function DrawingCanvas({
     }
   };
 
+<<<<<<< HEAD
+=======
+  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+    const newZoom = Math.max(0.1, Math.min(5, viewportState.zoom * zoomFactor));
+
+    setViewportState(prevState => ({
+      ...prevState,
+      zoom: newZoom,
+      x: prevState.x + (mouseX - prevState.x) * (1 - zoomFactor),
+      y: prevState.y + (mouseY - prevState.y) * (1 - zoomFactor)
+    }));
+  };
+
+>>>>>>> 453402249e08f9646e0ca037adc2c7e064ac64f1
   const clearCanvas = () => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
@@ -865,6 +910,31 @@ function DrawingCanvas({
     link.click();
   };
 
+<<<<<<< HEAD
+=======
+  const zoomIn = () => {
+    setViewportState(prevState => ({
+      ...prevState,
+      zoom: Math.min(5, prevState.zoom * 1.2)
+    }));
+  };
+
+  const zoomOut = () => {
+    setViewportState(prevState => ({
+      ...prevState,
+      zoom: Math.max(0.1, prevState.zoom / 1.2)
+    }));
+  };
+
+  const resetZoom = () => {
+    setViewportState({
+      x: 0,
+      y: 0,
+      zoom: 1
+    });
+  };
+
+>>>>>>> 453402249e08f9646e0ca037adc2c7e064ac64f1
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-gray-900/50 to-gray-800/50">
       <div className="flex items-center justify-between p-4 border-b border-white/10 bg-black/20 backdrop-blur-sm">
@@ -1076,7 +1146,6 @@ export default function CanvasModal({
           setParticipants(prev => [...prev, notification.to_user]);
           notificationService.showToast('success', 'User Joined', `${notification.to_user.username} joined the canvas`);
           
-          // Send current canvas state to the new participant
           if (canvasSession && currentUser) {
             socketService.sendCanvasAction({
               action: 'sync_state',
