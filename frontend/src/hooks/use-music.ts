@@ -449,22 +449,29 @@ export const useMusic = () => {
           const handleEnded = createAutoNextHandler(randomMusic.id);
           audio.addEventListener('ended', handleEnded);
 
-          audio.play().catch(() => {
-            const handleUserInteraction = async () => {
-              try {
-                await audio.play();
-                setPlayerState(prev => ({
-                  ...prev,
-                  isPlaying: true
-                }));
-                document.removeEventListener('click', handleUserInteraction);
-                document.removeEventListener('keydown', handleUserInteraction);
-              } catch {}
-            };
-            
-            document.addEventListener('click', handleUserInteraction, { once: true });
-            document.addEventListener('keydown', handleUserInteraction, { once: true });
-          });
+          audio.play()
+            .then(() => {
+              setPlayerState(prev => ({
+                ...prev,
+                isPlaying: true
+              }));
+            })
+            .catch(() => {
+              const handleUserInteraction = async () => {
+                try {
+                  await audio.play();
+                  setPlayerState(prev => ({
+                    ...prev,
+                    isPlaying: true
+                  }));
+                  document.removeEventListener('click', handleUserInteraction);
+                  document.removeEventListener('keydown', handleUserInteraction);
+                } catch {}
+              };
+              
+              document.addEventListener('click', handleUserInteraction, { once: true });
+              document.addEventListener('keydown', handleUserInteraction, { once: true });
+            });
         }, 100);
       }
     }
