@@ -170,9 +170,9 @@ export default function Home() {
           onMediaReady={onMediaReady}
         />
         <motion.div 
-          className="absolute inset-0 bg-gradient-to-br from-black/10 via-transparent to-black/5"
+          className="absolute inset-0 bg-black transition-opacity duration-300"
           initial={{ opacity: 0 }}
-          animate={{ opacity: state.ui.backgroundVisible ? 1 : 0 }}
+          animate={{ opacity: state.ui.backgroundVisible ? state.pomodoro.backgroundDim / 100 : 0 }}
           transition={{ duration: 1.0, delay: 0.8, ease: "easeInOut" }}
         />
       </div>

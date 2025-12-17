@@ -76,6 +76,7 @@ const MainContent = memo(function MainContent({
                   isRunning={state.pomodoro.isTimerRunning}
                   sessionCount={state.pomodoro.sessionCount}
                   soundEnabled={state.pomodoro.soundEnabled}
+                  backgroundDim={state.pomodoro.backgroundDim}
                   customDurations={state.pomodoro.customDurations}
                   sessionDurations={sessionDurations}
                   sessionLabels={sessionLabels}
@@ -84,6 +85,7 @@ const MainContent = memo(function MainContent({
                   onSetCurrentSession={(session) => dispatch({ type: 'UPDATE_POMODORO', payload: { currentSession: session } })}
                   onSetTimeLeft={(timeLeft) => dispatch({ type: 'UPDATE_POMODORO', payload: { timeLeft: typeof timeLeft === 'function' ? timeLeft(state.pomodoro.timeLeft) : timeLeft } })}
                   onSetSoundEnabled={(enabled) => dispatch({ type: 'UPDATE_POMODORO', payload: { soundEnabled: enabled } })}
+                  onSetBackgroundDim={(dim) => dispatch({ type: 'UPDATE_POMODORO', payload: { backgroundDim: dim } })}
                   onSetCustomDurations={(durations) => dispatch({ type: 'UPDATE_POMODORO', payload: { customDurations: typeof durations === 'function' ? durations(state.pomodoro.customDurations) : durations } })}
                   onSetSessionCount={(count) => dispatch({ type: 'UPDATE_POMODORO', payload: { sessionCount: count } })}
                 />

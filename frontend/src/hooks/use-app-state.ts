@@ -34,6 +34,7 @@ export interface AppState {
     isTimerRunning: boolean;
     sessionCount: number;
     soundEnabled: boolean;
+    backgroundDim: number;
     customDurations: {
       focus: number;
       'short-break': number;
@@ -88,6 +89,7 @@ const initialState: AppState = {
     isTimerRunning: false,
     sessionCount: 0,
     soundEnabled: true,
+    backgroundDim: 30,
     customDurations: {
       focus: 25,
       'short-break': 5,

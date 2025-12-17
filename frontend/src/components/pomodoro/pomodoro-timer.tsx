@@ -11,6 +11,7 @@ export default function PomodoroTimer({
   isRunning: propIsRunning,
   sessionCount: propSessionCount,
   soundEnabled: propSoundEnabled,
+  backgroundDim: propBackgroundDim,
   customDurations: propCustomDurations,
   sessionDurations: propSessionDurations,
   sessionLabels: propSessionLabels,
@@ -19,6 +20,7 @@ export default function PomodoroTimer({
   onSetCurrentSession,
   onSetTimeLeft,
   onSetSoundEnabled,
+  onSetBackgroundDim,
   onSetCustomDurations,
   onSetSessionCount
 }: IPomodoroTimer) {
@@ -28,18 +30,19 @@ export default function PomodoroTimer({
   const [internalSessionCount, setInternalSessionCount] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [internalSoundEnabled, setInternalSoundEnabled] = useState(true);
+  const [internalBackgroundDim, setInternalBackgroundDim] = useState(30);
   const [internalCustomDurations, setInternalCustomDurations] = useState({
     focus: 25,
     'short-break': 5,
     'long-break': 15
   });
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
   const currentSession = propCurrentSession ?? internalCurrentSession;
   const timeLeft = propTimeLeft ?? internalTimeLeft;
   const isRunning = propIsRunning ?? internalIsRunning;
   const sessionCount = propSessionCount ?? internalSessionCount;
   const soundEnabled = propSoundEnabled ?? internalSoundEnabled;
+  const backgroundDim = propBackgroundDim ?? internalBackgroundDim;
   const customDurations = propCustomDurations ?? internalCustomDurations;
   
   const sessionDurations = propSessionDurations ?? {
@@ -388,7 +391,6 @@ export default function PomodoroTimer({
                   <span className="text-white/60 text-xs">min</span>
                 </div>
               </div>
-              
               <div className="flex items-center justify-between pt-2 border-t border-white/10">
                 <span className="text-white/80 text-xs">Sound Notifications</span>
                 <button
@@ -397,6 +399,31 @@ export default function PomodoroTimer({
                 >
                   <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform ${soundEnabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
                 </button>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-white/20">
+              <div className="mb-3 text-left">
+                <h4 className="text-white font-medium text-sm text-left">Graphic Settings</h4>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-white/80 text-xs">Background Dim</span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max="80"
+                      value={backgroundDim}
+                      onChange={(e) => onSetBackgroundDim ? onSetBackgroundDim(parseInt(e.target.value)) : setInternalBackgroundDim(parseInt(e.target.value))}
+                      className="w-20 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+                      style={{
+                        background: `linear-gradient(to right, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.4) ${backgroundDim * 1.25}%, rgba(255, 255, 255, 0.2) ${backgroundDim * 1.25}%, rgba(255, 255, 255, 0.2) 100%)`
+                      }}
+                    />
+                    <span className="text-white/60 text-xs w-8 text-right">{backgroundDim}%</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

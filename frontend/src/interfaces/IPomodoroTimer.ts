@@ -6,6 +6,7 @@ export interface IPomodoroTimer {
   isRunning?: boolean;
   sessionCount?: number;
   soundEnabled?: boolean;
+  backgroundDim?: number;
   customDurations?: {
     focus: number;
     'short-break': number;
@@ -22,6 +23,7 @@ export interface IPomodoroTimer {
   onSetCurrentSession?: (session: 'focus' | 'short-break' | 'long-break') => void;
   onSetTimeLeft?: (time: number | ((prev: number) => number)) => void;
   onSetSoundEnabled?: (enabled: boolean) => void;
+  onSetBackgroundDim?: (dim: number) => void;
   onSetCustomDurations?: (durations: { focus: number; 'short-break': number; 'long-break': number; } | ((prev: { focus: number; 'short-break': number; 'long-break': number; }) => { focus: number; 'short-break': number; 'long-break': number; })) => void;
   onSetSessionCount?: (count: number) => void;
 }
