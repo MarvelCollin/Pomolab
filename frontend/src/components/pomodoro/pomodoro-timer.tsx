@@ -391,7 +391,7 @@ export default function PomodoroTimer({
                   <span className="text-white/60 text-xs">min</span>
                 </div>
               </div>
-              <div className="flex items-center justify-between pt-2 border-t border-white/10">
+              <div className="flex items-center justify-between pt-3 border-t border-white/10">
                 <span className="text-white/80 text-xs">Sound Notifications</span>
                 <button
                   onClick={() => onSetSoundEnabled ? onSetSoundEnabled(!soundEnabled) : setInternalSoundEnabled(!soundEnabled)}
