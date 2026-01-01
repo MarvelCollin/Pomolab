@@ -149,9 +149,9 @@ const ToolBar = memo(function ToolBar({
     <motion.div
       className="fixed top-4 right-4 z-40"
       initial={{ opacity: 0, y: -20 }}
-      animate={{ 
-        opacity: isVisible ? 1 : 0.9, 
-        y: isVisible ? 0 : -5
+      animate={{
+        opacity: isVisible ? 1 : 0.9,
+        y: isVisible ? 0 : -5,
       }}
       transition={{ duration: 0.2, ease: "easeOut" }}
     >
@@ -218,7 +218,9 @@ const ToolBar = memo(function ToolBar({
                       whileTap={{ scale: 0.98 }}
                     >
                       <LogOut className="w-4 h-4 text-white/90" />
-                      <span className="text-white text-sm font-medium">Sign Out</span>
+                      <span className="text-white text-sm font-medium">
+                        Sign Out
+                      </span>
                     </motion.button>
                   </motion.div>
                 ) : (
@@ -227,15 +229,20 @@ const ToolBar = memo(function ToolBar({
                       onShowLogin();
                       setShowMainMenu(false);
                     }}
-                    className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group mb-2 bg-white/10 backdrop-blur-2xl border border-white/10"
-                    whileHover={{ x: 4, backgroundColor: "rgba(255, 255, 255, 0.2)" }}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-white/20 rounded-lg transition-all duration-200 group mb-2 bg-white/10 backdrop-blur-2xl border border-white/10"
+                    whileHover={{
+                      x: 4,
+                      backgroundColor: "rgba(255, 255, 255, 0.2)",
+                    }}
                     whileTap={{ scale: 0.98 }}
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
                   >
                     <User className="w-4 h-4 text-white/90" />
-                    <span className="text-white text-sm font-medium">Sign In</span>
+                    <span className="text-white text-sm font-medium">
+                      Sign In
+                    </span>
                   </motion.button>
                 )}
 
@@ -264,7 +271,7 @@ const ToolBar = memo(function ToolBar({
                     setTasksMinimized(!tasksMinimized);
                     setShowMainMenu(false);
                   }}
-                  className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group"
+                  className="w-full flex items-center gap-3 p-3 hover:bg-white/20 rounded-lg transition-all duration-200 group"
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -292,12 +299,14 @@ const ToolBar = memo(function ToolBar({
                     setShowBackgroundSelector(!showBackgroundSelector);
                     setShowMainMenu(false);
                   }}
-                  className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group"
+                  className="w-full flex items-center gap-3 p-3 hover:bg-white/20 rounded-lg transition-all duration-200 group"
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <ImageIcon className="w-4 h-4 text-white/90" />
-                  <span className="text-white text-sm font-medium">Backgrounds</span>
+                  <span className="text-white text-sm font-medium">
+                    Backgrounds
+                  </span>
                 </motion.button>
 
                 <motion.button
@@ -305,7 +314,7 @@ const ToolBar = memo(function ToolBar({
                     setShowMusicPlayer(!showMusicPlayer);
                     setShowMainMenu(false);
                   }}
-                  className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group"
+                  className="w-full flex items-center gap-3 p-3 hover:bg-white/20 rounded-lg transition-all duration-200 group"
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -319,7 +328,9 @@ const ToolBar = memo(function ToolBar({
                       />
                     )}
                   </div>
-                  <span className="text-white text-sm font-medium">Music Library</span>
+                  <span className="text-white text-sm font-medium">
+                    Music Library
+                  </span>
                 </motion.button>
 
                 <motion.button
@@ -327,12 +338,14 @@ const ToolBar = memo(function ToolBar({
                     setShowAudioEffects(!showAudioEffects);
                     setShowMainMenu(false);
                   }}
-                  className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group"
+                  className="w-full flex items-center gap-3 p-3 hover:bg-white/20 rounded-lg transition-all duration-200 group"
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <Waves className="w-4 h-4 text-white/90" />
-                  <span className="text-white text-sm font-medium">Audio Effects</span>
+                  <span className="text-white text-sm font-medium">
+                    Audio Effects
+                  </span>
                 </motion.button>
 
                 {currentUser && (
@@ -341,12 +354,14 @@ const ToolBar = memo(function ToolBar({
                       setShowFriendsModal(true);
                       setShowMainMenu(false);
                     }}
-                    className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group"
+                    className="w-full flex items-center gap-3 p-3 hover:bg-white/20 rounded-lg transition-all duration-200 group"
                     whileHover={{ x: 4 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <Users className="w-4 h-4 text-white/90" />
-                    <span className="text-white text-sm font-medium">Friends & Chat</span>
+                    <span className="text-white text-sm font-medium">
+                      Friends & Chat
+                    </span>
                   </motion.button>
                 )}
 
@@ -356,12 +371,14 @@ const ToolBar = memo(function ToolBar({
                       setVideoOpen(true);
                       setShowMainMenu(false);
                     }}
-                    className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group"
+                    className="w-full flex items-center gap-3 p-3 hover:bg-white/20 rounded-lg transition-all duration-200 group"
                     whileHover={{ x: 4 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <Video className="w-4 h-4 text-white/90" />
-                    <span className="text-white text-sm font-medium">Video Call</span>
+                    <span className="text-white text-sm font-medium">
+                      Video Call
+                    </span>
                   </motion.button>
                 )}
 
@@ -372,7 +389,7 @@ const ToolBar = memo(function ToolBar({
                     setIsMinimalMode(!isMinimalMode);
                     setShowMainMenu(false);
                   }}
-                  className="w-full flex items-center gap-2 p-2 hover:bg-white/20 rounded-lg transition-all duration-200 group"
+                  className="w-full flex items-center gap-3 p-3 hover:bg-white/20 rounded-lg transition-all duration-200 group"
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -400,7 +417,7 @@ const ToolBar = memo(function ToolBar({
               transition={{ duration: 0.4, ease: "easeOut" }}
             >
               <div className="flex items-center justify-between mb-4">
-                <motion.h3 
+                <motion.h3
                   className="text-white font-medium text-sm"
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -418,22 +435,20 @@ const ToolBar = memo(function ToolBar({
                 </motion.button>
               </div>
 
-              <motion.div 
+              <motion.div
                 className="space-y-3"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
               >
-
-
                 <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
                   {backgrounds.map((background, index) => (
                     <motion.div
                       key={background.id}
                       className={`relative aspect-video rounded-lg overflow-hidden cursor-pointer border-2 transition-all duration-200 ${
                         activeBackground?.id === background.id
-                          ? 'border-white/50 ring-2 ring-white/30'
-                          : 'border-white/20 hover:border-white/40'
+                          ? "border-white/50 ring-2 ring-white/30"
+                          : "border-white/20 hover:border-white/40"
                       }`}
                       onClick={() => onBackgroundChange(background)}
                       initial={{ opacity: 0, scale: 0.8 }}
@@ -442,7 +457,7 @@ const ToolBar = memo(function ToolBar({
                       whileHover={{ scale: 1.05, y: -2 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      {background.type === 'video' ? (
+                      {background.type === "video" ? (
                         <video
                           src={background.url}
                           className="w-full h-full object-cover"
@@ -458,7 +473,6 @@ const ToolBar = memo(function ToolBar({
                         />
                       )}
                       <div className="absolute inset-0 bg-black/20" />
-
                     </motion.div>
                   ))}
                 </div>
@@ -477,7 +491,7 @@ const ToolBar = memo(function ToolBar({
               transition={{ duration: 0.4, ease: "easeOut" }}
             >
               <div className="flex items-center justify-between mb-4">
-                <motion.h3 
+                <motion.h3
                   className="text-white font-medium text-sm"
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -495,7 +509,7 @@ const ToolBar = memo(function ToolBar({
                 </motion.button>
               </div>
 
-              <motion.div 
+              <motion.div
                 className="space-y-2 max-h-48 overflow-y-auto"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -506,8 +520,8 @@ const ToolBar = memo(function ToolBar({
                     key={music.id}
                     className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${
                       currentMusic?.id === music.id
-                        ? 'bg-white/30 border border-white/40'
-                        : 'bg-white/10 hover:bg-white/20 border border-white/10'
+                        ? "bg-white/30 border border-white/40"
+                        : "bg-white/10 hover:bg-white/20 border border-white/10"
                     }`}
                     onClick={() => {
                       onPlayMusic(music);
@@ -522,7 +536,9 @@ const ToolBar = memo(function ToolBar({
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-white text-sm font-medium truncate">{music.name}</p>
+                          <p className="text-white text-sm font-medium truncate">
+                            {music.name}
+                          </p>
                           {currentMusic?.id === music.id && (
                             <motion.div
                               className="flex items-center gap-1"
@@ -536,10 +552,11 @@ const ToolBar = memo(function ToolBar({
                           )}
                         </div>
                         {currentMusic?.id === music.id && (
-                          <p className="text-green-400 text-xs font-medium">Now Playing</p>
+                          <p className="text-green-400 text-xs font-medium">
+                            Now Playing
+                          </p>
                         )}
                       </div>
-
                     </div>
                   </motion.div>
                 ))}
@@ -558,7 +575,7 @@ const ToolBar = memo(function ToolBar({
               transition={{ duration: 0.4, ease: "easeOut" }}
             >
               <div className="flex items-center justify-between mb-4">
-                <motion.h3 
+                <motion.h3
                   className="text-white font-medium text-sm"
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -576,7 +593,7 @@ const ToolBar = memo(function ToolBar({
                 </motion.button>
               </div>
 
-              <motion.div 
+              <motion.div
                 className="space-y-3 mb-4"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -584,7 +601,9 @@ const ToolBar = memo(function ToolBar({
               >
                 <div className="bg-white/10 backdrop-blur-2xl rounded-xl p-3 border border-white/10">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-white text-xs font-medium">Master Controls</span>
+                    <span className="text-white text-xs font-medium">
+                      Master Controls
+                    </span>
                     <div className="flex items-center gap-2">
                       <motion.button
                         onClick={onToggleMasterMute}
@@ -592,7 +611,7 @@ const ToolBar = memo(function ToolBar({
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                       >
-                        {audioEffects.some(e => e.isActive && !e.isMuted) ? (
+                        {audioEffects.some((e) => e.isActive && !e.isMuted) ? (
                           <Volume2 className="w-3 h-3 text-white/90" />
                         ) : (
                           <VolumeX className="w-3 h-3 text-white/60" />
@@ -616,10 +635,16 @@ const ToolBar = memo(function ToolBar({
                       max="1"
                       step="0.1"
                       value={getMasterVolume()}
-                      onChange={(e) => onSetMasterVolume(parseFloat(e.target.value))}
+                      onChange={(e) =>
+                        onSetMasterVolume(parseFloat(e.target.value))
+                      }
                       className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer slider"
                       style={{
-                        background: `linear-gradient(to right, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.6) ${getMasterVolume() * 100}%, rgba(255,255,255,0.2) ${getMasterVolume() * 100}%, rgba(255,255,255,0.2) 100%)`
+                        background: `linear-gradient(to right, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.6) ${
+                          getMasterVolume() * 100
+                        }%, rgba(255,255,255,0.2) ${
+                          getMasterVolume() * 100
+                        }%, rgba(255,255,255,0.2) 100%)`,
                       }}
                     />
                     <Volume2 className="w-3 h-3 text-white/60" />
@@ -627,7 +652,7 @@ const ToolBar = memo(function ToolBar({
                 </div>
               </motion.div>
 
-              <motion.div 
+              <motion.div
                 className="space-y-2 max-h-60 overflow-y-auto"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -638,8 +663,8 @@ const ToolBar = memo(function ToolBar({
                     key={effect.id}
                     className={`p-3 rounded-lg border transition-all duration-200 ${
                       effect.isActive
-                        ? 'bg-white/20 border-white/30'
-                        : 'bg-white/10 hover:bg-white/15 border-white/10'
+                        ? "bg-white/20 border-white/30"
+                        : "bg-white/10 hover:bg-white/15 border-white/10"
                     }`}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -649,15 +674,21 @@ const ToolBar = memo(function ToolBar({
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-medium truncate">{effect.name}</p>
+                        <p className="text-white text-sm font-medium truncate">
+                          {effect.name}
+                        </p>
                       </div>
                       <div className="flex items-center gap-1">
                         <motion.button
-                          onClick={() => effect.isActive ? onStopEffect(effect.id) : onPlayEffect(effect)}
+                          onClick={() =>
+                            effect.isActive
+                              ? onStopEffect(effect.id)
+                              : onPlayEffect(effect)
+                          }
                           className={`p-1 rounded-full transition-colors ${
-                            effect.isActive 
-                              ? 'bg-white/20 hover:bg-white/30' 
-                              : 'bg-white/10 hover:bg-white/20'
+                            effect.isActive
+                              ? "bg-white/20 hover:bg-white/30"
+                              : "bg-white/10 hover:bg-white/20"
                           }`}
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
@@ -680,11 +711,10 @@ const ToolBar = memo(function ToolBar({
                             <Volume2 className="w-3 h-3 text-white/90" />
                           )}
                         </motion.button>
-
                       </div>
                     </div>
                     {effect.isActive && (
-                      <motion.div 
+                      <motion.div
                         className="flex items-center gap-2"
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
@@ -698,10 +728,19 @@ const ToolBar = memo(function ToolBar({
                           max="1"
                           step="0.1"
                           value={effect.volume}
-                          onChange={(e) => onSetEffectVolume(effect.id, parseFloat(e.target.value))}
+                          onChange={(e) =>
+                            onSetEffectVolume(
+                              effect.id,
+                              parseFloat(e.target.value)
+                            )
+                          }
                           className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer slider"
                           style={{
-                            background: `linear-gradient(to right, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.6) ${effect.volume * 100}%, rgba(255,255,255,0.2) ${effect.volume * 100}%, rgba(255,255,255,0.2) 100%)`
+                            background: `linear-gradient(to right, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.6) ${
+                              effect.volume * 100
+                            }%, rgba(255,255,255,0.2) ${
+                              effect.volume * 100
+                            }%, rgba(255,255,255,0.2) 100%)`,
                           }}
                         />
                         <Volume2 className="w-3 h-3 text-white/60" />
@@ -711,7 +750,7 @@ const ToolBar = memo(function ToolBar({
                 ))}
 
                 {audioEffects.length === 0 && (
-                  <motion.div 
+                  <motion.div
                     className="text-center py-8 text-white/60"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -721,12 +760,12 @@ const ToolBar = memo(function ToolBar({
                       <Waves className="w-6 h-6 opacity-60" />
                     </div>
                     <p className="text-sm font-medium mb-1">No audio effects</p>
-                    <p className="text-xs opacity-80">Upload some effects to enhance your focus</p>
+                    <p className="text-xs opacity-80">
+                      Upload some effects to enhance your focus
+                    </p>
                   </motion.div>
                 )}
               </motion.div>
-
-
             </motion.div>
           )}
         </AnimatePresence>
