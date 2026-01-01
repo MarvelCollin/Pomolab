@@ -5,6 +5,8 @@ export interface IUser {
   google_id?: string;
   avatar?: string;
   email_verified_at?: string;
+  role: string;
+  is_banned: boolean;
   created_at: string;
   updated_at: string;
 }

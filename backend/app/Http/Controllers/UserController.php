@@ -46,7 +46,7 @@ class UserController extends Controller
     public function index(Request $request): JsonResponse
     {
         $search = $request->query('search');
-        
+
         if ($search) {
             if (strlen($search) < 2) {
                 return response()->json(['message' => 'Search query must be at least 2 characters'], 400);
@@ -55,7 +55,7 @@ class UserController extends Controller
         } else {
             $users = $this->userRepository->getAll()->take(50);
         }
-        
+
         return response()->json($users);
     }
 
@@ -88,7 +88,7 @@ class UserController extends Controller
     public function show(int $id): JsonResponse
     {
         $user = $this->userRepository->findById($id);
-        
+
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
         }
@@ -172,7 +172,7 @@ class UserController extends Controller
     {
         try {
             $user = $this->userRepository->findById($id);
-            
+
             if (!$user) {
                 return response()->json(['message' => 'User not found'], 404);
             }
@@ -214,7 +214,7 @@ class UserController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $user = $this->userRepository->findById($id);
-        
+
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
         }
@@ -251,7 +251,7 @@ class UserController extends Controller
     public function getUserWithFriends(int $id): JsonResponse
     {
         $user = $this->userRepository->getUserWithFriends($id);
-        
+
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
         }
@@ -288,7 +288,7 @@ class UserController extends Controller
     public function getUserWithTasks(int $id): JsonResponse
     {
         $user = $this->userRepository->getUserWithTasks($id);
-        
+
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
         }
@@ -329,7 +329,7 @@ class UserController extends Controller
             ]);
 
             $user = $this->userRepository->findByEmail($validated['email']);
-            
+
             if (!$user || !Hash::check($validated['password'], $user->password_hash)) {
                 return response()->json(['message' => 'Invalid credentials'], 401);
             }
@@ -344,6 +344,8 @@ class UserController extends Controller
                     'google_id' => $user->google_id,
                     'avatar' => $user->avatar,
                     'email_verified_at' => $user->email_verified_at,
+                    'role' => $user->role,
+                    'is_banned' => $user->is_banned,
                     'created_at' => $user->created_at,
                     'updated_at' => $user->updated_at,
                 ],
@@ -402,6 +404,8 @@ class UserController extends Controller
                     'google_id' => $user->google_id,
                     'avatar' => $user->avatar,
                     'email_verified_at' => $user->email_verified_at,
+                    'role' => $user->role,
+                    'is_banned' => $user->is_banned,
                     'created_at' => $user->created_at,
                     'updated_at' => $user->updated_at,
                 ],
@@ -455,6 +459,8 @@ class UserController extends Controller
             'google_id' => $request->user()->google_id,
             'avatar' => $request->user()->avatar,
             'email_verified_at' => $request->user()->email_verified_at,
+            'role' => $request->user()->role,
+            'is_banned' => $request->user()->is_banned,
             'created_at' => $request->user()->created_at,
             'updated_at' => $request->user()->updated_at,
         ]);
@@ -491,7 +497,7 @@ class UserController extends Controller
             ]);
 
             $googleUser = $this->verifyGoogleToken($validated['google_token']);
-            
+
             if (!$googleUser) {
                 return response()->json(['message' => 'Invalid Google token'], 401);
             }
@@ -507,6 +513,8 @@ class UserController extends Controller
                     'google_id' => $user->google_id,
                     'avatar' => $user->avatar,
                     'email_verified_at' => $user->email_verified_at,
+                    'role' => $user->role,
+                    'is_banned' => $user->is_banned,
                     'created_at' => $user->created_at,
                     'updated_at' => $user->updated_at,
                 ],
@@ -523,25 +531,25 @@ class UserController extends Controller
     {
         try {
             $response = file_get_contents("https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=" . $token);
-            
+
             if ($response === false) {
                 return null;
             }
 
             $tokenInfo = json_decode($response, true);
-            
+
             if (isset($tokenInfo['error'])) {
                 return null;
             }
 
             $userResponse = file_get_contents("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" . $token);
-            
+
             if ($userResponse === false) {
                 return null;
             }
 
             $userData = json_decode($userResponse, true);
-            
+
             if (isset($userData['error'])) {
                 return null;
             }
