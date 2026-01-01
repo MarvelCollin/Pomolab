@@ -49,7 +49,7 @@ class FriendController extends Controller
         $friend = $this->friendRepository->findById($id);
         
         if (!$friend) {
-            return response()->json(['message' => 'Friend relationship not found'], 404);
+            return response()->json(['message' => __('messages.friend_request_not_found')], 404);
         }
 
         return response()->json($friend);
@@ -89,7 +89,7 @@ class FriendController extends Controller
             );
 
             if ($existingActiveFriendship) {
-                return response()->json(['message' => 'Friendship already exists'], 409);
+                return response()->json(['message' => __('messages.already_friends')], 409);
             }
 
             $existingRejectedFriendship = $this->friendRepository->findFriendship(
@@ -122,7 +122,7 @@ class FriendController extends Controller
             $friend = $this->friendRepository->findById($id);
             
             if (!$friend) {
-                return response()->json(['message' => 'Friend relationship not found'], 404);
+                return response()->json(['message' => __('messages.friend_request_not_found')], 404);
             }
 
             $validated = $request->validate([
@@ -131,7 +131,7 @@ class FriendController extends Controller
 
             $this->friendRepository->update($id, $validated);
             
-            return response()->json(['message' => 'Friendship status updated successfully']);
+            return response()->json(['message' => __('messages.friend_request_accepted')]);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }
@@ -142,12 +142,12 @@ class FriendController extends Controller
         $friend = $this->friendRepository->findById($id);
         
         if (!$friend) {
-            return response()->json(['message' => 'Friend relationship not found'], 404);
+            return response()->json(['message' => __('messages.friend_request_not_found')], 404);
         }
 
         $this->friendRepository->delete($id);
         
-        return response()->json(['message' => 'Friendship deleted successfully']);
+        return response()->json(['message' => __('messages.friend_removed')]);
     }
 
     /**
@@ -203,10 +203,10 @@ class FriendController extends Controller
             );
 
             if (!$updated) {
-                return response()->json(['message' => 'Friendship not found'], 404);
+                return response()->json(['message' => __('messages.friend_request_not_found')], 404);
             }
 
-            return response()->json(['message' => 'Friendship status updated successfully']);
+            return response()->json(['message' => __('messages.friend_request_accepted')]);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }

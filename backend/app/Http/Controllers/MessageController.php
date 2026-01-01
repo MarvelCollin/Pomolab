@@ -47,7 +47,7 @@ class MessageController extends Controller
         $message = $this->messageRepository->findById($id);
         
         if (!$message) {
-            return response()->json(['message' => 'Message not found'], 404);
+            return response()->json(['message' => __('messages.message_not_found')], 404);
         }
 
         return response()->json($message);
@@ -77,7 +77,7 @@ class MessageController extends Controller
             $message = $this->messageRepository->findById($id);
             
             if (!$message) {
-                return response()->json(['message' => 'Message not found'], 404);
+                return response()->json(['message' => __('messages.message_not_found')], 404);
             }
 
             $validated = $request->validate([
@@ -85,7 +85,7 @@ class MessageController extends Controller
             ]);
 
             $this->messageRepository->update($id, $validated);
-            return response()->json(['message' => 'Message updated successfully']);
+            return response()->json(['message' => __('messages.message_updated')]);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }
@@ -96,11 +96,11 @@ class MessageController extends Controller
         $message = $this->messageRepository->findById($id);
         
         if (!$message) {
-            return response()->json(['message' => 'Message not found'], 404);
+            return response()->json(['message' => __('messages.message_not_found')], 404);
         }
 
         $this->messageRepository->delete($id);
-        return response()->json(['message' => 'Message deleted successfully']);
+        return response()->json(['message' => __('messages.message_deleted')]);
     }
 
     public function getMessagesByFromUser(int $fromUserId): JsonResponse

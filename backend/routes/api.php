@@ -8,10 +8,15 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\GroupMemberController;
+use App\Http\Controllers\LocaleController;
 
 Route::get('/test', function () {
     return response()->json(['message' => 'Hello World']);
 });
+
+// Locale routes
+Route::get('/locale', [LocaleController::class, 'getCurrentLocale']);
+Route::post('/locale', [LocaleController::class, 'setLocale']);
 
 Route::post('/auth/login', [UserController::class, 'login']);
 Route::post('/auth/register', [UserController::class, 'register']);

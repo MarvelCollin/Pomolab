@@ -20,6 +20,7 @@ import { FriendApi } from '../../apis/friend-api';
 import { FriendService } from '../../services/friend-service';
 import { useDebounce } from '../../hooks/use-debounce';
 import { useToast } from './toast';
+import { useLocale } from '../../hooks/use-locale';
 
 interface FriendsModalProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ interface FriendsModalProps {
 }
 
 function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModalProps) {
+  const { t } = useLocale();
   const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'add'>('friends');
   const [friends, setFriends] = useState<IFriend[]>([]);
   const [friendRequests, setFriendRequests] = useState<IFriend[]>([]);
@@ -78,7 +80,7 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
 
       if (friendsData.length === 0 && requestsData.length === 0 && sentData.length === 0) {
         if (showToast) {
-          showError('Unable to load friends data', 'Please check your connection and try again');
+          showError(t('friend.unableToLoad'), t('friend.checkConnection'));
         }
         return;
       }
@@ -97,10 +99,10 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
       setSentRequests(validSentRequests);
 
       if (showToast) {
-        showSuccess('Friends data refreshed', `Loaded ${validFriends.length} friends and ${validRequests.length} requests`);
+        showSuccess(t('friend.dataRefreshed'), `${t('friend.loaded')} ${validFriends.length} ${t('friend.friends')} ${t('common.and')} ${validRequests.length} ${t('friend.requests')}`);
       }
     } catch (err) {
-      const errorMessage = 'Failed to load friends data';
+      const errorMessage = t('friend.failedToLoad');
       setError(errorMessage);
       console.error('Error loading friends:', err);
       if (showToast) {
@@ -112,7 +114,7 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
     } finally {
       setLoading(false);
     }
-  }, [currentUser, showSuccess, showError]);
+  }, [currentUser, showSuccess, showError, t]);
 
   useEffect(() => {
     const searchUsers = async () => {
@@ -161,15 +163,15 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
       await FriendService.sendFriendRequest(currentUser.id, userId);
       
       const targetUser = searchResults.find(user => user.id === userId);
-      showSuccess('Friend request sent', `Request sent to ${targetUser?.username || 'user'}`);
+      showSuccess(t('friend.requestSent'), `${t('friend.requestSentTo')} ${targetUser?.username || t('common.user')}`);
       
       await loadFriendsData();
       setAddFriendQuery('');
       setSearchResults([]);
     } catch (err) {
-      const errorMessage = 'Failed to send friend request';
+      const errorMessage = t('friend.failedToSend');
       setError(errorMessage);
-      showError(errorMessage, 'Please try again');
+      showError(errorMessage, t('common.tryAgain'));
       console.error('Error sending friend request:', err);
     } finally {
       setSendingRequestTo(null);
@@ -185,13 +187,13 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
       await FriendService.acceptFriendRequest(friendId);
       
       const request = friendRequests.find(r => r.id === friendId);
-      showSuccess('Friend request accepted', `You are now friends with ${request?.user?.username || 'user'}`);
+      showSuccess(t('friend.requestAccepted'), `${t('friend.youAnd')} ${request?.user?.username || t('common.user')} ${t('friend.nowFriends')}`);
       
       await loadFriendsData();
     } catch (err) {
-      const errorMessage = 'Failed to accept friend request';
+      const errorMessage = t('friend.failedToAccept');
       setError(errorMessage);
-      showError(errorMessage, 'Please try again');
+      showError(errorMessage, t('common.tryAgain'));
       console.error('Error accepting friend request:', err);
     } finally {
       setAcceptingRequest(null);
@@ -207,13 +209,13 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
       await FriendService.rejectFriendRequest(friendId);
       
       const request = friendRequests.find(r => r.id === friendId);
-      showSuccess('Friend request rejected', `Rejected request from ${request?.user?.username || 'user'}`);
+      showSuccess(t('friend.requestRejected'), `${t('friend.rejectedFrom')} ${request?.user?.username || t('common.user')}`);
       
       await loadFriendsData();
     } catch (err) {
-      const errorMessage = 'Failed to reject friend request';
+      const errorMessage = t('friend.failedToReject');
       setError(errorMessage);
-      showError(errorMessage, 'Please try again');
+      showError(errorMessage, t('common.tryAgain'));
       console.error('Error rejecting friend request:', err);
     } finally {
       setRejectingRequest(null);
@@ -229,13 +231,13 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
       await FriendService.removeFriend(friendId);
       
       const friend = friends.find(f => f.id === friendId);
-      showSuccess('Friend removed', `Removed ${friend?.friend?.username || 'user'} from friends`);
+      showSuccess(t('friend.friendRemoved'), `${t('friend.removed')} ${friend?.friend?.username || t('common.user')} ${t('friend.fromFriends')}`);
       
       await loadFriendsData();
     } catch (err) {
-      const errorMessage = 'Failed to remove friend';
+      const errorMessage = t('friend.failedToRemove');
       setError(errorMessage);
-      showError(errorMessage, 'Please try again');
+      showError(errorMessage, t('common.tryAgain'));
       console.error('Error removing friend:', err);
     } finally {
       setRemovingFriend(null);
@@ -318,14 +320,14 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
           <div className="flex items-center justify-between p-4 border-b border-white/10">
             <div className="flex items-center gap-3">
               <Users className="w-6 h-6 text-white" />
-              <h2 className="text-white font-semibold text-lg">Friends</h2>
+              <h2 className="text-white font-semibold text-lg">{t('friend.friends')}</h2>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => loadFriendsData(true)}
                 disabled={loading}
                 className="p-2 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Refresh friends data"
+                title={t('friend.refresh')}
               >
                 <RefreshCw className={`w-5 h-5 text-white/60 ${loading ? 'animate-spin' : ''}`} />
               </button>
@@ -340,9 +342,9 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
 
           <div className="flex border-b border-white/10">
             {[
-              { id: 'friends', label: 'Friends', count: friends.length },
-              { id: 'requests', label: 'Requests', count: friendRequests.length },
-              { id: 'add', label: 'Add Friends', count: null }
+              { id: 'friends', label: t('friend.friends'), count: friends.length },
+              { id: 'requests', label: t('friend.requests'), count: friendRequests.length },
+              { id: 'add', label: t('friend.addFriends'), count: null }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -431,8 +433,8 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
                   ) : (
                     <div className="text-center py-8">
                       <Users className="w-12 h-12 text-white/40 mx-auto mb-3" />
-                      <p className="text-white/60 text-sm">No friends yet</p>
-                      <p className="text-white/40 text-xs mt-1">Add some friends to get started!</p>
+                      <p className="text-white/60 text-sm">{t('friend.noFriends')}</p>
+                      <p className="text-white/40 text-xs mt-1">{t('friend.addSomeone')}</p>
                     </div>
                   )}
                 </div>
@@ -486,15 +488,15 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
                   ) : (
                     <div className="text-center py-8">
                       <Clock className="w-12 h-12 text-white/40 mx-auto mb-3" />
-                      <p className="text-white/60 text-sm">No pending requests</p>
-                      <p className="text-white/40 text-xs mt-1">You're all caught up!</p>
+                      <p className="text-white/60 text-sm">{t('friend.noPending')}</p>
+                      <p className="text-white/40 text-xs mt-1">{t('friend.allCaughtUp')}</p>
                     </div>
                   )}
                 </div>
 
                 {sentRequests.length > 0 && (
                   <div className="pt-4 border-t border-white/10">
-                    <h3 className="text-white/80 font-medium text-sm mb-3">Sent Requests</h3>
+                    <h3 className="text-white/80 font-medium text-sm mb-3">{t('friend.sentRequests')}</h3>
                     <div className="space-y-2">
                       {sentRequests.map((request) => (
                         request.friend && (
@@ -503,7 +505,7 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
                               request.friend,
                               <div className="flex items-center gap-2">
                                 <Clock className="w-4 h-4 text-yellow-400" />
-                                <span className="text-yellow-400 text-xs">Pending</span>
+                                <span className="text-yellow-400 text-xs">{t('friend.pending')}</span>
                               </div>
                             )}
                           </div>
@@ -520,13 +522,13 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
                 <div className="space-y-3">
                   <div>
                     <label className="block text-white/80 text-sm font-medium mb-2">
-                      Search for users to add as friends
+                      {t('friend.searchUsers')}
                     </label>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/40" />
                       <input
                         type="text"
-                        placeholder="Type username or email to search..."
+                        placeholder={t('friend.searchPlaceholder')}
                         value={addFriendQuery}
                         onChange={(e) => setAddFriendQuery(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 outline-none focus:border-white/40 transition-colors"
@@ -541,7 +543,7 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
 
                   {filteredSearchResults.length > 0 && (
                     <div className="space-y-2 max-h-60 overflow-y-auto">
-                      <h4 className="text-white/80 text-sm font-medium">Search Results</h4>
+                      <h4 className="text-white/80 text-sm font-medium">{t('friend.searchResults')}</h4>
                       {filteredSearchResults.map((user) => (
                         <div key={user.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors">
                           <div className="flex items-center gap-3">
@@ -571,7 +573,7 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
                             ) : (
                               <UserPlus className="w-3 h-3" />
                             )}
-                            {sendingRequestTo === user.id ? 'Sending...' : 'Add Friend'}
+                            {sendingRequestTo === user.id ? t('friend.sending') : t('friend.addFriend')}
                           </button>
                         </div>
                       ))}
@@ -581,15 +583,15 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
                   {debouncedSearchQuery && !searchLoading && filteredSearchResults.length === 0 && (
                     <div className="text-center py-6">
                       <User className="w-8 h-8 text-white/30 mx-auto mb-2" />
-                      <p className="text-white/60 text-sm">No users found matching "{debouncedSearchQuery}"</p>
+                      <p className="text-white/60 text-sm">{t('friend.noUsersFound')} "{debouncedSearchQuery}"</p>
                     </div>
                   )}
 
                   {!addFriendQuery && (
                     <div className="text-center py-8">
                       <Search className="w-12 h-12 text-white/20 mx-auto mb-3" />
-                      <p className="text-white/60 text-sm">Start typing to search for users</p>
-                      <p className="text-white/40 text-xs mt-1">Search by username or email address</p>
+                      <p className="text-white/60 text-sm">{t('friend.startTyping')}</p>
+                      <p className="text-white/40 text-xs mt-1">{t('friend.searchByUsername')}</p>
                     </div>
                   )}
                 </div>

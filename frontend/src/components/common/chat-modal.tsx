@@ -4,6 +4,7 @@ import { Send, X, GripVertical, User, MessageCircle, Loader2 } from 'lucide-reac
 import type { IChatModal, IChatMessage } from '../../interfaces/IChatModal';
 import { messageService } from '../../services/message-service';
 import { useToast } from './toast';
+import { useLocale } from '../../hooks/use-locale';
 
 export default function ChatModal({
   isOpen,
@@ -12,6 +13,7 @@ export default function ChatModal({
   chatUser,
   onSendMessage
 }: IChatModal) {
+  const { t } = useLocale();
   const constraintsRef = useRef(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -47,7 +49,7 @@ export default function ChatModal({
       setTimeout(scrollToBottom, 100);
     } catch (error) {
       console.error('Failed to load conversation:', error);
-      showError('Failed to load messages', 'Please try again');
+      showError(t('message.failedToLoad'), t('common.tryAgain'));
     } finally {
       setLoading(false);
     }
@@ -76,7 +78,7 @@ export default function ChatModal({
       setMessages(prev => [...prev, enhancedMessage]);
       setNewMessage('');
       
-      showSuccess('Message sent', 'Your message was sent successfully');
+      showSuccess(t('message.sent'), t('message.sentSuccess'));
       
       if (onSendMessage) {
         onSendMessage(messageData.message);
@@ -85,7 +87,7 @@ export default function ChatModal({
       setTimeout(scrollToBottom, 100);
     } catch (error) {
       console.error('Failed to send message:', error);
-      showError('Failed to send message', 'Please try again');
+      showError(t('message.failedToSend'), t('common.tryAgain'));
     } finally {
       setSending(false);
     }

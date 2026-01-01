@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { LogOut, User } from 'lucide-react';
 import type { IUser } from '../../interfaces/IUser';
+import { useLocale } from '../../hooks/use-locale';
 
 interface UserProfileDisplayProps {
   user: IUser;
@@ -8,6 +9,7 @@ interface UserProfileDisplayProps {
 }
 
 export default function UserProfileDisplay({ user, onLogout }: UserProfileDisplayProps) {
+  const { t } = useLocale();
   const getAvatarUrl = () => {
     if (user.avatar) {
       return user.avatar;
@@ -56,7 +58,7 @@ export default function UserProfileDisplay({ user, onLogout }: UserProfileDispla
             className="p-1.5 hover:bg-white/20 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            title="Logout"
+            title={t('auth.logout')}
           >
             <LogOut className="w-4 h-4 text-white/70 hover:text-white" />
           </motion.button>

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Settings, Volume2, VolumeX, X } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings, Volume2, VolumeX, X, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { IPomodoroTimer } from '../../interfaces/IPomodoroTimer';
+import { useLocale } from '../../hooks/use-locale';
 
 export default function PomodoroTimer({ 
   onSessionComplete, 
@@ -37,6 +38,7 @@ export default function PomodoroTimer({
     'long-break': 15
   });
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { locale, setLocale, t, availableLocales } = useLocale();
   const currentSession = propCurrentSession ?? internalCurrentSession;
   const timeLeft = propTimeLeft ?? internalTimeLeft;
   const isRunning = propIsRunning ?? internalIsRunning;
@@ -423,6 +425,31 @@ export default function PomodoroTimer({
                     />
                     <span className="text-white/60 text-xs w-8 text-right">{backgroundDim}%</span>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-white/20">
+              <div className="mb-3 text-left">
+                <h4 className="text-white font-medium text-sm text-left flex items-center gap-2">
+                  <Globe className="w-4 h-4" />
+                  Language Settings
+                </h4>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-white/80 text-xs">Language</span>
+                  <select
+                    value={locale}
+                    onChange={(e) => setLocale(e.target.value)}
+                    className="bg-white/15 backdrop-blur-2xl border border-white/10 rounded px-3 py-1.5 text-xs outline-none text-white cursor-pointer hover:bg-white/20 transition-colors"
+                  >
+                    {availableLocales.map((lang) => (
+                      <option key={lang} value={lang} className="bg-gray-800 text-white">
+                        {lang === 'en' ? 'English' : 'Indonesian'}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>

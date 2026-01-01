@@ -3,6 +3,7 @@ import { X, Eye, EyeOff, User, Mail, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserApi } from '../../apis/user-api';
 import type { IUser } from '../../interfaces/IUser';
+import { useLocale } from '../../hooks/use-locale';
 
 declare global {
   interface Window {
@@ -18,6 +19,7 @@ interface LoginModalProps {
 }
 
 export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
+  const { t } = useLocale();
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -145,7 +147,7 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
         >
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-white">
-              {isLoginMode ? 'Welcome Back' : 'Create Account'}
+              {isLoginMode ? t('auth.login') : t('auth.register')}
             </h2>
             <button
               onClick={handleClose}
@@ -169,7 +171,7 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
             {!isLoginMode && (
               <div>
                 <label className="block text-white/70 text-sm font-medium mb-2">
-                  Username
+                  {t('auth.username')}
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/50" />
@@ -178,7 +180,7 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
                     value={registerData.username}
                     onChange={(e) => setRegisterData({...registerData, username: e.target.value})}
                     className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-white/40 focus:bg-white/15 transition-all"
-                    placeholder="Enter your username"
+                    placeholder={t('auth.username')}
                     required
                   />
                 </div>
@@ -187,7 +189,7 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
 
             <div>
               <label className="block text-white/70 text-sm font-medium mb-2">
-                Email
+                {t('auth.email')}
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/50" />
@@ -202,7 +204,7 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
                     }
                   }}
                   className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-white/40 focus:bg-white/15 transition-all"
-                  placeholder="Enter your email"
+                  placeholder={t('auth.email')}
                   required
                 />
               </div>
@@ -210,7 +212,7 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
 
             <div>
               <label className="block text-white/70 text-sm font-medium mb-2">
-                Password
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/50" />
@@ -225,7 +227,7 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
                     }
                   }}
                   className="w-full pl-12 pr-12 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-white/40 focus:bg-white/15 transition-all"
-                  placeholder="Enter your password"
+                  placeholder={t('auth.password')}
                   minLength={8}
                   required
                 />
@@ -247,7 +249,7 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
               {loading && (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               )}
-              {isLoginMode ? 'Sign In' : 'Create Account'}
+              {isLoginMode ? t('auth.login') : t('auth.register')}
             </button>
           </form>
 
@@ -268,7 +270,7 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
               <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Continue with Google
+            {isLoginMode ? t('auth.loginWithGoogle') : t('auth.registerWithGoogle')}
           </button>
 
           <div className="mt-6 text-center">
@@ -278,11 +280,11 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
             >
               {isLoginMode ? (
                 <>
-                  Don't have an account? <span className="font-medium text-white">Sign up</span>
+                  {t('auth.dontHaveAccount')} <span className="font-medium text-white">{t('auth.register')}</span>
                 </>
               ) : (
                 <>
-                  Already have an account? <span className="font-medium text-white">Sign in</span>
+                  {t('auth.alreadyHaveAccount')} <span className="font-medium text-white">{t('auth.login')}</span>
                 </>
               )}
             </button>

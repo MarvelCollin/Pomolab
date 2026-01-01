@@ -90,7 +90,7 @@ class UserController extends Controller
         $user = $this->userRepository->findById($id);
 
         if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+            return response()->json(['message' => __('messages.user_not_found')], 404);
         }
 
         return response()->json($user);
@@ -174,7 +174,7 @@ class UserController extends Controller
             $user = $this->userRepository->findById($id);
 
             if (!$user) {
-                return response()->json(['message' => 'User not found'], 404);
+                return response()->json(['message' => __('messages.user_not_found')], 404);
             }
 
             $validated = $request->validate([
@@ -189,7 +189,7 @@ class UserController extends Controller
             }
 
             $this->userRepository->update($id, $validated);
-            return response()->json(['message' => 'User updated successfully']);
+            return response()->json(['message' => __('messages.user_updated')]);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }
@@ -216,11 +216,11 @@ class UserController extends Controller
         $user = $this->userRepository->findById($id);
 
         if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+            return response()->json(['message' => __('messages.user_not_found')], 404);
         }
 
         $this->userRepository->delete($id);
-        return response()->json(['message' => 'User deleted successfully']);
+        return response()->json(['message' => __('messages.user_deleted')]);
     }
 
     /**
@@ -253,7 +253,7 @@ class UserController extends Controller
         $user = $this->userRepository->getUserWithFriends($id);
 
         if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+            return response()->json(['message' => __('messages.user_not_found')], 404);
         }
 
         return response()->json($user);
@@ -290,7 +290,7 @@ class UserController extends Controller
         $user = $this->userRepository->getUserWithTasks($id);
 
         if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+            return response()->json(['message' => __('messages.user_not_found')], 404);
         }
 
         return response()->json($user);
@@ -331,7 +331,7 @@ class UserController extends Controller
             $user = $this->userRepository->findByEmail($validated['email']);
 
             if (!$user || !Hash::check($validated['password'], $user->password_hash)) {
-                return response()->json(['message' => 'Invalid credentials'], 401);
+                return response()->json(['message' => __('auth.invalid_credentials')], 401);
             }
 
             $token = $user->createToken('auth-token')->plainTextToken;
@@ -428,7 +428,7 @@ class UserController extends Controller
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'Logout successful']);
+        return response()->json(['message' => __('auth.logout_successful')]);
     }
 
     /**
@@ -499,7 +499,7 @@ class UserController extends Controller
             $googleUser = $this->verifyGoogleToken($validated['google_token']);
 
             if (!$googleUser) {
-                return response()->json(['message' => 'Invalid Google token'], 401);
+                return response()->json(['message' => __('auth.invalid_google_token')], 401);
             }
 
             $user = $this->userRepository->findOrCreateGoogleUser($googleUser);
@@ -523,7 +523,7 @@ class UserController extends Controller
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Google authentication failed'], 500);
+            return response()->json(['message' => __('auth.google_auth_failed')], 500);
         }
     }
 

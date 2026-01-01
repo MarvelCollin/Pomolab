@@ -4,8 +4,7 @@ import { X, GripVertical, Camera, CameraOff, Mic, MicOff, Users, Video, Phone } 
 import { MeetingProvider, useMeeting, useParticipant } from '@videosdk.live/react-sdk';
 import type { IVideoModal } from '../../interfaces/IVideoModal';
 import { createMeeting } from '../../services/video-call-service';
-import { useToast } from './toast';
-import LoadingSpinner from './loading-spinner';
+import { useToast } from './toast';import { useLocale } from '../../hooks/use-locale';import LoadingSpinner from './loading-spinner';
 
 function VideoParticipantView({ participantId }: { participantId: string }) {
   const { webcamStream, micStream, webcamOn, micOn, isLocal, displayName } = useParticipant(participantId);
@@ -54,7 +53,7 @@ function VideoParticipantView({ participantId }: { participantId: string }) {
         <div className="w-full h-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
           <div className="text-center text-white/60">
             <Camera className="w-8 h-8 mx-auto mb-2" />
-            <span className="text-sm">Camera Off</span>
+            <span className="text-sm">{t('common.cameraOff')}</span>
           </div>
         </div>
       )}
@@ -208,7 +207,7 @@ export default function VideoModal({
 
   const createVideoMeeting = useCallback(async () => {
     if (!currentUser) {
-      showError('Authentication Required', 'Please login to start a video call');
+      showError(t('auth.required'), t('auth.loginToVideoCall'));
       return;
     }
 
@@ -217,7 +216,7 @@ export default function VideoModal({
       const { roomId, token } = await createMeeting();
       setToken(token);
       setMeetingId(roomId);
-      showSuccess('Meeting Created', 'Video meeting is ready');
+      showSuccess(t('common.meetingCreated'), t('common.videoReady'));
     } catch (error) {
       console.error('Failed to create meeting:', error);
       showError('Failed to create meeting', 'Please try again');

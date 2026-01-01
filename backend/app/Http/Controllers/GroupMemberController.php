@@ -124,7 +124,7 @@ class GroupMemberController extends Controller
 
             // Check if user is already a member
             if ($this->groupMemberRepository->isMember($validated['group_id'], $validated['user_id'])) {
-                return response()->json(['error' => 'User is already a member of this group'], 409);
+                return response()->json(['message' => __('messages.already_member')], 409);
             }
 
             $groupMember = $this->groupMemberRepository->create($validated);
@@ -170,11 +170,11 @@ class GroupMemberController extends Controller
 
             $groupMember = $this->groupMemberRepository->findById($id);
             if (!$groupMember) {
-                return response()->json(['error' => 'Group member not found'], 404);
+                return response()->json(['message' => __('messages.member_not_found')], 404);
             }
 
             $this->groupMemberRepository->update($id, $validated);
-            return response()->json(['message' => 'Group member updated successfully']);
+            return response()->json(['message' => __('messages.member_role_updated')]);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }
@@ -201,11 +201,11 @@ class GroupMemberController extends Controller
         $groupMember = $this->groupMemberRepository->findById($id);
 
         if (!$groupMember) {
-            return response()->json(['error' => 'Group member not found'], 404);
+            return response()->json(['message' => __('messages.member_not_found')], 404);
         }
 
         $this->groupMemberRepository->delete($id);
-        return response()->json(['message' => 'Group member removed successfully']);
+        return response()->json(['message' => __('messages.member_removed')]);
     }
 
     /**

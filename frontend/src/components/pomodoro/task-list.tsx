@@ -5,6 +5,7 @@ import type { ITask } from '../../interfaces/ITask';
 import type { IUser } from '../../interfaces/IUser';
 import { FriendApi } from '../../apis/friend-api';
 import { useDebounce } from '../../hooks/use-debounce';
+import { useLocale } from '../../hooks/use-locale';
 
 interface TaskListProps {
   tasks: ITask[];
@@ -20,6 +21,7 @@ interface TaskListProps {
 }
 
 function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete, onTaskEdit, onTaskAssign, selectedTaskId, isMinimized = false, currentUser }: TaskListProps) {
+  const { t } = useLocale();
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
@@ -135,7 +137,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
   const getAssignedUserName = (task: ITask) => {
     if (!task.assigned_to_id) return null;
     const assignedUser = availableUsers.find(user => user.id === task.assigned_to_id);
-    return assignedUser?.username || 'Unknown User';
+    return assignedUser?.username || t('common.unknownUser');
   };
 
   const handleAddTask = async () => {
@@ -332,12 +334,12 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
           >
             <div className="flex flex-wrap gap-2">
               {[
-                { key: 'active', label: 'Active', count: tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled').length },
-                { key: 'all', label: 'All', count: tasks.length },
-                { key: 'pending', label: 'Pending', count: tasks.filter(t => t.status === 'pending').length },
-                { key: 'in_progress', label: 'In Progress', count: tasks.filter(t => t.status === 'in_progress').length },
-                { key: 'completed', label: 'Completed', count: tasks.filter(t => t.status === 'completed').length },
-                { key: 'cancelled', label: 'Cancelled', count: tasks.filter(t => t.status === 'cancelled').length }
+                { key: 'active', label: t('task.active'), count: tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled').length },
+                { key: 'all', label: t('task.all'), count: tasks.length },
+                { key: 'pending', label: t('task.pending'), count: tasks.filter(t => t.status === 'pending').length },
+                { key: 'in_progress', label: t('task.inProgress'), count: tasks.filter(t => t.status === 'in_progress').length },
+                { key: 'completed', label: t('task.completed'), count: tasks.filter(t => t.status === 'completed').length },
+                { key: 'cancelled', label: t('task.cancelled'), count: tasks.filter(t => t.status === 'cancelled').length }
               ].map(filter => (
                 <button
                   key={filter.key}
@@ -363,7 +365,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
           {(() => {
             const activeTask = filteredTasks.find(t => t.status === 'in_progress' || selectedTaskId === t.id) || filteredTasks.find(t => t.status === 'pending');
             if (!activeTask) return (
-              <p className="text-white/60 text-xs text-center py-2">No active tasks</p>
+              <p className="text-white/60 text-xs text-center py-2">{t('task.noActive')}</p>
             );
             return (
               <div className="flex items-center justify-between">
@@ -391,14 +393,14 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
               type="text"
               value={newTaskTitle}
               onChange={(e) => setNewTaskTitle(e.target.value)}
-              placeholder="Task title..."
+              placeholder={t('task.titlePlaceholder')}
               className="w-full bg-white/10 backdrop-blur-2xl border border-white/10 rounded-lg px-3 py-2 outline-none text-white font-medium mb-2 placeholder-white/50 text-sm"
               autoFocus
             />
             <textarea
               value={newTaskDescription}
               onChange={(e) => setNewTaskDescription(e.target.value)}
-              placeholder="Description (optional)..."
+              placeholder={t('task.descriptionPlaceholder')}
               className="w-full bg-white/10 backdrop-blur-2xl border border-white/10 rounded-lg px-3 py-2 outline-none text-white/80 text-xs mb-2 placeholder-white/40 resize-none"
               rows={2}
             />
@@ -407,7 +409,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
               onChange={(e) => setNewTaskAssignee(e.target.value ? parseInt(e.target.value) : null)}
               className="w-full bg-white/10 backdrop-blur-2xl border border-white/10 rounded-lg px-3 py-2 outline-none text-white/80 text-xs mb-2"
             >
-              <option value="">Assign to (optional)</option>
+              <option value="">{t('task.assignTo')}</option>
               {availableUsers.map(user => (
                 <option key={user.id} value={user.id} className="text-gray-900">
                   {user.username}
@@ -420,7 +422,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
                   onClick={() => setIsAddingTask(false)}
                   className="px-3 py-1 bg-white/10 backdrop-blur-2xl border border-white/10 rounded-lg text-xs text-white/70 hover:bg-white/20 transition-all duration-200"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleAddTask}
@@ -430,7 +432,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
                   {addingTask && (
                     <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin"></div>
                   )}
-                  Add
+                  {t('task.add')}
                 </button>
               </div>
             </div>
@@ -550,7 +552,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Description (optional)..."
+                  placeholder={t('task.descriptionPlaceholder')}
                   className="w-full bg-white/15 backdrop-blur-2xl border border-white/20 rounded-lg px-2 py-1 text-white text-xs outline-none focus:border-white/40 resize-none task-edit-input"
                   rows={2}
                   autoFocus
@@ -560,13 +562,13 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
                     onClick={cancelEditing}
                     className="px-2 py-1 bg-white/10 backdrop-blur-2xl border border-white/10 rounded-lg text-xs text-white/70 hover:bg-white/20 transition-all duration-200"
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                   <button
                     onClick={saveEdit}
                     className="px-2 py-1 bg-white/20 backdrop-blur-2xl border border-white/10 text-white rounded-lg text-xs hover:bg-white/30 transition-all duration-200"
                   >
-                    Save
+                    {t('common.save')}
                   </button>
                 </div>
               </div>
@@ -582,7 +584,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
                 className="text-xs text-white/40 mb-2 italic cursor-pointer hover:text-white/30 transition-colors"
                 onDoubleClick={() => handleDoubleClick(task, 'description')}
               >
-                Double-click to add description
+                {t('task.addDescription')}
               </p>
             )}
             
@@ -594,7 +596,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
                 {task.assigned_to_id && (
                   <span className="flex items-center gap-1 text-white/60">
                     <User className="w-3 h-3" />
-                    {getAssignedUserName(task) || 'Assigned'}
+                    {getAssignedUserName(task) || t('task.assigned')}
                   </span>
                 )}
               </div>

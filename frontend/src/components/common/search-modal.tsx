@@ -3,8 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Users, UserPlus, Video } from 'lucide-react';
 import type { ISearchModalProps, ISearchResult } from '../../interfaces/ISearchModal';
 import { AuthTrigger } from '../../utils/auth-trigger';
+import { useLocale } from '../../hooks/use-locale';
 
 function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: ISearchModalProps) {
+  const { t } = useLocale();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<ISearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -13,8 +15,8 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
   const allResults: ISearchResult[] = [
     {
       id: 'friends-list',
-      title: 'Friends List',
-      description: 'View and manage your friends',
+      title: t('friend.friendsList'),
+      description: t('friend.viewManage'),
       category: 'friends',
       icon: Users,
       requireAuth: true,

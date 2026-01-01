@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Command } from 'lucide-react';
 import type { ISearchBarProps } from '../../interfaces/ISearchBar';
+import { useLocale } from '../../hooks/use-locale';
 
 export default function SearchBar({ onOpenModal }: ISearchBarProps) {
+  const { t } = useLocale();
   const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
@@ -36,7 +38,7 @@ export default function SearchBar({ onOpenModal }: ISearchBarProps) {
         <Search className="w-4 h-4 text-white/60 group-hover:text-white/80 transition-colors" />
         
         <span className="flex-1 text-left text-white/60 text-sm group-hover:text-white/80 transition-colors">
-          Search friends...
+          {t('friend.searchFriends')}
         </span>
 
         <div className="flex items-center gap-1">

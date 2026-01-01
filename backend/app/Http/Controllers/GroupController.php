@@ -79,7 +79,7 @@ class GroupController extends Controller
         $group = $this->groupRepository->findById($id);
 
         if (!$group) {
-            return response()->json(['message' => 'Group not found'], 404);
+            return response()->json(['message' => __('messages.group_not_found')], 404);
         }
 
         return response()->json($group);
@@ -171,7 +171,7 @@ class GroupController extends Controller
             $group = $this->groupRepository->findById($id);
 
             if (!$group) {
-                return response()->json(['message' => 'Group not found'], 404);
+                return response()->json(['message' => __('messages.group_not_found')], 404);
             }
 
             $validated = $request->validate([
@@ -182,7 +182,7 @@ class GroupController extends Controller
             ]);
 
             $this->groupRepository->update($id, $validated);
-            return response()->json(['message' => 'Group updated successfully']);
+            return response()->json(['message' => __('messages.group_updated')]);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }
@@ -209,11 +209,11 @@ class GroupController extends Controller
         $group = $this->groupRepository->findById($id);
 
         if (!$group) {
-            return response()->json(['message' => 'Group not found'], 404);
+            return response()->json(['message' => __('messages.group_not_found')], 404);
         }
 
         $this->groupRepository->delete($id);
-        return response()->json(['message' => 'Group deleted successfully']);
+        return response()->json(['message' => __('messages.group_deleted')]);
     }
 
     /**
@@ -246,7 +246,7 @@ class GroupController extends Controller
         $group = $this->groupRepository->getGroupWithMembers($id);
 
         if (!$group) {
-            return response()->json(['message' => 'Group not found'], 404);
+            return response()->json(['message' => __('messages.group_not_found')], 404);
         }
 
         return response()->json($group);

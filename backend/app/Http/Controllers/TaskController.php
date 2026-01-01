@@ -46,7 +46,7 @@ class TaskController extends Controller
         $task = $this->taskRepository->findById($id);
         
         if (!$task) {
-            return response()->json(['message' => 'Task not found'], 404);
+            return response()->json(['message' => __('messages.task_not_found')], 404);
         }
 
         return response()->json($task);
@@ -107,7 +107,7 @@ class TaskController extends Controller
             ]);
 
             $this->taskRepository->update($id, $validated);
-            return response()->json(['message' => 'Task updated successfully']);
+            return response()->json(['message' => __('messages.task_updated')]);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }
@@ -118,11 +118,11 @@ class TaskController extends Controller
         $task = $this->taskRepository->findById($id);
         
         if (!$task) {
-            return response()->json(['message' => 'Task not found'], 404);
+            return response()->json(['message' => __('messages.task_not_found')], 404);
         }
 
         $this->taskRepository->delete($id);
-        return response()->json(['message' => 'Task deleted successfully']);
+        return response()->json(['message' => __('messages.task_deleted')]);
     }
 
     public function getTasksByOwner(int $ownerId): JsonResponse
@@ -173,7 +173,7 @@ class TaskController extends Controller
         $task = $this->taskRepository->getTaskWithMessages($id);
         
         if (!$task) {
-            return response()->json(['message' => 'Task not found'], 404);
+            return response()->json(['message' => __('messages.task_not_found')], 404);
         }
 
         return response()->json($task);
@@ -189,11 +189,11 @@ class TaskController extends Controller
             $task = $this->taskRepository->findById($id);
             
             if (!$task) {
-                return response()->json(['message' => 'Task not found'], 404);
+                return response()->json(['message' => __('messages.task_not_found')], 404);
             }
 
             $this->taskRepository->updateTaskStatus($id, $validated['status']);
-            return response()->json(['message' => 'Task status updated successfully']);
+            return response()->json(['message' => __('messages.task_updated')]);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }
@@ -209,11 +209,11 @@ class TaskController extends Controller
             $task = $this->taskRepository->findById($id);
             
             if (!$task) {
-                return response()->json(['message' => 'Task not found'], 404);
+                return response()->json(['message' => __('messages.task_not_found')], 404);
             }
 
             $this->taskRepository->assignTask($id, $validated['user_id']);
-            return response()->json(['message' => 'Task assigned successfully']);
+            return response()->json(['message' => __('messages.task_updated')]);
         } catch (ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         }
