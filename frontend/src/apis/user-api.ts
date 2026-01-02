@@ -20,7 +20,17 @@ interface RegisterRequest {
 
 export class UserApi {
   static async getAllUsers(): Promise<IUser[]> {
-    const response = await fetch(`${API_BASE_URL}/api/users`);
+    const token = localStorage.getItem('authToken');
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/api/users`, {
+      headers
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch users');
     }
@@ -82,7 +92,7 @@ export class UserApi {
   }
 
   static async getUserWithFriends(id: number): Promise<IUser> {
-    const response = await fetch(`${API_BASE_URL}/api/users/${id}/friends`);
+    const response = await fetch(`${API_BASE_URL}/api/users/${id}/with-friends`);
     if (!response.ok) {
       throw new Error('Failed to fetch user with friends');
     }
