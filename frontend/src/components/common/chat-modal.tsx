@@ -78,8 +78,6 @@ export default function ChatModal({
       setMessages(prev => [...prev, enhancedMessage]);
       setNewMessage('');
       
-      showSuccess(t('message.sent'), t('message.sentSuccess'));
-      
       if (onSendMessage) {
         onSendMessage(messageData.message);
       }

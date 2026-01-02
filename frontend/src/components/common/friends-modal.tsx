@@ -79,13 +79,6 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat, initialTab = '
       const requestsData = Array.isArray(requestsResponse) ? requestsResponse : [];
       const sentData = Array.isArray(sentResponse) ? sentResponse : [];
 
-      if (friendsData.length === 0 && requestsData.length === 0 && sentData.length === 0) {
-        if (showToast) {
-          showError(t('friend.unableToLoad'), t('friend.checkConnection'));
-        }
-        return;
-      }
-
       const validFriends: IFriend[] = friendsData
         .filter(friendship => friendship && typeof friendship === 'object' && friendship.friend);
 

@@ -75,7 +75,7 @@ class MessageService {
   }
 
   private async triggerToastNotification(notification: IMessageNotification): Promise<void> {
-    if (notification.type === 'message_received' || notification.type === 'message_updated') {
+    if (notification.type === 'message_received') {
       const shouldShowNotification = this.currentUser && 
         notification.message.to_user_id === this.currentUser.id &&
         notification.message.from_user_id !== this.currentUser.id &&

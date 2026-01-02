@@ -29,7 +29,6 @@ import type { IUser } from '../../interfaces/IUser';
 import FriendsModal from './friends-modal';
 import ChatModal from './chat-modal';
 import VideoModal from './video-modal';
-import { useMessageNotifications } from '../../hooks/use-message-notification';
 
 interface ToolBarProps {
   showBackgroundSelector: boolean;
@@ -115,11 +114,6 @@ const ToolBar = memo(function ToolBar({
     setChatOpen(false);
     setChatWithUser(null);
   };
-
-  useMessageNotifications({ 
-    onOpenChat: handleOpenChat,
-    currentUser: currentUser 
-  });
 
   useEffect(() => {
     let ticking = false;
@@ -362,7 +356,7 @@ const ToolBar = memo(function ToolBar({
                   >
                     <Users className="w-4 h-4 text-white/90" />
                     <span className="text-white text-sm font-medium">
-                      {t('friendsAndChat')}
+                      {t('toolbar.friendsAndChat')}
                     </span>
                   </motion.button>
                 )}
