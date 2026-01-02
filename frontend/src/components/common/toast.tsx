@@ -1,5 +1,6 @@
   import React, { useEffect, useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { CheckCircle, XCircle, AlertTriangle, Info, Bell, X } from 'lucide-react';
 
 export interface ToastItem {
   id: string;
@@ -54,17 +55,18 @@ const SingleToast: React.FC<SingleToastProps> = ({ toast, onRemove }) => {
   };
 
   const getIcon = () => {
+    const iconClass = "w-5 h-5";
     switch (toast.type) {
       case 'success':
-        return 'fas fa-check-circle';
+        return <CheckCircle className={iconClass} />;
       case 'error':
-        return 'fas fa-exclamation-circle';
+        return <XCircle className={iconClass} />;
       case 'warning':
-        return 'fas fa-exclamation-triangle';
+        return <AlertTriangle className={iconClass} />;
       case 'info':
-        return 'fas fa-info-circle';
+        return <Info className={iconClass} />;
       default:
-        return 'fas fa-bell';
+        return <Bell className={iconClass} />;
     }
   };
 
@@ -77,11 +79,16 @@ const SingleToast: React.FC<SingleToastProps> = ({ toast, onRemove }) => {
       className={`relative max-w-sm w-full rounded-lg p-4 ${getToastStyles()} ${toast.onClick ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onClick={() => toast.onClick && toast.onClick()}
+      onClick={() => {
+        if (toast.onClick) {
+          toast.onClick();
+          onRemove(toast.id);
+        }
+      }}
     >
       <div className="flex items-start space-x-3">
         <div className="flex-shrink-0">
-          <i className={`${getIcon()} text-lg`} />
+          {getIcon()}
         </div>
         
         <div className="flex-1 min-w-0">
@@ -102,7 +109,7 @@ const SingleToast: React.FC<SingleToastProps> = ({ toast, onRemove }) => {
           }}
           className="flex-shrink-0 ml-2 opacity-60 hover:opacity-100 transition-opacity duration-200"
         >
-          <i className="fas fa-times text-sm" />
+          <X className="w-4 h-4" />
         </button>
       </div>
 
