@@ -8,7 +8,6 @@ import { useLocale } from '../../hooks/use-locale';
 function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: ISearchModalProps) {
   const { t } = useLocale();
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<ISearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -75,6 +74,17 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
     }
   ], [t, onOpenFriendsModal, onOpenVideoModal]);
 
+  const results = useMemo(() => {
+    if (query.trim() === '') {
+      return allResults.slice(0, 6);
+    }
+    return allResults.filter(result =>
+      result.title.toLowerCase().includes(query.toLowerCase()) ||
+      result.description.toLowerCase().includes(query.toLowerCase()) ||
+      result.category.toLowerCase().includes(query.toLowerCase())
+    );
+  }, [query, allResults]);
+
   useEffect(() => {
     if (isOpen) {
       inputRef.current?.focus();
@@ -84,19 +94,8 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
   }, [isOpen]);
 
   useEffect(() => {
-    if (query.trim() === '') {
-      setResults(allResults.slice(0, 6));
-    } else {
-      const filtered = allResults.filter(result =>
-        result.title.toLowerCase().includes(query.toLowerCase()) ||
-        result.description.toLowerCase().includes(query.toLowerCase()) ||
-        result.category.toLowerCase().includes(query.toLowerCase())
-      );
-      setResults(filtered);
-    }
     setSelectedIndex(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]);
+  }, [results]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
