@@ -21,6 +21,7 @@ import {
   Users,
   Video
 } from 'lucide-react';
+import { useLocale } from '../../hooks/use-locale';
 import type { IBackground } from '../../interfaces/IBackground';
 import type { IMusic } from '../../interfaces/IMusic';
 import type { IAudioEffect } from '../../interfaces/IAudioEffect';
@@ -99,6 +100,7 @@ const ToolBar = memo(function ToolBar({
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showMainMenu, setShowMainMenu] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
+  const { t } = useLocale();
   
   const [chatOpen, setChatOpen] = useState(false);
   const [chatWithUser, setChatWithUser] = useState<IUser | null>(null);
@@ -255,7 +257,7 @@ const ToolBar = memo(function ToolBar({
                 >
                   <Timer className="w-4 h-4 text-white/90" />
                   <span className="text-white text-sm font-medium">
-                    {pomodoroMinimized ? "Expand Timer" : "Minimize Timer"}
+                    {pomodoroMinimized ? t('toolbar.maximizeTimer') : t('toolbar.minimizeTimer')}
                   </span>
                   <div className="ml-auto">
                     {pomodoroMinimized ? (
@@ -277,7 +279,7 @@ const ToolBar = memo(function ToolBar({
                 >
                   <CheckSquare className="w-4 h-4 text-white/90" />
                   <span className="text-white text-sm font-medium">
-                    {tasksMinimized ? "Expand Tasks" : "Minimize Tasks"}
+                    {tasksMinimized ? t('toolbar.maximizeTasks') : t('toolbar.minimizeTasks')}
                   </span>
                   <motion.div
                     className="ml-auto"
@@ -305,7 +307,7 @@ const ToolBar = memo(function ToolBar({
                 >
                   <ImageIcon className="w-4 h-4 text-white/90" />
                   <span className="text-white text-sm font-medium">
-                    Backgrounds
+                    {t('toolbar.background')}
                   </span>
                 </motion.button>
 
@@ -329,7 +331,7 @@ const ToolBar = memo(function ToolBar({
                     )}
                   </div>
                   <span className="text-white text-sm font-medium">
-                    Music Library
+                    {t('toolbar.music')}
                   </span>
                 </motion.button>
 
@@ -344,7 +346,7 @@ const ToolBar = memo(function ToolBar({
                 >
                   <Waves className="w-4 h-4 text-white/90" />
                   <span className="text-white text-sm font-medium">
-                    Audio Effects
+                    {t('toolbar.effects')}
                   </span>
                 </motion.button>
 
@@ -360,7 +362,7 @@ const ToolBar = memo(function ToolBar({
                   >
                     <Users className="w-4 h-4 text-white/90" />
                     <span className="text-white text-sm font-medium">
-                      Friends & Chat
+                      {t('friendsAndChat')}
                     </span>
                   </motion.button>
                 )}
@@ -399,7 +401,7 @@ const ToolBar = memo(function ToolBar({
                     <EyeOff className="w-4 h-4 text-white/90" />
                   )}
                   <span className="text-white text-sm font-medium">
-                    {isMinimalMode ? "Show Interface" : "Minimal Mode"}
+                    {isMinimalMode ? t('toolbar.showInterface') : t('toolbar.minimalMode')}
                   </span>
                 </motion.button>
               </div>
@@ -423,7 +425,7 @@ const ToolBar = memo(function ToolBar({
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 }}
                 >
-                  Backgrounds
+                  {t('toolbar.selectBackground')}
                 </motion.h3>
                 <motion.button
                   onClick={() => setShowBackgroundSelector(false)}
@@ -497,7 +499,7 @@ const ToolBar = memo(function ToolBar({
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 }}
                 >
-                  Music Library
+                  {t('toolbar.selectMusic')}
                 </motion.h3>
                 <motion.button
                   onClick={() => setShowMusicPlayer(false)}
@@ -553,7 +555,7 @@ const ToolBar = memo(function ToolBar({
                         </div>
                         {currentMusic?.id === music.id && (
                           <p className="text-green-400 text-xs font-medium">
-                            Now Playing
+                            {t('toolbar.nowPlaying')}
                           </p>
                         )}
                       </div>
@@ -581,7 +583,7 @@ const ToolBar = memo(function ToolBar({
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 }}
                 >
-                  Audio Effects
+                  {t('toolbar.audioEffects')}
                 </motion.h3>
                 <motion.button
                   onClick={() => setShowAudioEffects(false)}

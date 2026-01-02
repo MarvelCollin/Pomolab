@@ -25,7 +25,11 @@
     "unknownUser": "Pengguna Tidak Dikenal",
     "cameraOff": "Kamera Mati",
     "meetingCreated": "Pertemuan Dibuat",
-    "videoReady": "Pertemuan video siap"
+    "videoReady": "Pertemuan video siap",
+    "navigate": "navigasi",
+    "select": "pilih",
+    "noResultsFound": "Tidak ada hasil ditemukan",
+    "tryDifferentSearch": "Coba kata kunci pencarian lain"
   },
   "auth": {
     "login": "Masuk",
@@ -109,7 +113,8 @@
     "loaded": "Memuat",
     "refresh": "Perbarui data teman",
     "friendsList": "Daftar Teman",
-    "viewManage": "Lihat dan kelola teman Anda"
+    "viewManage": "Lihat dan kelola teman Anda",
+    "category": "teman"
   },
   "task": {
     "tasks": "Tugas",
@@ -139,7 +144,22 @@
     "descriptionPlaceholder": "Deskripsi (opsional)...",
     "assignTo": "Tugaskan ke (opsional)",
     "addDescription": "Klik dua kali untuk menambah deskripsi",
-    "assigned": "Ditugaskan"
+    "assigned": "Ditugaskan",
+    "done": "Selesai",
+    "completedMark": "✓ Selesai",
+    "noTasksYet": "Belum ada tugas",
+    "noFilteredTasks": "Tidak ada tugas {status}",
+    "addTaskToStart": "Tambahkan tugas untuk memulai sesi Anda",
+    "tryChangeFilter": "Coba ubah filter untuk melihat tugas lain",
+    "allFiltered": "Semua tugas tersaring",
+    "assignTask": "Tugaskan Tugas",
+    "searchUsers": "Cari pengguna...",
+    "unassign": "Batalkan Penugasan",
+    "removeAssignment": "Hapus penugasan",
+    "you": "(Anda)",
+    "noUsersAvailable": "Tidak ada pengguna tersedia",
+    "addFriendsToAssign": "Tambahkan teman untuk menugaskan tugas",
+    "category": "teman"
   },
   "group": {
     "groups": "Grup",
@@ -174,6 +194,11 @@
     "failedToSend": "Gagal mengirim pesan",
     "failedToLoad": "Gagal memuat pesan"
   },
+  "video": {
+    "videoCall": "Panggilan Video",
+    "startOrJoin": "Mulai atau gabung pertemuan video",
+    "category": "video"
+  },
   "pomodoro": {
     "timer": "Timer Pomodoro",
     "start": "Mulai",
@@ -184,13 +209,47 @@
     "longBreak": "Istirahat Panjang",
     "focusTime": "Waktu Fokus",
     "breakTime": "Waktu Istirahat",
-    "sessionsCompleted": "Sesi Selesai"
+    "sessionsCompleted": "Sesi Selesai",
+    "currentTask": "Tugas Saat Ini",
+    "videoCallFeature": "Gunakan fitur panggilan video di menu kanan atas untuk berkolaborasi dengan teman",
+    "errorLoadingTasks": "Gagal memuat tugas",
+    "timerSettings": "Pengaturan Timer",
+    "focusDuration": "Durasi Fokus",
+    "shortBreakDuration": "Istirahat Pendek",
+    "longBreakDuration": "Istirahat Panjang",
+    "soundNotifications": "Notifikasi Suara",
+    "graphicSettings": "Pengaturan Grafis",
+    "backgroundDim": "Redupkan Latar",
+    "languageSettings": "Pengaturan Bahasa",
+    "language": "Bahasa",
+    "minutes": "mnt",
+    "session": "Sesi",
+    "cyclesCompleted": "siklus selesai"
   },
   "language": {
     "english": "Inggris",
     "indonesian": "Indonesia",
     "selectLanguage": "Pilih Bahasa",
     "changeLanguage": "Ubah Bahasa"
+  },
+  "toolbar": {
+    "minimizeTimer": "Minimalkan Timer",
+    "maximizeTimer": "Maksimalkan Timer",
+    "minimizeTasks": "Minimalkan Tugas",
+    "maximizeTasks": "Maksimalkan Tugas",
+    "background": "Latar Belakang",
+    "music": "Musik",
+    "effects": "Efek",
+    "friendsAndChat": "Teman & Chat",
+    "minimalMode": "Mode Minimal",
+    "showInterface": "Tampilkan Antarmuka",
+    "selectBackground": "Pilih Latar Belakang",
+    "selectMusic": "Pilih Musik",
+    "audioEffects": "Efek Audio",
+    "masterVolume": "Volume Utama",
+    "stopAll": "Hentikan Semua",
+    "nowPlaying": "Sedang Diputar",
+    "noMusicPlaying": "Tidak ada musik yang diputar"
   },
   "validation": {
     "required": "Bidang ini wajib diisi",

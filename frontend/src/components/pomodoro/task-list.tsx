@@ -301,7 +301,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
       <div className={`bg-white/5 backdrop-blur-2xl rounded-xl border border-white/10 shadow-lg transition-all duration-500 ease-in-out ${isMinimized ? 'p-2 mb-2' : 'p-3 mb-4'}`}>
         <div className="flex items-center justify-between">
           <h2 className={`font-semibold text-white drop-shadow transition-all duration-500 ease-in-out ${isMinimized ? 'text-sm' : 'text-lg'}`}>
-            Tasks {isMinimized ? `(${filteredTasks.length})` : `(${filteredTasks.length})`}
+            {t('task.tasks')} {isMinimized ? `(${filteredTasks.length})` : `(${filteredTasks.length})`}
           </h2>
           <div className="flex items-center gap-2">
             {!isMinimized && (
@@ -474,13 +474,13 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
                       onClick={cancelEditing}
                       className="px-2 py-1 bg-white/10 backdrop-blur-2xl border border-white/10 rounded-lg text-xs text-white/70 hover:bg-white/20 transition-all duration-200"
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </button>
                     <button
                       onClick={saveEdit}
                       className="px-2 py-1 bg-white/20 backdrop-blur-2xl border border-white/10 text-white rounded-lg text-xs hover:bg-white/30 transition-all duration-200"
                     >
-                      Save
+                      {t('common.save')}
                     </button>
                   </div>
                 </div>
@@ -518,7 +518,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
                         className="w-full px-4 py-2 text-xs text-white/90 hover:bg-white/20 flex items-center gap-2 rounded-t-xl transition-colors"
                       >
                         <Edit3 className="w-4 h-4" />
-                        Edit
+                        {t('common.edit')}
                       </button>
                       <button
                         onClick={(e) => {
@@ -528,7 +528,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
                         className="w-full px-4 py-2 text-xs text-white/90 hover:bg-white/20 flex items-center gap-2 transition-colors border-t border-white/10"
                       >
                         <UserPlus className="w-4 h-4" />
-                        Assign
+                        {t('task.assignTask')}
                       </button>
                       <button
                         onClick={(e) => {
@@ -538,7 +538,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
                         className="w-full px-4 py-2 text-xs text-red-400 hover:bg-red-500/30 flex items-center gap-2 rounded-b-xl transition-colors border-t border-white/10"
                       >
                         <Trash2 className="w-4 h-4" />
-                        Delete
+                        {t('common.delete')}
                       </button>
                     </div>
                   )}
@@ -602,7 +602,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
               </div>
               <div className="flex items-center gap-1">
                 {task.status === 'completed' ? (
-                  <span className="text-green-400 font-medium text-xs">✓ Done</span>
+                  <span className="text-green-400 font-medium text-xs">{t('task.completedMark')}</span>
                 ) : (
                   <button
                     onClick={(e) => {
@@ -615,7 +615,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
                     {completingTaskId === task.id && (
                       <div className="w-2 h-2 border border-white/30 border-t-white rounded-full animate-spin"></div>
                     )}
-                    Done
+                    {t('task.done')}
                   </button>
                 )}
               </div>
@@ -634,11 +634,11 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
               <Clock className="w-8 h-8 opacity-60" />
             </div>
             <p className="text-sm font-medium mb-1">
-              {tasks.length === 0 ? 'No tasks yet' : `No ${statusFilter === 'active' ? 'active' : statusFilter} tasks`}
+              {tasks.length === 0 ? t('task.noTasksYet') : t('task.noFilteredTasks').replace('{status}', statusFilter === 'active' ? t('task.active').toLowerCase() : t(`task.${statusFilter}`).toLowerCase())}
             </p>
             <p className="text-xs opacity-80">
-              {tasks.length === 0 ? 'Add a task to start your session' : 
-               statusFilter !== 'all' ? `Try changing the filter to see other tasks` : 'All tasks are filtered out'}
+              {tasks.length === 0 ? t('task.addTaskToStart') : 
+               statusFilter !== 'all' ? t('task.tryChangeFilter') : t('task.allFiltered')}
             </p>
           </motion.div>
         )}
@@ -661,7 +661,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">Assign Task</h3>
+                <h3 className="text-lg font-semibold text-white">{t('task.assignTask')}</h3>
                 <button
                   onClick={() => setShowAssignModal(false)}
                   className="p-1 hover:bg-white/10 rounded-lg transition-colors"
@@ -673,7 +673,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
               <div className="mb-4">
                 <input
                   type="text"
-                  placeholder="Search users..."
+                  placeholder={t('task.searchUsers')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-white/10 backdrop-blur-2xl border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 outline-none focus:border-white/40"
@@ -689,8 +689,8 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
                     <X className="w-4 h-4 text-white/60" />
                   </div>
                   <div>
-                    <p className="text-white font-medium">Unassign</p>
-                    <p className="text-white/60 text-xs">Remove assignment</p>
+                    <p className="text-white font-medium">{t('task.unassign')}</p>
+                    <p className="text-white/60 text-xs">{t('task.removeAssignment')}</p>
                   </div>
                 </button>
 
@@ -711,7 +711,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
                       <p className="text-white font-medium">{user.username}</p>
                       <p className="text-white/60 text-xs">{user.email}</p>
                       {user.id === currentUser?.id && (
-                        <span className="text-blue-400 text-xs">(You)</span>
+                        <span className="text-blue-400 text-xs">{t('task.you')}</span>
                       )}
                     </div>
                   </button>
@@ -726,8 +726,8 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
                 {availableUsers.length === 0 && !searchLoading && (
                   <div className="text-center py-8 text-white/60">
                     <Users className="w-12 h-12 mx-auto mb-2 opacity-40" />
-                    <p className="text-sm">No users available</p>
-                    <p className="text-xs opacity-80">Add friends to assign tasks</p>
+                    <p className="text-sm">{t('task.noUsersAvailable')}</p>
+                    <p className="text-xs opacity-80">{t('task.addFriendsToAssign')}</p>
                   </div>
                 )}
               </div>

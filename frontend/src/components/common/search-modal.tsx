@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, memo } from 'react';
+import { useState, useEffect, useRef, memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Users, UserPlus, Video } from 'lucide-react';
 import type { ISearchModalProps, ISearchResult } from '../../interfaces/ISearchModal';
@@ -12,7 +12,7 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const allResults: ISearchResult[] = [
+  const allResults: ISearchResult[] = useMemo(() => [
     {
       id: 'friends-list',
       title: t('friend.friendsList'),
@@ -30,8 +30,8 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
     },
     {
       id: 'add-friends',
-      title: 'Add Friends',
-      description: 'Find and add new friends',
+      title: t('friend.addFriends'),
+      description: t('friend.searchUsers'),
       category: 'friends',
       icon: UserPlus,
       requireAuth: true,
@@ -45,8 +45,8 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
     },
     {
       id: 'friend-requests',
-      title: 'Friend Requests',
-      description: 'View pending friend requests',
+      title: t('friend.friendRequests'),
+      description: t('friend.requests'),
       category: 'friends',
       icon: Users,
       requireAuth: true,
@@ -60,8 +60,8 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
     },
     {
       id: 'video-call',
-      title: 'Video Call',
-      description: 'Start or join a video meeting',
+      title: t('video.videoCall'),
+      description: t('video.startOrJoin'),
       category: 'video',
       icon: Video,
       requireAuth: true,
@@ -73,7 +73,7 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
         }
       }
     }
-  ];
+  ], [t, onOpenFriendsModal, onOpenVideoModal]);
 
   useEffect(() => {
     if (isOpen) {
@@ -95,7 +95,7 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
       setResults(filtered);
     }
     setSelectedIndex(0);
-  }, [query]);
+  }, [query, allResults]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -149,7 +149,7 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
               <input
                 ref={inputRef}
                 type="text"
-                placeholder="Search for friends..."
+                placeholder={t('friend.searchFriends')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -189,7 +189,7 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
                           <p className="text-white/60 text-xs truncate">{result.description}</p>
                         </div>
                         <div className="text-white/40 text-xs uppercase tracking-wider">
-                          {result.category}
+                          {result.category === 'friends' ? t('friend.category') : result.category === 'video' ? t('video.category') : result.category}
                         </div>
                       </div>
                     );
@@ -200,8 +200,8 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
                   <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3">
                     <Search className="w-6 h-6 text-white/40" />
                   </div>
-                  <p className="text-white/60 text-sm">No results found</p>
-                  <p className="text-white/40 text-xs mt-1">Try a different search term</p>
+                  <p className="text-white/60 text-sm">{t('common.noResultsFound')}</p>
+                  <p className="text-white/40 text-xs mt-1">{t('common.tryDifferentSearch')}</p>
                 </div>
               )}
             </div>
@@ -212,16 +212,16 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
                   <span className="flex items-center gap-1">
                     <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-[10px]">↑</kbd>
                     <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-[10px]">↓</kbd>
-                    navigate
+                    {t('common.navigate')}
                   </span>
                   <span className="flex items-center gap-1">
                     <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-[10px]">enter</kbd>
-                    select
+                    {t('common.select')}
                   </span>
                 </div>
                 <span className="flex items-center gap-1">
                   <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-[10px]">esc</kbd>
-                  close
+                  {t('common.close')}
                 </span>
               </div>
             </div>

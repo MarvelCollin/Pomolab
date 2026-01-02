@@ -25,7 +25,11 @@
     "unknownUser": "Unknown User",
     "cameraOff": "Camera Off",
     "meetingCreated": "Meeting Created",
-    "videoReady": "Video meeting is ready"
+    "videoReady": "Video meeting is ready",
+    "navigate": "navigate",
+    "select": "select",
+    "noResultsFound": "No results found",
+    "tryDifferentSearch": "Try a different search term"
   },
   "auth": {
     "login": "Sign In",
@@ -109,7 +113,8 @@
     "loaded": "Loaded",
     "refresh": "Refresh friends data",
     "friendsList": "Friends List",
-    "viewManage": "View and manage your friends"
+    "viewManage": "View and manage your friends",
+    "category": "friend"
   },
   "task": {
     "tasks": "Tasks",
@@ -139,7 +144,22 @@
     "descriptionPlaceholder": "Description (optional)...",
     "assignTo": "Assign to (optional)",
     "addDescription": "Double-click to add description",
-    "assigned": "Assigned"
+    "assigned": "Assigned",
+    "done": "Done",
+    "completedMark": "✓ Done",
+    "noTasksYet": "No tasks yet",
+    "noFilteredTasks": "No {status} tasks",
+    "addTaskToStart": "Add a task to start your session",
+    "tryChangeFilter": "Try changing the filter to see other tasks",
+    "allFiltered": "All tasks are filtered out",
+    "assignTask": "Assign Task",
+    "searchUsers": "Search users...",
+    "unassign": "Unassign",
+    "removeAssignment": "Remove assignment",
+    "you": "(You)",
+    "noUsersAvailable": "No users available",
+    "addFriendsToAssign": "Add friends to assign tasks",
+    "category": "friends"
   },
   "group": {
     "groups": "Groups",
@@ -174,6 +194,11 @@
     "failedToSend": "Failed to send message",
     "failedToLoad": "Failed to load messages"
   },
+  "video": {
+    "videoCall": "Video Call",
+    "startOrJoin": "Start or join a video meeting",
+    "category": "video"
+  },
   "pomodoro": {
     "timer": "Pomodoro Timer",
     "start": "Start",
@@ -184,13 +209,47 @@
     "longBreak": "Long Break",
     "focusTime": "Focus Time",
     "breakTime": "Break Time",
-    "sessionsCompleted": "Sessions Completed"
+    "sessionsCompleted": "Sessions Completed",
+    "currentTask": "Current Task",
+    "videoCallFeature": "Use the video call feature in the top-right menu to collaborate with friends",
+    "errorLoadingTasks": "Error loading tasks",
+    "timerSettings": "Timer Settings",
+    "focusDuration": "Focus Duration",
+    "shortBreakDuration": "Short Break",
+    "longBreakDuration": "Long Break",
+    "soundNotifications": "Sound Notifications",
+    "graphicSettings": "Graphic Settings",
+    "backgroundDim": "Background Dim",
+    "languageSettings": "Language Settings",
+    "language": "Language",
+    "minutes": "min",
+    "session": "Session",
+    "cyclesCompleted": "cycles completed"
   },
   "language": {
     "english": "English",
     "indonesian": "Indonesian",
     "selectLanguage": "Select Language",
     "changeLanguage": "Change Language"
+  },
+  "toolbar": {
+    "minimizeTimer": "Minimize Timer",
+    "maximizeTimer": "Maximize Timer",
+    "minimizeTasks": "Minimize Tasks",
+    "maximizeTasks": "Maximize Tasks",
+    "background": "Background",
+    "music": "Music",
+    "effects": "Effects",
+    "friendsAndChat": "Friends & Chat",
+    "minimalMode": "Minimal Mode",
+    "showInterface": "Show Interface",
+    "selectBackground": "Select Background",
+    "selectMusic": "Select Music",
+    "audioEffects": "Audio Effects",
+    "masterVolume": "Master Volume",
+    "stopAll": "Stop All",
+    "nowPlaying": "Now Playing",
+    "noMusicPlaying": "No music playing"
   },
   "validation": {
     "required": "This field is required",

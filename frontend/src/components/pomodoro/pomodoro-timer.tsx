@@ -54,9 +54,9 @@ export default function PomodoroTimer({
   };
 
   const sessionLabels = propSessionLabels ?? {
-    focus: 'Focus Time',
-    'short-break': 'Short Break',
-    'long-break': 'Long Break'
+    focus: t('pomodoro.focusTime'),
+    'short-break': t('pomodoro.shortBreak'),
+    'long-break': t('pomodoro.longBreak')
   };
 
 
@@ -333,13 +333,13 @@ export default function PomodoroTimer({
             isMinimized ? 'opacity-0 h-0 overflow-hidden mt-0' : 'opacity-100 h-auto mt-4'
           }`}
         >
-          Session #{sessionCount + 1} • {Math.floor(sessionCount / 4)} cycles completed
+          {t('pomodoro.session')} #{sessionCount + 1} • {Math.floor(sessionCount / 4)} {t('pomodoro.cyclesCompleted')}
         </div>
 
         {showSettings && !isMinimized && (
           <div className="mt-6 bg-white/10 backdrop-blur-2xl rounded-xl p-4 border border-white/20 shadow-lg">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-medium text-sm">Timer Settings</h3>
+              <h3 className="text-white font-medium text-sm">{t('pomodoro.timerSettings')}</h3>
               <button
                 onClick={() => setShowSettings(false)}
                 className="w-6 h-6 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
@@ -350,7 +350,7 @@ export default function PomodoroTimer({
             
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-white/80 text-xs">Focus Duration</span>
+                <span className="text-white/80 text-xs">{t('pomodoro.focusDuration')}</span>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
@@ -360,12 +360,12 @@ export default function PomodoroTimer({
                     max="120"
                     className="w-12 bg-white/15 backdrop-blur-2xl border border-white/10 rounded px-2 py-1 text-xs text-center outline-none text-white"
                   />
-                  <span className="text-white/60 text-xs">min</span>
+                  <span className="text-white/60 text-xs">{t('pomodoro.minutes')}</span>
                 </div>
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-white/80 text-xs">Short Break</span>
+                <span className="text-white/80 text-xs">{t('pomodoro.shortBreakDuration')}</span>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
@@ -375,12 +375,12 @@ export default function PomodoroTimer({
                     max="30"
                     className="w-12 bg-white/15 backdrop-blur-2xl border border-white/10 rounded px-2 py-1 text-xs text-center outline-none text-white"
                   />
-                  <span className="text-white/60 text-xs">min</span>
+                  <span className="text-white/60 text-xs">{t('pomodoro.minutes')}</span>
                 </div>
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-white/80 text-xs">Long Break</span>
+                <span className="text-white/80 text-xs">{t('pomodoro.longBreakDuration')}</span>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
@@ -390,11 +390,11 @@ export default function PomodoroTimer({
                     max="60"
                     className="w-12 bg-white/15 backdrop-blur-2xl border border-white/10 rounded px-2 py-1 text-xs text-center outline-none text-white"
                   />
-                  <span className="text-white/60 text-xs">min</span>
+                  <span className="text-white/60 text-xs">{t('pomodoro.minutes')}</span>
                 </div>
               </div>
               <div className="flex items-center justify-between pt-3 border-t border-white/10">
-                <span className="text-white/80 text-xs">Sound Notifications</span>
+                <span className="text-white/80 text-xs">{t('pomodoro.soundNotifications')}</span>
                 <button
                   onClick={() => onSetSoundEnabled ? onSetSoundEnabled(!soundEnabled) : setInternalSoundEnabled(!soundEnabled)}
                   className={`w-8 h-4 rounded-full relative transition-colors ${soundEnabled ? 'bg-green-500' : 'bg-white/20'}`}
@@ -406,11 +406,11 @@ export default function PomodoroTimer({
 
             <div className="mt-4 pt-4 border-t border-white/20">
               <div className="mb-3 text-left">
-                <h4 className="text-white font-medium text-sm text-left">Graphic Settings</h4>
+                <h4 className="text-white font-medium text-sm text-left">{t('pomodoro.graphicSettings')}</h4>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-white/80 text-xs">Background Dim</span>
+                  <span className="text-white/80 text-xs">{t('pomodoro.backgroundDim')}</span>
                   <div className="flex items-center gap-2">
                     <input
                       type="range"
@@ -433,12 +433,12 @@ export default function PomodoroTimer({
               <div className="mb-3 text-left">
                 <h4 className="text-white font-medium text-sm text-left flex items-center gap-2">
                   <Globe className="w-4 h-4" />
-                  Language Settings
+                  {t('pomodoro.languageSettings')}
                 </h4>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-white/80 text-xs">Language</span>
+                  <span className="text-white/80 text-xs">{t('pomodoro.language')}</span>
                   <select
                     value={locale}
                     onChange={(e) => setLocale(e.target.value)}
@@ -446,7 +446,7 @@ export default function PomodoroTimer({
                   >
                     {availableLocales.map((lang) => (
                       <option key={lang} value={lang} className="bg-gray-800 text-white">
-                        {lang === 'en' ? 'English' : 'Indonesian'}
+                        {lang === 'en' ? t('language.english') : t('language.indonesian')}
                       </option>
                     ))}
                   </select>

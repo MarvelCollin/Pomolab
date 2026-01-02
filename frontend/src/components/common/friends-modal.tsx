@@ -254,7 +254,8 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
     if (isOpen && currentUser) {
       loadFriendsData();
     }
-  }, [isOpen, currentUser, loadFriendsData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, currentUser]);
 
   const filteredFriends = friends.filter(friend =>
     friend.friend && 

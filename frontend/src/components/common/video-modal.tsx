@@ -4,9 +4,12 @@ import { X, GripVertical, Camera, CameraOff, Mic, MicOff, Users, Video, Phone } 
 import { MeetingProvider, useMeeting, useParticipant } from '@videosdk.live/react-sdk';
 import type { IVideoModal } from '../../interfaces/IVideoModal';
 import { createMeeting } from '../../services/video-call-service';
-import { useToast } from './toast';import { useLocale } from '../../hooks/use-locale';import LoadingSpinner from './loading-spinner';
+import { useToast } from './toast';
+import { useLocale } from '../../hooks/use-locale';
+import LoadingSpinner from './loading-spinner';
 
 function VideoParticipantView({ participantId }: { participantId: string }) {
+  const { t } = useLocale();
   const { webcamStream, micStream, webcamOn, micOn, isLocal, displayName } = useParticipant(participantId);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);

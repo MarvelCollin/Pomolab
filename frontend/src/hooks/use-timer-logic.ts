@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useMemo } from 'react';
 import type { AppAction, AppState } from './use-app-state';
+import { useLocale } from './use-locale';
 
 export const useTimerLogic = (
   dispatch: React.Dispatch<AppAction>,
@@ -7,6 +8,7 @@ export const useTimerLogic = (
   handleSessionComplete: (sessionType: 'focus' | 'short-break' | 'long-break') => void
 ) => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { t } = useLocale();
 
   const sessionDurations = useMemo(() => ({
     focus: pomodoro.customDurations.focus * 60,
@@ -15,10 +17,10 @@ export const useTimerLogic = (
   }), [pomodoro.customDurations]);
 
   const sessionLabels = useMemo(() => ({
-    focus: 'Focus Time',
-    'short-break': 'Short Break',
-    'long-break': 'Long Break'
-  }), []);
+    focus: t('pomodoro.focusTime'),
+    'short-break': t('pomodoro.shortBreak'),
+    'long-break': t('pomodoro.longBreak')
+  }), [t]);
 
   useEffect(() => {
     if (pomodoro.isTimerRunning && pomodoro.timeLeft > 0) {

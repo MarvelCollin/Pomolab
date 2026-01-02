@@ -4,6 +4,7 @@ import PomodoroTimer from '../pomodoro/pomodoro-timer';
 import TaskList from '../pomodoro/task-list';
 import type { AppState, AppAction } from '../../hooks/use-app-state';
 import type { ITask } from '../../interfaces/ITask';
+import { useLocale } from '../../hooks/use-locale';
 
 interface MainContentProps {
   state: AppState;
@@ -44,6 +45,8 @@ const MainContent = memo(function MainContent({
   handleTaskEdit,
   handleTaskAssign
 }: MainContentProps) {
+  const { t } = useLocale();
+  
   if (state.ui.isMinimalMode) return null;
 
   return (
@@ -101,7 +104,7 @@ const MainContent = memo(function MainContent({
                   }`}
                 >
                   <h3 className={`text-white/90 font-medium mb-1 transition-all duration-500 ${state.ui.pomodoroMinimized ? 'text-xs' : 'text-sm'}`}>
-                    Current Task
+                    {t('pomodoro.currentTask')}
                   </h3>
                   <p className={`text-white font-medium drop-shadow transition-all duration-500 ${state.ui.pomodoroMinimized ? 'text-sm' : 'text-base'}`}>
                     {state.selectedTask.title}
@@ -121,7 +124,7 @@ const MainContent = memo(function MainContent({
                 }`}
               >
                 <p className="text-white/60 text-sm">
-                  Use the video call feature in the top-right menu to collaborate with friends
+                  {t('pomodoro.videoCallFeature')}
                 </p>
               </div>
             </div>
@@ -131,7 +134,7 @@ const MainContent = memo(function MainContent({
             <div className={`rounded-3xl transition-all duration-500 ease-in-out ${state.ui.tasksMinimized ? 'p-2 max-h-[120px]' : 'p-4 flex-1 min-h-0'} ${state.ui.tasksMinimized ? 'overflow-hidden' : 'flex flex-col'}`}>
               {state.tasksError && !state.ui.tasksMinimized && (
                 <div className="bg-red-500/10 backdrop-blur-2xl border border-red-500/20 rounded-xl p-3 mb-4">
-                  <p className="text-red-400 text-sm">Error loading tasks: {state.tasksError}</p>
+                  <p className="text-red-400 text-sm">{t('pomodoro.errorLoadingTasks')}: {state.tasksError}</p>
                 </div>
               )}
               
