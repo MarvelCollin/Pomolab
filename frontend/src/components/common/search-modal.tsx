@@ -95,7 +95,7 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
 
   useEffect(() => {
     setSelectedIndex(0);
-  }, [results]);
+  }, [query]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
