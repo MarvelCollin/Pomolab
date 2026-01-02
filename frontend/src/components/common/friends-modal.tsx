@@ -27,11 +27,12 @@ interface FriendsModalProps {
   onClose: () => void;
   currentUser: IUser | null;
   onOpenChat?: (user: IUser) => void;
+  initialTab?: 'friends' | 'requests' | 'add';
 }
 
-function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModalProps) {
+function FriendsModal({ isOpen, onClose, currentUser, onOpenChat, initialTab = 'friends' }: FriendsModalProps) {
   const { t } = useLocale();
-  const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'add'>('friends');
+  const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'add'>(initialTab);
   const [friends, setFriends] = useState<IFriend[]>([]);
   const [friendRequests, setFriendRequests] = useState<IFriend[]>([]);
   const [sentRequests, setSentRequests] = useState<IFriend[]>([]);
@@ -253,9 +254,10 @@ function FriendsModal({ isOpen, onClose, currentUser, onOpenChat }: FriendsModal
   useEffect(() => {
     if (isOpen && currentUser) {
       loadFriendsData();
+      setActiveTab(initialTab);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, currentUser]);
+  }, [isOpen, currentUser, initialTab]);
 
   const filteredFriends = friends.filter(friend =>
     friend.friend && 

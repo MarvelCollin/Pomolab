@@ -22,7 +22,7 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
       action: () => {
         if (AuthTrigger.checkAuthForMutation()) {
           if (onOpenFriendsModal) {
-            onOpenFriendsModal();
+            onOpenFriendsModal('friends');
           }
         }
       }
@@ -37,7 +37,7 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
       action: () => {
         if (AuthTrigger.checkAuthForMutation()) {
           if (onOpenFriendsModal) {
-            onOpenFriendsModal();
+            onOpenFriendsModal('add');
           }
         }
       }
@@ -52,7 +52,7 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
       action: () => {
         if (AuthTrigger.checkAuthForMutation()) {
           if (onOpenFriendsModal) {
-            onOpenFriendsModal();
+            onOpenFriendsModal('requests');
           }
         }
       }

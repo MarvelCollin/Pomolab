@@ -22,6 +22,7 @@ export interface AppState {
     initialLoadComplete: boolean;
     showSearchModal: boolean;
     showFriendsModal: boolean;
+    friendsModalTab: 'friends' | 'requests' | 'add';
     showLoginModal: boolean;
   };
   auth: {
@@ -77,6 +78,7 @@ const initialState: AppState = {
     initialLoadComplete: false,
     showSearchModal: false,
     showFriendsModal: false,
+    friendsModalTab: 'friends',
     showLoginModal: false,
   },
   auth: {

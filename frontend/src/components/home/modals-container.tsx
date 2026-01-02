@@ -12,7 +12,7 @@ interface ModalsContainerProps {
   state: AppState;
   dispatch: React.Dispatch<AppAction>;
   handleCloseSearchModal: () => void;
-  handleOpenFriendsModal: () => void;
+  handleOpenFriendsModal: (tab?: 'friends' | 'requests' | 'add') => void;
   handleCloseFriendsModal: () => void;
   handleLogin: (user: IUser, token: string) => Promise<void>;
 }
@@ -65,6 +65,7 @@ const ModalsContainer = memo(function ModalsContainer({
         onClose={handleCloseFriendsModal}
         currentUser={state.auth.currentUser}
         onOpenChat={handleOpenChat}
+        initialTab={state.ui.friendsModalTab}
       />
 
       <LoginModal

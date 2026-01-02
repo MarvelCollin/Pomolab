@@ -138,8 +138,8 @@ export default function Home() {
     dispatch({ type: 'UPDATE_UI', payload: { showSearchModal: false } });
   }, [dispatch]);
 
-  const handleOpenFriendsModal = useCallback(() => {
-    dispatch({ type: 'UPDATE_UI', payload: { showFriendsModal: true } });
+  const handleOpenFriendsModal = useCallback((tab: 'friends' | 'requests' | 'add' = 'friends') => {
+    dispatch({ type: 'UPDATE_UI', payload: { showFriendsModal: true, friendsModalTab: tab } });
   }, [dispatch]);
 
   const handleCloseFriendsModal = useCallback(() => {

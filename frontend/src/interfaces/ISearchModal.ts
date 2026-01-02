@@ -1,7 +1,7 @@
 export interface ISearchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onOpenFriendsModal?: () => void;
+  onOpenFriendsModal?: (tab: 'friends' | 'requests' | 'add') => void;
   onOpenVideoModal?: () => void;
 }
 
