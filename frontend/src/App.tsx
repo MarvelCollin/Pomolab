@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import './App.css'
 import Home from './pages/home'
+import AdminDashboard from './pages/admin-dashboard'
 import SocketTest from './components/socket/socket-test'
 
 function App() {
@@ -9,6 +10,7 @@ function App() {
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/socket-test" element={<SocketTest />} />
         </Routes>
       </main>
@@ -17,3 +19,4 @@ function App() {
 }
 
 export default App
+

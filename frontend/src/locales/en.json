@@ -257,5 +257,18 @@
     "minLength": "Must be at least {min} characters",
     "maxLength": "Must be no more than {max} characters",
     "passwordMismatch": "Passwords do not match"
+  },
+  "admin": {
+    "dashboard": "Admin Dashboard",
+    "statistics": "Statistics",
+    "totalUsers": "Total Users",
+    "totalTasks": "Total Tasks",
+    "totalGroups": "Total Groups",
+    "activeSessions": "Active Sessions",
+    "users": "Users",
+    "recentActivity": "Recent Activity",
+    "logout": "Logout",
+    "backToHome": "Back to Home",
+    "noData": "No data available"
   }
 }

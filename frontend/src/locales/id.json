@@ -257,5 +257,18 @@
     "minLength": "Harus minimal {min} karakter",
     "maxLength": "Tidak boleh lebih dari {max} karakter",
     "passwordMismatch": "Kata sandi tidak cocok"
+  },
+  "admin": {
+    "dashboard": "Dashboard Admin",
+    "statistics": "Statistik",
+    "totalUsers": "Total Pengguna",
+    "totalTasks": "Total Tugas",
+    "totalGroups": "Total Grup",
+    "activeSessions": "Sesi Aktif",
+    "users": "Pengguna",
+    "recentActivity": "Aktivitas Terbaru",
+    "logout": "Keluar",
+    "backToHome": "Kembali ke Beranda",
+    "noData": "Tidak ada data tersedia"
   }
 }
