@@ -95,7 +95,8 @@ function SearchModal({ isOpen, onClose, onOpenFriendsModal, onOpenVideoModal }: 
       setResults(filtered);
     }
     setSelectedIndex(0);
-  }, [query, allResults]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {

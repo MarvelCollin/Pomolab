@@ -25,28 +25,20 @@ class TaskRepository
         if ($taskId) {
             Cache::forget($this->getCacheKey("task:{$taskId}"));
             Cache::forget($this->getCacheKey("task_with_messages:{$taskId}"));
-        }
 
-        // Clear pattern-based caches (owner, assigned, status, user tasks)
-        $patterns = [
-            'owner:*',
-            'assigned:*',
-            'status:*',
-            'user:*'
-        ];
+            // Get task to clear related caches
+            $task = Task::find($taskId);
+            if ($task) {
+                Cache::forget($this->getCacheKey("owner:{$task->owner_id}"));
+                Cache::forget($this->getCacheKey("user:{$task->owner_id}"));
 
-        foreach ($patterns as $pattern) {
-            $this->clearCachePattern($pattern);
-        }
-    }
+                if ($task->assigned_to_id) {
+                    Cache::forget($this->getCacheKey("assigned:{$task->assigned_to_id}"));
+                    Cache::forget($this->getCacheKey("user:{$task->assigned_to_id}"));
+                }
 
-    private function clearCachePattern(string $pattern): void
-    {
-        $fullPattern = $this->getCacheKey($pattern);
-        $keys = Cache::getRedis()->keys($fullPattern);
-
-        if (!empty($keys)) {
-            Cache::getRedis()->del($keys);
+                Cache::forget($this->getCacheKey("status:{$task->status}"));
+            }
         }
     }
     public function getAll(): Collection
@@ -71,8 +63,8 @@ class TaskRepository
     {
         $task = Task::create($data);
 
-        // Clear relevant caches
-        $this->clearTaskCache();
+        // Clear relevant caches including user-specific caches
+        $this->clearTaskCache($task->id);
 
         return $task;
     }
