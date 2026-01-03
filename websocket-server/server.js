@@ -25,6 +25,10 @@ wss.on('connection', (ws) => {
       const data = JSON.parse(message.toString());
       
       if (data.type === 'subscribe') {
+        if (ws.channel === data.channel) {
+          console.log(`Client already subscribed to channel: ${data.channel}`);
+          return;
+        }
         ws.channel = data.channel;
         console.log(`Client subscribed to channel: ${data.channel}`);
       } else if (data.type === 'send_message') {

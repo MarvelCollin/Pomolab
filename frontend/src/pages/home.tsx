@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import MiniPomodoroTimer from '../components/common/mini-pomodoro-timer';
 import MiniMusicPlayer from '../components/common/mini-music-player';
@@ -89,23 +89,25 @@ export default function Home() {
     ToastContainer
   } = useToast();
 
-  useFriendNotifications(state.auth.currentUser, {
-    onFriendRequestSent: (data) => {
+  const friendNotificationCallbacks = useMemo(() => ({
+    onFriendRequestSent: (data: any) => {
       showSuccess('Friend Request Sent', data.message);
     },
-    onFriendRequestReceived: (data) => {
+    onFriendRequestReceived: (data: any) => {
       showInfo('Friend Request Received', data.message);
     },
-    onFriendRequestAccepted: (data) => {
+    onFriendRequestAccepted: (data: any) => {
       showSuccess('Friend Request Accepted', data.message);
     },
-    onFriendRequestRejected: (data) => {
+    onFriendRequestRejected: (data: any) => {
       showWarning('Friend Request Rejected', data.message);
     },
-    onFriendRemoved: (data) => {
+    onFriendRemoved: (data: any) => {
       showError('Friend Removed', data.message);
     }
-  });
+  }), [showSuccess, showError, showWarning, showInfo]);
+
+  useFriendNotifications(state.auth.currentUser, friendNotificationCallbacks);
 
   useEffect(() => {
     if (!backgroundsLoading && !musicLoading && !state.ui.initialLoadComplete) {
