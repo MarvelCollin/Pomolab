@@ -3,8 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Users, CheckSquare, UsersRound, Activity, LogOut, Home, Shield } from 'lucide-react';
 import { UserApi } from '../apis/user-api';
+import { TaskApi } from '../apis/task-api';
+import { GroupApi } from '../apis/group-api';
 import { useLocale } from '../hooks/use-locale';
 import type { IUser } from '../interfaces/IUser';
+import type { ITask } from '../interfaces/ITask';
+import type { IGroup } from '../interfaces/IGroup';
 
 interface StatCardProps {
     icon: React.ReactNode;
@@ -35,10 +39,119 @@ function StatCard({ icon, title, value, color, delay }: StatCardProps) {
     );
 }
 
+interface DonutChartProps {
+    data: { label: string; value: number; color: string }[];
+    title: string;
+    delay: number;
+}
+
+function DonutChart({ data, title, delay }: DonutChartProps) {
+    const total = data.reduce((sum, item) => sum + item.value, 0);
+    let currentAngle = 0;
+
+    const createArcPath = (startAngle: number, endAngle: number, radius: number = 40) => {
+        const startX = 50 + radius * Math.cos((startAngle - 90) * Math.PI / 180);
+        const startY = 50 + radius * Math.sin((startAngle - 90) * Math.PI / 180);
+        const endX = 50 + radius * Math.cos((endAngle - 90) * Math.PI / 180);
+        const endY = 50 + radius * Math.sin((endAngle - 90) * Math.PI / 180);
+        const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
+        return `M 50 50 L ${startX} ${startY} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay }}
+            className="bg-white/10 backdrop-blur-2xl rounded-2xl border border-white/20 p-6 shadow-2xl"
+        >
+            <h3 className="text-lg font-bold text-white mb-4">{title}</h3>
+            <div className="flex items-center gap-6">
+                <svg viewBox="0 0 100 100" className="w-32 h-32">
+                    {total === 0 ? (
+                        <circle cx="50" cy="50" r="40" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+                    ) : (
+                        data.map((item, index) => {
+                            const angle = (item.value / total) * 360;
+                            const path = createArcPath(currentAngle, currentAngle + angle);
+                            currentAngle += angle;
+                            return (
+                                <motion.path
+                                    key={index}
+                                    d={path}
+                                    fill={item.color}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: delay + index * 0.1 }}
+                                />
+                            );
+                        })
+                    )}
+                    <circle cx="50" cy="50" r="25" fill="rgba(26, 26, 46, 0.8)" />
+                    <text x="50" y="55" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">
+                        {total}
+                    </text>
+                </svg>
+                <div className="space-y-2">
+                    {data.map((item, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                            <span className="text-white/70 text-sm">{item.label}</span>
+                            <span className="text-white font-medium text-sm">({item.value})</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </motion.div>
+    );
+}
+
+interface BarChartProps {
+    data: { label: string; value: number; color: string }[];
+    title: string;
+    delay: number;
+}
+
+function BarChart({ data, title, delay }: BarChartProps) {
+    const maxValue = Math.max(...data.map(d => d.value), 1);
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay }}
+            className="bg-white/10 backdrop-blur-2xl rounded-2xl border border-white/20 p-6 shadow-2xl"
+        >
+            <h3 className="text-lg font-bold text-white mb-4">{title}</h3>
+            <div className="space-y-3">
+                {data.map((item, index) => (
+                    <div key={index} className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                            <span className="text-white/70">{item.label}</span>
+                            <span className="text-white font-medium">{item.value}</span>
+                        </div>
+                        <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+                            <motion.div
+                                className="h-full rounded-full"
+                                style={{ backgroundColor: item.color }}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${(item.value / maxValue) * 100}%` }}
+                                transition={{ duration: 0.8, delay: delay + index * 0.1 }}
+                            />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </motion.div>
+    );
+}
+
 export default function AdminDashboard() {
     const navigate = useNavigate();
     const { t } = useLocale();
     const [users, setUsers] = useState<IUser[]>([]);
+    const [tasks, setTasks] = useState<ITask[]>([]);
+    const [groups, setGroups] = useState<IGroup[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAuthorized, setIsAuthorized] = useState(false);
 
@@ -52,15 +165,21 @@ export default function AdminDashboard() {
         }
 
         setIsAuthorized(true);
-        fetchUsers();
+        fetchAllData();
     }, [navigate]);
 
-    const fetchUsers = async () => {
+    const fetchAllData = async () => {
         try {
-            const usersData = await UserApi.getAllUsers();
+            const [usersData, tasksData, groupsData] = await Promise.all([
+                UserApi.getAllUsers().catch(() => []),
+                TaskApi.getAllTasks().catch(() => []),
+                GroupApi.getAllGroups().catch(() => [])
+            ]);
             setUsers(usersData);
+            setTasks(tasksData);
+            setGroups(groupsData);
         } catch (error) {
-            console.error('Failed to fetch users:', error);
+            console.error('Failed to fetch data:', error);
         } finally {
             setLoading(false);
         }
@@ -81,9 +200,31 @@ export default function AdminDashboard() {
     }
 
     const totalUsers = users.length;
-    const totalTasks = users.reduce((acc, user) => acc + (user.id || 0), 0) % 100;
-    const totalGroups = Math.floor(totalUsers / 3) || 1;
-    const activeSessions = Math.floor(Math.random() * 10) + 5;
+    const totalTasks = tasks.length;
+    const totalGroups = groups.length;
+
+    const completedTasks = tasks.filter(t => t.status === 'completed').length;
+    const pendingTasks = tasks.filter(t => t.status === 'pending').length;
+    const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length;
+
+    const privateGroups = groups.filter(g => g.is_private).length;
+    const publicGroups = groups.filter(g => !g.is_private).length;
+
+    const taskStatusData = [
+        { label: t('task.completed'), value: completedTasks, color: '#10b981' },
+        { label: t('task.pending'), value: pendingTasks, color: '#f59e0b' },
+        { label: t('task.inProgress'), value: inProgressTasks, color: '#3b82f6' }
+    ];
+
+    const groupTypeData = [
+        { label: t('admin.private'), value: privateGroups, color: '#8b5cf6' },
+        { label: t('admin.public'), value: publicGroups, color: '#06b6d4' }
+    ];
+
+    const userRoleData = [
+        { label: t('admin.roleAdmin'), value: users.filter(u => u.role === 'admin').length, color: '#ec4899' },
+        { label: t('admin.roleUser'), value: users.filter(u => u.role !== 'admin').length, color: '#6366f1' }
+    ];
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] p-6">
@@ -157,16 +298,34 @@ export default function AdminDashboard() {
                     <StatCard
                         icon={<Activity className="w-6 h-6 text-white" />}
                         title={t('admin.activeSessions')}
-                        value={activeSessions}
+                        value={loading ? '...' : users.filter(u => !u.is_banned).length}
                         color="bg-gradient-to-br from-orange-500 to-amber-500"
                         delay={0.4}
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <DonutChart
+                        data={taskStatusData}
+                        title={t('admin.tasksByStatus')}
+                        delay={0.5}
+                    />
+                    <DonutChart
+                        data={groupTypeData}
+                        title={t('admin.groupsByType')}
+                        delay={0.6}
+                    />
+                    <BarChart
+                        data={userRoleData}
+                        title={t('admin.usersByRole')}
+                        delay={0.7}
                     />
                 </div>
 
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.5 }}
+                    transition={{ duration: 0.5, delay: 0.8 }}
                     className="bg-white/10 backdrop-blur-2xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden"
                 >
                     <div className="p-6 border-b border-white/10">
@@ -200,7 +359,7 @@ export default function AdminDashboard() {
                                             key={user.id}
                                             initial={{ opacity: 0, x: -20 }}
                                             animate={{ opacity: 1, x: 0 }}
-                                            transition={{ duration: 0.3, delay: 0.6 + index * 0.05 }}
+                                            transition={{ duration: 0.3, delay: 0.9 + index * 0.05 }}
                                             className="border-t border-white/5 hover:bg-white/5 transition-colors"
                                         >
                                             <td className="px-6 py-4 text-white/80">{user.id}</td>
@@ -223,8 +382,8 @@ export default function AdminDashboard() {
                                             <td className="px-6 py-4 text-white/80">{user.email}</td>
                                             <td className="px-6 py-4">
                                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${user.role === 'admin'
-                                                        ? 'bg-purple-500/30 text-purple-300'
-                                                        : 'bg-blue-500/30 text-blue-300'
+                                                    ? 'bg-purple-500/30 text-purple-300'
+                                                    : 'bg-blue-500/30 text-blue-300'
                                                     }`}>
                                                     {user.role || 'user'}
                                                 </span>
@@ -237,40 +396,6 @@ export default function AdminDashboard() {
                                 </tbody>
                             </table>
                         )}
-                    </div>
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.7 }}
-                    className="mt-8 bg-white/10 backdrop-blur-2xl rounded-2xl border border-white/20 p-6 shadow-2xl"
-                >
-                    <h2 className="text-xl font-bold text-white mb-4">{t('admin.recentActivity')}</h2>
-                    <div className="space-y-4">
-                        {[1, 2, 3].map((_, index) => (
-                            <motion.div
-                                key={index}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.3, delay: 0.8 + index * 0.1 }}
-                                className="flex items-center gap-4 p-4 bg-white/5 rounded-xl"
-                            >
-                                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-                                <div className="flex-1">
-                                    <p className="text-white/80 text-sm">
-                                        {index === 0 && 'New user registered: user@example.com'}
-                                        {index === 1 && 'Task completed by StudyMaster'}
-                                        {index === 2 && 'New group created: Focus Session'}
-                                    </p>
-                                    <p className="text-white/40 text-xs mt-1">
-                                        {index === 0 && '2 minutes ago'}
-                                        {index === 1 && '15 minutes ago'}
-                                        {index === 2 && '1 hour ago'}
-                                    </p>
-                                </div>
-                            </motion.div>
-                        ))}
                     </div>
                 </motion.div>
             </motion.div>

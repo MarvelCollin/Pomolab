@@ -49,7 +49,8 @@
     "registerSuccessful": "Registration successful",
     "logoutSuccessful": "Logout successful",
     "required": "Authentication Required",
-    "loginToVideoCall": "Please login to start a video call"
+    "loginToVideoCall": "Please login to start a video call",
+    "loginFailed": "Login failed"
   },
   "user": {
     "profile": "Profile",
@@ -264,11 +265,19 @@
     "totalUsers": "Total Users",
     "totalTasks": "Total Tasks",
     "totalGroups": "Total Groups",
-    "activeSessions": "Active Sessions",
+    "activeSessions": "Active Users",
     "users": "Users",
     "recentActivity": "Recent Activity",
     "logout": "Logout",
     "backToHome": "Back to Home",
-    "noData": "No data available"
+    "noData": "No data available",
+    "tasksByStatus": "Tasks by Status",
+    "groupsByType": "Groups by Type",
+    "usersByRole": "Users by Role",
+    "private": "Private",
+    "public": "Public",
+    "roleAdmin": "Admin",
+    "roleUser": "User",
+    "invalidCredentials": "Invalid admin credentials"
   }
 }

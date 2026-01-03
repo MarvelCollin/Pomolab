@@ -73,7 +73,7 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
     }
 
     if (loginData.email === 'admin@gmail.com') {
-      setError('Invalid admin credentials');
+      setError(t('admin.invalidCredentials'));
       setLoading(false);
       return;
     }
@@ -84,7 +84,7 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
       onLogin(response.user, response.token);
       handleClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : t('auth.loginFailed'));
     } finally {
       setLoading(false);
     }

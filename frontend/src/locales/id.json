@@ -49,7 +49,8 @@
     "registerSuccessful": "Registrasi berhasil",
     "logoutSuccessful": "Logout berhasil",
     "required": "Autentikasi Diperlukan",
-    "loginToVideoCall": "Silakan login untuk memulai panggilan video"
+    "loginToVideoCall": "Silakan login untuk memulai panggilan video",
+    "loginFailed": "Login gagal"
   },
   "user": {
     "profile": "Profil",
@@ -264,11 +265,19 @@
     "totalUsers": "Total Pengguna",
     "totalTasks": "Total Tugas",
     "totalGroups": "Total Grup",
-    "activeSessions": "Sesi Aktif",
+    "activeSessions": "Pengguna Aktif",
     "users": "Pengguna",
     "recentActivity": "Aktivitas Terbaru",
     "logout": "Keluar",
     "backToHome": "Kembali ke Beranda",
-    "noData": "Tidak ada data tersedia"
+    "noData": "Tidak ada data tersedia",
+    "tasksByStatus": "Tugas Berdasarkan Status",
+    "groupsByType": "Grup Berdasarkan Tipe",
+    "usersByRole": "Pengguna Berdasarkan Peran",
+    "private": "Privat",
+    "public": "Publik",
+    "roleAdmin": "Admin",
+    "roleUser": "Pengguna",
+    "invalidCredentials": "Kredensial admin tidak valid"
   }
 }
