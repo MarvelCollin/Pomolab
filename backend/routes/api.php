@@ -14,6 +14,10 @@ Route::get('/test', function () {
     return response()->json(['message' => 'Hello World']);
 });
 
+Route::get('/login', function () {
+    return response()->json(['message' => 'Unauthenticated'], 401);
+})->name('login');
+
 // Locale routes
 Route::get('/locale', [LocaleController::class, 'getCurrentLocale']);
 Route::post('/locale', [LocaleController::class, 'setLocale']);
@@ -29,6 +33,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::middleware('auth:sanctum')->apiResource('users', UserController::class);
+Route::middleware('auth:sanctum')->get('/users/{id}/with-friends', [UserController::class, 'getUserWithFriends']);
 Route::middleware('auth:sanctum')->get('/users/{id}/tasks', [UserController::class, 'getUserWithTasks']);
 
 Route::middleware('auth:sanctum')->group(function () {
