@@ -50,7 +50,8 @@
     "logoutSuccessful": "Logout berhasil",
     "required": "Autentikasi Diperlukan",
     "loginToVideoCall": "Silakan login untuk memulai panggilan video",
-    "loginFailed": "Login gagal"
+    "loginFailed": "Login gagal",
+    "accountBanned": "Akun Anda telah diblokir. Silakan hubungi dukungan."
   },
   "user": {
     "profile": "Profil",
@@ -278,6 +279,17 @@
     "public": "Publik",
     "roleAdmin": "Admin",
     "roleUser": "Pengguna",
-    "invalidCredentials": "Kredensial admin tidak valid"
+    "invalidCredentials": "Kredensial admin tidak valid",
+    "status": "Status",
+    "actions": "Aksi",
+    "ban": "Blokir",
+    "unban": "Buka Blokir",
+    "banUser": "Blokir Pengguna",
+    "unbanUser": "Buka Blokir Pengguna",
+    "userBanned": "Pengguna telah diblokir",
+    "userUnbanned": "Pengguna telah dibuka blokirnya",
+    "cannotBanAdmin": "Tidak dapat memblokir pengguna admin",
+    "active": "Aktif",
+    "bannedStatus": "Diblokir"
   }
 }

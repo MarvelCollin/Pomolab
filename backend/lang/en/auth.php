@@ -22,5 +22,6 @@ return [
     'login_successful' => 'Login successful',
     'google_auth_failed' => 'Google authentication failed',
     'invalid_google_token' => 'Invalid Google token',
+    'account_banned' => 'Your account has been banned. Please contact support.',
 
 ];

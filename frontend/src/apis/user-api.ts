@@ -20,17 +20,7 @@ interface RegisterRequest {
 
 export class UserApi {
   static async getAllUsers(): Promise<IUser[]> {
-    const token = localStorage.getItem('authToken');
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const response = await fetch(`${API_BASE_URL}/api/users`, {
-      headers
-    });
+    const response = await fetch(`${API_BASE_URL}/api/users`);
     if (!response.ok) {
       throw new Error('Failed to fetch users');
     }
@@ -38,17 +28,7 @@ export class UserApi {
   }
 
   static async getUserById(id: number): Promise<IUser> {
-    const token = localStorage.getItem('authToken');
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
-      headers
-    });
+    const response = await fetch(`${API_BASE_URL}/api/users/${id}`);
     if (!response.ok) {
       throw new Error('Failed to fetch user');
     }
@@ -176,5 +156,35 @@ export class UserApi {
       throw new Error(error.message || 'Google authentication failed');
     }
     return response.json();
+  }
+
+  static async banUser(id: number): Promise<void> {
+    const token = localStorage.getItem('authToken');
+    const response = await fetch(`${API_BASE_URL}/api/users/${id}/ban`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to ban user');
+    }
+  }
+
+  static async unbanUser(id: number): Promise<void> {
+    const token = localStorage.getItem('authToken');
+    const response = await fetch(`${API_BASE_URL}/api/users/${id}/unban`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to unban user');
+    }
   }
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Users, CheckSquare, UsersRound, Activity, LogOut, Home, Shield } from 'lucide-react';
+import { Users, CheckSquare, UsersRound, Activity, LogOut, Home, Shield, Ban } from 'lucide-react';
 import { UserApi } from '../apis/user-api';
 import { TaskApi } from '../apis/task-api';
 import { GroupApi } from '../apis/group-api';
@@ -154,6 +154,7 @@ export default function AdminDashboard() {
     const [groups, setGroups] = useState<IGroup[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAuthorized, setIsAuthorized] = useState(false);
+    const [banningUserId, setBanningUserId] = useState<number | null>(null);
 
     useEffect(() => {
         const token = localStorage.getItem('authToken');
@@ -193,6 +194,30 @@ export default function AdminDashboard() {
 
     const handleBackToHome = () => {
         navigate('/');
+    };
+
+    const handleBanUser = async (userId: number) => {
+        setBanningUserId(userId);
+        try {
+            await UserApi.banUser(userId);
+            setUsers(users.map(u => u.id === userId ? { ...u, is_banned: true } : u));
+        } catch (error) {
+            console.error('Failed to ban user:', error);
+        } finally {
+            setBanningUserId(null);
+        }
+    };
+
+    const handleUnbanUser = async (userId: number) => {
+        setBanningUserId(userId);
+        try {
+            await UserApi.unbanUser(userId);
+            setUsers(users.map(u => u.id === userId ? { ...u, is_banned: false } : u));
+        } catch (error) {
+            console.error('Failed to unban user:', error);
+        } finally {
+            setBanningUserId(null);
+        }
     };
 
     if (!isAuthorized) {
@@ -350,7 +375,9 @@ export default function AdminDashboard() {
                                         <th className="px-6 py-4 text-left text-sm font-medium text-white/60">{t('auth.username')}</th>
                                         <th className="px-6 py-4 text-left text-sm font-medium text-white/60">{t('auth.email')}</th>
                                         <th className="px-6 py-4 text-left text-sm font-medium text-white/60">{t('user.role')}</th>
+                                        <th className="px-6 py-4 text-left text-sm font-medium text-white/60">{t('admin.status')}</th>
                                         <th className="px-6 py-4 text-left text-sm font-medium text-white/60">{t('user.createdAt')}</th>
+                                        <th className="px-6 py-4 text-left text-sm font-medium text-white/60">{t('admin.actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -388,8 +415,37 @@ export default function AdminDashboard() {
                                                     {user.role || 'user'}
                                                 </span>
                                             </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${user.is_banned
+                                                    ? 'bg-red-500/30 text-red-300'
+                                                    : 'bg-green-500/30 text-green-300'
+                                                    }`}>
+                                                    {user.is_banned ? t('admin.bannedStatus') : t('admin.active')}
+                                                </span>
+                                            </td>
                                             <td className="px-6 py-4 text-white/60 text-sm">
                                                 {new Date(user.created_at).toLocaleDateString()}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {user.role !== 'admin' && (
+                                                    <motion.button
+                                                        whileHover={{ scale: 1.05 }}
+                                                        whileTap={{ scale: 0.95 }}
+                                                        onClick={() => user.is_banned ? handleUnbanUser(user.id) : handleBanUser(user.id)}
+                                                        disabled={banningUserId === user.id}
+                                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${user.is_banned
+                                                                ? 'bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30'
+                                                                : 'bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30'
+                                                            }`}
+                                                    >
+                                                        {banningUserId === user.id ? (
+                                                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                                        ) : (
+                                                            <Ban className="w-4 h-4" />
+                                                        )}
+                                                        {user.is_banned ? t('admin.unban') : t('admin.ban')}
+                                                    </motion.button>
+                                                )}
                                             </td>
                                         </motion.tr>
                                     ))}

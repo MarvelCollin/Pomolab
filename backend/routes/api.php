@@ -32,9 +32,15 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::middleware('auth:sanctum')->apiResource('users', UserController::class);
-Route::middleware('auth:sanctum')->get('/users/{id}/with-friends', [UserController::class, 'getUserWithFriends']);
-Route::middleware('auth:sanctum')->get('/users/{id}/tasks', [UserController::class, 'getUserWithTasks']);
+Route::get('/users', [UserController::class, 'index']);
+Route::get('/users/{id}', [UserController::class, 'show']);
+Route::middleware('admin.bypass')->post('/users', [UserController::class, 'store']);
+Route::middleware('admin.bypass')->put('/users/{id}', [UserController::class, 'update']);
+Route::middleware('admin.bypass')->delete('/users/{id}', [UserController::class, 'destroy']);
+Route::middleware('admin.bypass')->get('/users/{id}/with-friends', [UserController::class, 'getUserWithFriends']);
+Route::middleware('admin.bypass')->get('/users/{id}/tasks', [UserController::class, 'getUserWithTasks']);
+Route::middleware('admin.bypass')->put('/users/{id}/ban', [UserController::class, 'banUser']);
+Route::middleware('admin.bypass')->put('/users/{id}/unban', [UserController::class, 'unbanUser']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/friends', [FriendController::class, 'index']);

@@ -334,6 +334,10 @@ class UserController extends Controller
                 return response()->json(['message' => __('auth.invalid_credentials')], 401);
             }
 
+            if ($user->is_banned) {
+                return response()->json(['message' => __('auth.account_banned')], 403);
+            }
+
             $token = $user->createToken('auth-token')->plainTextToken;
 
             return response()->json([
@@ -503,6 +507,11 @@ class UserController extends Controller
             }
 
             $user = $this->userRepository->findOrCreateGoogleUser($googleUser);
+
+            if ($user->is_banned) {
+                return response()->json(['message' => __('auth.account_banned')], 403);
+            }
+
             $token = $user->createToken('auth-token')->plainTextToken;
 
             return response()->json([
@@ -525,6 +534,34 @@ class UserController extends Controller
         } catch (\Exception $e) {
             return response()->json(['message' => __('auth.google_auth_failed')], 500);
         }
+    }
+
+    public function banUser(Request $request, int $id): JsonResponse
+    {
+        $user = $this->userRepository->findById($id);
+
+        if (!$user) {
+            return response()->json(['message' => __('messages.user_not_found')], 404);
+        }
+
+        if ($user->role === 'admin') {
+            return response()->json(['message' => 'Cannot ban an admin user'], 403);
+        }
+
+        $this->userRepository->update($id, ['is_banned' => true]);
+        return response()->json(['message' => 'User banned successfully']);
+    }
+
+    public function unbanUser(Request $request, int $id): JsonResponse
+    {
+        $user = $this->userRepository->findById($id);
+
+        if (!$user) {
+            return response()->json(['message' => __('messages.user_not_found')], 404);
+        }
+
+        $this->userRepository->update($id, ['is_banned' => false]);
+        return response()->json(['message' => 'User unbanned successfully']);
     }
 
     private function verifyGoogleToken(string $token): ?array

@@ -50,7 +50,8 @@
     "logoutSuccessful": "Logout successful",
     "required": "Authentication Required",
     "loginToVideoCall": "Please login to start a video call",
-    "loginFailed": "Login failed"
+    "loginFailed": "Login failed",
+    "accountBanned": "Your account has been banned. Please contact support."
   },
   "user": {
     "profile": "Profile",
@@ -278,6 +279,17 @@
     "public": "Public",
     "roleAdmin": "Admin",
     "roleUser": "User",
-    "invalidCredentials": "Invalid admin credentials"
+    "invalidCredentials": "Invalid admin credentials",
+    "status": "Status",
+    "actions": "Actions",
+    "ban": "Ban",
+    "unban": "Unban",
+    "banUser": "Ban User",
+    "unbanUser": "Unban User",
+    "userBanned": "User has been banned",
+    "userUnbanned": "User has been unbanned",
+    "cannotBanAdmin": "Cannot ban an admin user",
+    "active": "Active",
+    "bannedStatus": "Banned"
   }
 }

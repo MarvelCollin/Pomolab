@@ -22,5 +22,6 @@ return [
     'login_successful' => 'Login berhasil',
     'google_auth_failed' => 'Autentikasi Google gagal',
     'invalid_google_token' => 'Token Google tidak valid',
+    'account_banned' => 'Akun Anda telah diblokir. Silakan hubungi dukungan.',
 
 ];
