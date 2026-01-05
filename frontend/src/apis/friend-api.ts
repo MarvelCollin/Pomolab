@@ -5,16 +5,10 @@ import { getApiHeaders } from '../utils/api-headers';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('authToken');
-  localStorage.setItem('token', token || '');
-  return getApiHeaders(true);
-};
-
 export class FriendApi {
   static async getAllFriends(): Promise<IFriend[]> {
     const response = await fetch(`${API_BASE_URL}/api/friends`, {
-      headers: getAuthHeaders(),
+      headers: getApiHeaders(),
     });
     if (!response.ok) {
       throw new Error('Failed to fetch friends');
@@ -24,7 +18,7 @@ export class FriendApi {
 
   static async getFriendById(id: number): Promise<IFriend> {
     const response = await fetch(`${API_BASE_URL}/api/friends/${id}`, {
-      headers: getAuthHeaders(),
+      headers: getApiHeaders(),
     });
     if (!response.ok) {
       throw new Error('Failed to fetch friend');
@@ -36,7 +30,7 @@ export class FriendApi {
     return AuthTrigger.wrapApiCall(authOperations.create, async () => {
       const response = await fetch(`${API_BASE_URL}/api/friends`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: getApiHeaders(),
         body: JSON.stringify(friendData),
       });
       if (!response.ok) {
@@ -54,7 +48,7 @@ export class FriendApi {
     await AuthTrigger.wrapApiCall(authOperations.update, async () => {
       const response = await fetch(`${API_BASE_URL}/api/friendship/status`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
+        headers: getApiHeaders(),
         body: JSON.stringify({ user_id: userId, friend_id: friendId, status }),
       });
       if (!response.ok) {
@@ -67,7 +61,7 @@ export class FriendApi {
     await AuthTrigger.wrapApiCall(authOperations.delete, async () => {
       const response = await fetch(`${API_BASE_URL}/api/friends/${id}`, {
         method: 'DELETE',
-        headers: getAuthHeaders(),
+        headers: getApiHeaders(),
       });
       if (!response.ok) {
         throw new Error('Failed to delete friend');
@@ -78,7 +72,7 @@ export class FriendApi {
   static async getUserFriends(userId: number): Promise<IFriend[]> {
     try {
       const response = await fetch(`${API_BASE_URL}/api/users/${userId}/friends`, {
-        headers: getAuthHeaders(),
+        headers: getApiHeaders(),
       });
       if (response.status === 401) {
         throw new Error('Unauthorized access');
@@ -99,7 +93,7 @@ export class FriendApi {
   static async getFriendRequests(userId: number): Promise<IFriend[]> {
     try {
       const response = await fetch(`${API_BASE_URL}/api/users/${userId}/friend-requests`, {
-        headers: getAuthHeaders(),
+        headers: getApiHeaders(),
       });
       if (response.status === 401) {
         throw new Error('Unauthorized access');
@@ -120,7 +114,7 @@ export class FriendApi {
   static async getSentRequests(userId: number): Promise<IFriend[]> {
     try {
       const response = await fetch(`${API_BASE_URL}/api/users/${userId}/sent-requests`, {
-        headers: getAuthHeaders(),
+        headers: getApiHeaders(),
       });
       if (response.status === 401) {
         throw new Error('Unauthorized access');
@@ -142,7 +136,7 @@ export class FriendApi {
     await AuthTrigger.wrapApiCall(authOperations.update, async () => {
       const response = await fetch(`${API_BASE_URL}/api/friendship/status`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
+        headers: getApiHeaders(),
         body: JSON.stringify({ user_id, friend_id, status }),
       });
       if (!response.ok) {
@@ -157,7 +151,7 @@ export class FriendApi {
         return [];
       }
       const response = await fetch(`${API_BASE_URL}/api/users?search=${encodeURIComponent(query)}`, {
-        headers: getAuthHeaders(),
+        headers: getApiHeaders(),
       });
       if (response.status === 401) {
         throw new Error('Unauthorized access');
@@ -177,7 +171,7 @@ export class FriendApi {
 
   static async getAllUsers(): Promise<IUser[]> {
     const response = await fetch(`${API_BASE_URL}/api/users`, {
-      headers: getAuthHeaders(),
+      headers: getApiHeaders(),
     });
     if (!response.ok) {
       throw new Error('Failed to fetch users');

@@ -4,7 +4,7 @@ export function getApiHeaders(): HeadersInit {
         'Accept-Language': localStorage.getItem('locale') || 'en',
     };
 
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken");
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
     }

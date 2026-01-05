@@ -114,7 +114,7 @@ export class UserApi {
     localStorage.setItem('token', token);
     const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
       method: 'POST',
-      headers: getApiHeaders(true),
+      headers: getApiHeaders(),
     });
     if (!response.ok) {
       throw new Error('Logout failed');
@@ -124,7 +124,7 @@ export class UserApi {
   static async getCurrentUser(token: string): Promise<IUser> {
     localStorage.setItem('token', token);
     const response = await fetch(`${API_BASE_URL}/api/auth/user`, {
-      headers: getApiHeaders(true),
+      headers: getApiHeaders(),
     });
     if (!response.ok) {
       throw new Error('Failed to get current user');
@@ -150,7 +150,7 @@ export class UserApi {
     localStorage.setItem('token', token || '');
     const response = await fetch(`${API_BASE_URL}/api/users/${id}/ban`, {
       method: 'PUT',
-      headers: getApiHeaders(true),
+      headers: getApiHeaders(),
     });
     if (!response.ok) {
       const error = await response.json();
@@ -163,7 +163,7 @@ export class UserApi {
     localStorage.setItem('token', token || '');
     const response = await fetch(`${API_BASE_URL}/api/users/${id}/unban`, {
       method: 'PUT',
-      headers: getApiHeaders(true),
+      headers: getApiHeaders(),
     });
     if (!response.ok) {
       const error = await response.json();
