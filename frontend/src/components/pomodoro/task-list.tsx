@@ -452,7 +452,9 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
           <div
             key={task.id}
             onClick={() => onTaskSelect(task)}
-            className={`bg-white/10 backdrop-blur-2xl rounded-xl p-3 border transition-all duration-200 cursor-pointer shadow-lg hover:shadow-xl hover:bg-white/15 transform hover:-translate-y-0.5 ${
+            className={`bg-white/10 backdrop-blur-2xl rounded-xl p-3 border transition-all duration-200 cursor-pointer shadow-lg hover:shadow-xl hover:bg-white/15 transform hover:-translate-y-0.5 relative ${
+              openMenuId === task.id ? 'z-50' : ''
+            } ${
               selectedTaskId === task.id 
                 ? 'border-l-4 border-l-white border-r border-t border-b border-r-white/20 border-t-white/20 border-b-white/20 bg-white/15 shadow-xl' 
                 : 'border-white/10 hover:border-white/15'
@@ -509,7 +511,7 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
                   </button>
                   
                   {openMenuId === task.id && (
-                    <div className="absolute right-0 top-6 z-50 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-xl shadow-2xl min-w-[140px] animate-in fade-in-0 zoom-in-95 duration-150">
+                    <div className="absolute right-0 top-6 z-50 bg-black/60 backdrop-blur-xl border border-white/30 rounded-xl shadow-2xl min-w-[140px] animate-in fade-in-0 zoom-in-95 duration-150">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
