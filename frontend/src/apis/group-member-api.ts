@@ -1,4 +1,5 @@
 import type { IGroupMember } from '../interfaces/IGroupMember';
+import { getApiHeaders } from '../utils/api-headers';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -22,9 +23,7 @@ export class GroupMemberApi {
   static async addGroupMember(memberData: { user_id: number; group_id: number; role?: string }): Promise<IGroupMember> {
     const response = await fetch(`${API_BASE_URL}/api/group-members`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
       body: JSON.stringify(memberData),
     });
     if (!response.ok) {
@@ -36,9 +35,7 @@ export class GroupMemberApi {
   static async updateGroupMember(id: number, memberData: Partial<IGroupMember>): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/api/group-members/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
       body: JSON.stringify(memberData),
     });
     if (!response.ok) {
@@ -74,9 +71,7 @@ export class GroupMemberApi {
   static async updateMemberRole(id: number, role: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/api/group-members/${id}/role`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
       body: JSON.stringify({ role }),
     });
     if (!response.ok) {

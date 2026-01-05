@@ -1,4 +1,5 @@
 import type { ITask } from '../interfaces/ITask';
+import { getApiHeaders } from '../utils/api-headers';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -22,9 +23,7 @@ export class TaskApi {
   static async createTask(taskData: { title: string; description?: string; owner_id: number; assigned_to_id?: number; group_id?: number; status: string }): Promise<ITask> {
     const response = await fetch(`${API_BASE_URL}/api/tasks`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
       body: JSON.stringify(taskData),
     });
     if (!response.ok) {
@@ -36,9 +35,7 @@ export class TaskApi {
   static async updateTask(id: number, taskData: Partial<ITask>): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/api/tasks/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
       body: JSON.stringify(taskData),
     });
     if (!response.ok) {

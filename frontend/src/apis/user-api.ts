@@ -1,4 +1,5 @@
 import type { IUser } from '../interfaces/IUser';
+import { getApiHeaders } from '../utils/api-headers';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -38,9 +39,7 @@ export class UserApi {
   static async createUser(userData: Partial<IUser> & { password: string }): Promise<IUser> {
     const response = await fetch(`${API_BASE_URL}/api/users`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
       body: JSON.stringify(userData),
     });
     if (!response.ok) {
@@ -52,9 +51,7 @@ export class UserApi {
   static async updateUser(id: number, userData: Partial<IUser>): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
       body: JSON.stringify(userData),
     });
     if (!response.ok) {
@@ -90,9 +87,7 @@ export class UserApi {
   static async login(credentials: LoginRequest): Promise<AuthResponse> {
     const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
       body: JSON.stringify(credentials),
     });
     if (!response.ok) {
@@ -105,9 +100,7 @@ export class UserApi {
   static async register(userData: RegisterRequest): Promise<AuthResponse> {
     const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
       body: JSON.stringify(userData),
     });
     if (!response.ok) {
@@ -118,12 +111,10 @@ export class UserApi {
   }
 
   static async logout(token: string): Promise<void> {
+    localStorage.setItem('token', token);
     const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(true),
     });
     if (!response.ok) {
       throw new Error('Logout failed');
@@ -131,11 +122,9 @@ export class UserApi {
   }
 
   static async getCurrentUser(token: string): Promise<IUser> {
+    localStorage.setItem('token', token);
     const response = await fetch(`${API_BASE_URL}/api/auth/user`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(true),
     });
     if (!response.ok) {
       throw new Error('Failed to get current user');
@@ -146,9 +135,7 @@ export class UserApi {
   static async googleAuth(googleToken: string): Promise<AuthResponse> {
     const response = await fetch(`${API_BASE_URL}/api/auth/google`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getApiHeaders(),
       body: JSON.stringify({ google_token: googleToken }),
     });
     if (!response.ok) {
@@ -160,12 +147,10 @@ export class UserApi {
 
   static async banUser(id: number): Promise<void> {
     const token = localStorage.getItem('authToken');
+    localStorage.setItem('token', token || '');
     const response = await fetch(`${API_BASE_URL}/api/users/${id}/ban`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
+      headers: getApiHeaders(true),
     });
     if (!response.ok) {
       const error = await response.json();
@@ -175,12 +160,10 @@ export class UserApi {
 
   static async unbanUser(id: number): Promise<void> {
     const token = localStorage.getItem('authToken');
+    localStorage.setItem('token', token || '');
     const response = await fetch(`${API_BASE_URL}/api/users/${id}/unban`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
+      headers: getApiHeaders(true),
     });
     if (!response.ok) {
       const error = await response.json();

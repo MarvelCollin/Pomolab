@@ -1,4 +1,5 @@
 import type { IGroup } from "../interfaces/IGroup";
+import { getApiHeaders } from '../utils/api-headers';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -57,9 +58,7 @@ export class GroupApi {
   }): Promise<IGroup> {
     const response = await fetch(`${API_BASE_URL}/api/groups`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: getApiHeaders(),
       body: JSON.stringify(groupData),
     });
     if (!response.ok) {
@@ -74,9 +73,7 @@ export class GroupApi {
   ): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/api/groups/${id}`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: getApiHeaders(),
       body: JSON.stringify(groupData),
     });
     if (!response.ok) {

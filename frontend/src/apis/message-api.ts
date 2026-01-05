@@ -1,14 +1,13 @@
 import type { IMessage } from '../interfaces/IMessage';
 import { AuthTrigger, authOperations } from '../utils/auth-trigger';
+import { getApiHeaders } from '../utils/api-headers';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('authToken');
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': token ? `Bearer ${token}` : '',
-  };
+  localStorage.setItem('token', token || '');
+  return getApiHeaders(true);
 };
 
 export class MessageApi {
