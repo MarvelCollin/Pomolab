@@ -407,11 +407,11 @@ function TaskList({ tasks, onTaskSelect, onTaskComplete, onTaskAdd, onTaskDelete
             <select
               value={newTaskAssignee || ''}
               onChange={(e) => setNewTaskAssignee(e.target.value ? parseInt(e.target.value) : null)}
-              className="w-full bg-white/10 backdrop-blur-2xl border border-white/10 rounded-lg px-3 py-2 outline-none text-white/80 text-xs mb-2"
+              className="w-full bg-white/15 backdrop-blur-2xl border border-white/10 rounded-lg px-3 py-2 outline-none text-white text-xs mb-2 cursor-pointer hover:bg-white/20 transition-colors"
             >
-              <option value="">{t('task.assignTo')}</option>
+              <option value="" className="bg-gray-800 text-white">{t('task.assignTo')}</option>
               {availableUsers.map(user => (
-                <option key={user.id} value={user.id} className="text-gray-900">
+                <option key={user.id} value={user.id} className="bg-gray-800 text-white">
                   {user.username}
                 </option>
               ))}
