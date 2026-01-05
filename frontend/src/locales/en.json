@@ -253,6 +253,14 @@
     "nowPlaying": "Now Playing",
     "noMusicPlaying": "No music playing"
   },
+  "musicPlayer": {
+    "settings": "Music Settings",
+    "autoNextPlay": "Auto Next Play",
+    "alwaysOn": "Always On",
+    "volume": "Volume",
+    "previous": "Previous",
+    "next": "Next"
+  },
   "validation": {
     "required": "This field is required",
     "email": "Please enter a valid email address",

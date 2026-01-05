@@ -253,6 +253,14 @@
     "nowPlaying": "Sedang Diputar",
     "noMusicPlaying": "Tidak ada musik yang diputar"
   },
+  "musicPlayer": {
+    "settings": "Pengaturan Musik",
+    "autoNextPlay": "Putar Otomatis Berikutnya",
+    "alwaysOn": "Selalu Aktif",
+    "volume": "Volume",
+    "previous": "Sebelumnya",
+    "next": "Berikutnya"
+  },
   "validation": {
     "required": "Bidang ini wajib diisi",
     "email": "Silakan masukkan alamat email yang valid",

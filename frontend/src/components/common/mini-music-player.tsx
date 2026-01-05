@@ -1,6 +1,7 @@
 import React, { useState, useEffect, memo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Settings, Music, X } from 'lucide-react';
+import { useLocale } from '../../hooks/use-locale';
 import type { IMusic, IMusicPlayerState } from '../../interfaces/IMusic';
 
 interface MiniMusicPlayerProps {
@@ -26,6 +27,7 @@ function MiniMusicPlayer({
   onToggleMute,
   onSeekTo
 }: MiniMusicPlayerProps) {
+  const { t } = useLocale();
   const [showMusicSettings, setShowMusicSettings] = useState(false);
 
   const formatTime = (time: number): string => {
@@ -140,7 +142,7 @@ function MiniMusicPlayer({
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-white text-sm font-medium drop-shadow-sm">Music Settings</span>
+                  <span className="text-white text-sm font-medium drop-shadow-sm">{t('musicPlayer.settings')}</span>
                   <button
                     onClick={() => setShowMusicSettings(false)}
                     className="w-6 h-6 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300"
@@ -149,11 +151,11 @@ function MiniMusicPlayer({
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
-                  <span className="text-white/80 text-sm">Auto Next Play</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-400 text-xs font-medium">Always On</span>
-                    <div className="relative w-11 h-6 rounded-full bg-gradient-to-r from-green-500 to-green-400">
+                <div className="flex items-center justify-between gap-3 p-3 bg-white/5 rounded-xl">
+                  <span className="text-white/80 text-sm flex-1 min-w-0">{t('musicPlayer.autoNextPlay')}</span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-green-400 text-xs font-medium whitespace-nowrap">{t('musicPlayer.alwaysOn')}</span>
+                    <div className="relative w-11 h-6 rounded-full bg-gradient-to-r from-green-500 to-green-400 flex-shrink-0">
                       <motion.div 
                         className="w-4 h-4 bg-white rounded-full shadow-lg absolute top-1"
                         animate={{ x: 20 }}
@@ -165,7 +167,7 @@ function MiniMusicPlayer({
 
                 <div className="space-y-3 p-3 bg-white/5 rounded-xl">
                   <div className="flex items-center justify-between">
-                    <span className="text-white/80 text-sm">Volume</span>
+                    <span className="text-white/80 text-sm">{t('musicPlayer.volume')}</span>
                     <span className="text-white/60 text-xs font-mono">
                       {Math.round(playerState.volume * 100)}%
                     </span>
@@ -201,7 +203,7 @@ function MiniMusicPlayer({
                     className="flex-1 bg-white/10 hover:bg-white/20 rounded-xl p-3 flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105"
                   >
                     <SkipBack className="w-4 h-4 text-white/80" />
-                    <span className="text-white/80 text-xs font-medium">Previous</span>
+                    <span className="text-white/80 text-xs font-medium">{t('musicPlayer.previous')}</span>
                   </button>
                   
                   <button
@@ -209,7 +211,7 @@ function MiniMusicPlayer({
                     className="flex-1 bg-white/10 hover:bg-white/20 rounded-xl p-3 flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105"
                   >
                     <SkipForward className="w-4 h-4 text-white/80" />
-                    <span className="text-white/80 text-xs font-medium">Next</span>
+                    <span className="text-white/80 text-xs font-medium">{t('musicPlayer.next')}</span>
                   </button>
                 </div>
               </div>
